@@ -50,6 +50,51 @@ export const FurnitureList = ({ setPage, setSelectedFurniture }) => {
     setDeleteId(null);
   };
 
+  const handleExport = () => {
+    if (filteredList.length === 0) {
+      alert('No assets available to export.');
+      return;
+    }
+
+    // Define CSV Headers
+    const headers = ['Asset ID', 'Name', 'Category', 'Building', 'Department', 'Room', 'Qty', 'Condition', 'Status', 'Purchase Date', 'Cost', 'Supplier', 'Warranty', 'Description'];
+    
+    // Map assets to CSV rows
+    const rows = filteredList.map(item => [
+      item.id,
+      `"${item.name.replace(/"/g, '""')}"`,
+      item.category,
+      item.building,
+      item.department,
+      item.room,
+      item.quantity,
+      item.condition,
+      item.status,
+      item.purchaseDate,
+      item.cost,
+      `"${(item.supplier || '').replace(/"/g, '""')}"`,
+      item.warranty,
+      `"${(item.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    // Construct CSV content with BOM (\uFEFF) for Excel UTF-8 encoding compatibility
+    const csvContent = "\uFEFF" + [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Create a Blob and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `asset_inventory_export_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div>
       <TopBar title="All Assets" subtitle={`${filteredList.length} assets found`} user={currentUser} />
@@ -103,7 +148,7 @@ export const FurnitureList = ({ setPage, setSelectedFurniture }) => {
           <Btn onClick={() => setPage('furniture-add')}>
             <Icon.Plus /> Add Asset
           </Btn>
-          <Btn variant="secondary" onClick={() => alert('Exporting data as CSV...')}>
+          <Btn variant="secondary" onClick={handleExport}>
             <Icon.Download /> Export
           </Btn>
         </div>
@@ -177,7 +222,7 @@ export const FurnitureList = ({ setPage, setSelectedFurniture }) => {
       {deleteId && (
         <Modal title="Confirm Asset Deletion" onClose={() => setDeleteId(null)}>
           <div className="text-center py-2">
-            <div className="w-14 h-14 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100 dark:border-rose-900/50">
+            <div className="w-14 h-14 bg-rose-50 dark:bg-rose-955/20 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100 dark:border-rose-900/50">
               <Icon.Trash />
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-350 font-semibold mb-1">Are you sure you want to delete</p>
