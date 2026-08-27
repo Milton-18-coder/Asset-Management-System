@@ -4,14 +4,14 @@ import { TopBar } from '../components/TopBar';
 import { Card, Btn, Modal, Input, Icon } from '../components/UIComponents';
 
 const defaultCategories = [
-  { id: 'C01', name: 'Desk', icon: '🪑', description: 'Writing and work desks for classrooms and offices', count: 0, color: 'bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/50' },
-  { id: 'C02', name: 'Chair', icon: '💺', description: 'Student, faculty and ergonomic chairs', count: 0, color: 'bg-violet-50 border-violet-100 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-900/50' },
-  { id: 'C03', name: 'Table', icon: '🪵', description: 'Conference, lab and general-purpose tables', count: 0, color: 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50' },
-  { id: 'C04', name: 'Board', icon: '📋', description: 'Whiteboards, blackboards and notice boards', count: 0, color: 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50' },
-  { id: 'C05', name: 'Electronics', icon: '💻', description: 'Projectors, computers, smart boards and AV equipment', count: 0, color: 'bg-sky-50 border-sky-100 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400 dark:border-sky-900/50' },
-  { id: 'C06', name: 'Storage', icon: '🗄️', description: 'Filing cabinets, bookshelves and lockers', count: 0, color: 'bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:text-rose-455 dark:border-rose-900/50' },
-  { id: 'C07', name: 'Equipment', icon: '🔬', description: 'Lab instruments, oscilloscopes and specialised tools', count: 0, color: 'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/50' },
-  { id: 'C08', name: 'Other', icon: '📦', description: 'Miscellaneous assets not covered by other categories', count: 0, color: 'bg-slate-50 border-slate-200 text-slate-650 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700/50' },
+  { id: 'C01', name: 'Desk', icon: '/images/desk.jpg', description: 'Writing and work desks for classrooms and offices', count: 0, color: 'bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/50' },
+  { id: 'C02', name: 'Chair', icon: '/images/chair.jpg', description: 'Student, faculty and ergonomic chairs', count: 0, color: 'bg-violet-50 border-violet-100 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-900/50' },
+  { id: 'C03', name: 'Table', icon: '/images/table.jpg', description: 'Conference, lab and general-purpose tables', count: 0, color: 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50' },
+  { id: 'C04', name: 'Board', icon: '/images/board.jpg', description: 'Whiteboards, blackboards and notice boards', count: 0, color: 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50' },
+  { id: 'C05', name: 'Electronics', icon: '/images/electronics.jpg', description: 'Projectors, computers, smart boards and AV equipment', count: 0, color: 'bg-sky-50 border-sky-100 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400 dark:border-sky-900/50' },
+  { id: 'C06', name: 'Storage', icon: '/images/storage.jpg', description: 'Filing cabinets, bookshelves and lockers', count: 0, color: 'bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:text-rose-455 dark:border-rose-900/50' },
+  { id: 'C07', name: 'Equipment', icon: '/images/equipment.jpg', description: 'Lab instruments, oscilloscopes and specialised tools', count: 0, color: 'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/50' },
+  { id: 'C08', name: 'Other', icon: '/images/other.jpg', description: 'Miscellaneous assets not covered by other categories', count: 0, color: 'bg-slate-50 border-slate-200 text-slate-650 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700/50' },
 ];
 
 export const CategoryPage = () => {
@@ -74,8 +74,12 @@ export const CategoryPage = () => {
         {categories.map(c => (
           <Card key={c.id} className="p-5 border-2 border-slate-100 dark:border-slate-800 hover:shadow-md hover:translate-y-[-2px] transition-all duration-300">
             <div className="flex items-start justify-between mb-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl border ${c.color.split(' ')[0]}`}>
-                {c.icon}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl border overflow-hidden ${c.color.split(' ')[0]}`}>
+                {c.icon.startsWith('/') ? (
+                  <img src={c.icon} alt={c.name} className="w-full h-full object-cover" />
+                ) : (
+                  c.icon
+                )}
               </div>
               <div className="flex gap-1">
                 <button
@@ -146,13 +150,19 @@ export const CategoryPage = () => {
                     <td className="px-5 py-4 font-mono text-slate-400 dark:text-slate-550">{c.id}</td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <span className={`w-6 h-6 rounded flex items-center justify-center text-xs border ${c.color.split(' ')[0]}`}>{c.icon}</span>
+                        <span className={`w-6 h-6 rounded flex items-center justify-center text-xs border overflow-hidden ${c.color.split(' ')[0]}`}>
+                          {c.icon.startsWith('/') ? (
+                            <img src={c.icon} alt={c.name} className="w-full h-full object-cover" />
+                          ) : (
+                            c.icon
+                          )}
+                        </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200">{c.name}</span>
                       </div>
                     </td>
                     <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-medium max-w-sm truncate">{c.description}</td>
                     <td className="px-5 py-4 text-center font-bold text-slate-700 dark:text-slate-300">{c.count.toLocaleString()}</td>
-                    <td className="px-5 py-4 text-center font-bold text-slate-600 dark:text-slate-450">{assetCount}</td>
+                    <td className="px-5 py-4 text-center font-bold text-slate-660 dark:text-slate-450">{assetCount}</td>
                     <td className="px-5 py-4">
                       <div className="flex gap-1.5">
                         <button onClick={() => setEditId(c.id)} className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"><Icon.Edit /></button>
