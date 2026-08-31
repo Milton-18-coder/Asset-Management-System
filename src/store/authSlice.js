@@ -27,22 +27,9 @@ export const DEMO_USERS = {
   },
 };
 
-const getInitialState = () => {
-  const saved = localStorage.getItem('asset_auth_user');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      return { currentUser: parsed, isAuthenticated: true };
-    } catch {
-      // ignore
-    }
-  }
-  return { currentUser: null, isAuthenticated: false };
-};
-
 const authSlice = createSlice({
   name: 'auth',
-  initialState: getInitialState(),
+  initialState: { currentUser: null, isAuthenticated: false },
   reducers: {
     loginSuccess: (state, action) => {
       state.currentUser = action.payload;
