@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addInspection } from '../store/inspectionsSlice';
 import { updateFurnitureCondition } from '../store/furnitureSlice';
+import { addNotification } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Select, Input, Icon } from '../components/UIComponents';
 
@@ -40,6 +41,15 @@ export const Inspections = () => {
 
     dispatch(addInspection(newInspection));
     dispatch(updateFurnitureCondition({ id: selectedAssetId, condition }));
+    dispatch(
+      addNotification({
+        title: `Asset Inspected: ${condition}`,
+        message: `${currentUser.name} audited ${asset.name} (${selectedAssetId}) in ${asset.room}. Condition marked as ${condition}.`,
+        type: 'inspection',
+        link: `/assets/${selectedAssetId}`,
+        department: asset.department,
+      })
+    );
     setSuccess(true);
   };
 

@@ -17,6 +17,7 @@ import { Inspections } from './pages/Inspections';
 import { Users } from './pages/Users';
 import { Settings } from './pages/Settings';
 import { Profile } from './pages/Profile';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 export default function App() {
   const dispatch = useDispatch();
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/assets" element={<FurnitureList />} />
             <Route path="/assets/new" element={<AddFurniture />} />
             <Route path="/assets/edit/:id" element={<AddFurniture />} />

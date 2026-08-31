@@ -1,15 +1,19 @@
 import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { markAsRead } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { StatCard, Card, Badge, Btn, Icon } from '../components/UIComponents';
 import { DonutChart, BarChart } from '../components/Charts';
+import { Bell, ArrowRight } from 'lucide-react';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
   const transfersList = useSelector((state) => state.transfers.list);
+  const notificationsList = useSelector((state) => state.notifications?.list || []);
 
   if (!currentUser) return null;
 
@@ -20,6 +24,14 @@ export const Dashboard = () => {
     if (isSuperAdmin) return furnitureList;
     return furnitureList.filter(f => f.department === currentUser.department);
   }, [furnitureList, isSuperAdmin, currentUser.department]);
+
+  // Scoped notifications for dashboard widget
+  const recentNotifications = useMemo(() => {
+    const scoped = isSuperAdmin
+      ? notificationsList
+      : notificationsList.filter(n => !n.department || n.department === currentUser.department || n.department === 'All');
+    return scoped.slice(0, 4);
+  }, [notificationsList, isSuperAdmin, currentUser.department]);
 
   // Compute metrics using useMemo
   const stats = useMemo(() => {
@@ -70,23 +82,23 @@ export const Dashboard = () => {
       />
 
       {/* Stats Cards */}
-      <div className={`grid gap-4 mb-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 ${isSuperAdmin ? 'lg:grid-cols-7' : 'lg:grid-cols-4'}`}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard 
           icon={<Icon.Furniture />} 
           label="Total Assets" 
           value={stats.total} 
-          sub="units registered" 
+          sub="units recorded" 
           color="bg-indigo-50 border-indigo-150 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/50 dark:text-indigo-400" 
         />
         <StatCard 
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>} 
+          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>} 
           label="Available" 
           value={stats.available} 
-          sub="ready to assign" 
+          sub="ready for use" 
           color="bg-emerald-50 border-emerald-150 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900/50 dark:text-emerald-400" 
         />
         <StatCard 
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>} 
+          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} 
           label="In Use" 
           value={stats.inUse} 
           sub="currently assigned" 
@@ -99,43 +111,83 @@ export const Dashboard = () => {
           sub="requires review" 
           color="bg-amber-50 border-amber-150 text-amber-600 dark:bg-amber-950/20 dark:border-amber-900/50 dark:text-amber-400" 
         />
-        
-        {isSuperAdmin && (
-          <>
-            <StatCard icon={<Icon.Building />} label="Buildings" value={8} sub="campus sectors" color="bg-sky-50 border-sky-150 text-sky-600 dark:bg-sky-950/20 dark:border-sky-900/50 dark:text-sky-400" />
-            <StatCard icon={<Icon.Department />} label="Depts" value={8} sub="academic depts" color="bg-indigo-50 border-indigo-150 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/50 dark:text-indigo-400" />
-            <StatCard icon={<Icon.Room />} label="Rooms" value={320} sub="total spaces" color="bg-rose-50 border-rose-150 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/50 dark:text-rose-400" />
-          </>
-        )}
       </div>
 
-      {/* Charts Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <Card className="p-5 flex flex-col justify-between">
+      {/* Analytics & Activity Panel */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="p-4 flex flex-col justify-between">
           <DonutChart data={conditionDonut} title="Asset Condition Summary" />
         </Card>
-        <Card className="p-5 flex flex-col justify-between font-medium">
-          <BarChart data={categoryData} title="Assets Category Distribution" />
+        
+        <Card className="p-4 flex flex-col justify-between font-medium">
+          <BarChart data={categoryData} title="Category Distribution" />
         </Card>
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 font-display tracking-tight">Recent Transfers</p>
-            <button onClick={() => navigate('/transfers')} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">View all</button>
-          </div>
-          <div className="space-y-4">
-            {recentTransfers.length === 0 ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500 py-6 text-center">No recent transfers.</p>
-            ) : (
-              recentTransfers.map(t => (
-                <div key={t.id} className="flex items-start justify-between gap-3 text-xs bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100/50 dark:border-slate-800/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-700 dark:text-slate-200 truncate">{t.furniture}</p>
-                    <p className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 font-semibold">{t.source} → {t.destination}</p>
+        
+        {/* Recent Transfers Widget */}
+        <Card className="p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 font-display uppercase tracking-wide">Transfers</p>
+              <button onClick={() => navigate('/transfers')} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">View all</button>
+            </div>
+            <div className="space-y-2.5">
+              {recentTransfers.length === 0 ? (
+                <p className="text-xs text-slate-400 dark:text-slate-500 py-6 text-center">No transfers.</p>
+              ) : (
+                recentTransfers.map(t => (
+                  <div key={t.id} className="flex items-start justify-between gap-2 text-xs bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 dark:text-slate-200 truncate text-[11px]">{t.furniture}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">{t.source} → {t.destination}</p>
+                    </div>
+                    <Badge label={t.status} />
                   </div>
-                  <Badge label={t.status} />
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Small Live Notifications Widget on Dashboard */}
+        <Card className="p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <Bell size={13} className="text-indigo-600 dark:text-indigo-400" />
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 font-display uppercase tracking-wide">Alerts</p>
+              </div>
+              <button onClick={() => navigate('/notifications')} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">View all</button>
+            </div>
+            <div className="space-y-2">
+              {recentNotifications.length === 0 ? (
+                <p className="text-xs text-slate-400 dark:text-slate-500 py-6 text-center">No recent alerts.</p>
+              ) : (
+                recentNotifications.map(n => (
+                  <div
+                    key={n.id}
+                    onClick={() => {
+                      if (!n.read) dispatch(markAsRead(n.id));
+                      if (n.link) navigate(n.link);
+                    }}
+                    className={`p-2 rounded-xl border transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
+                      !n.read
+                        ? 'border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/20 dark:bg-indigo-950/20'
+                        : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <p className={`text-[11px] truncate ${!n.read ? 'font-bold text-slate-900 dark:text-white' : 'font-semibold text-slate-700 dark:text-slate-300'}`}>
+                        {n.title}
+                      </p>
+                      {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {n.message}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </Card>
       </div>
@@ -149,7 +201,7 @@ export const Dashboard = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-855 text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold whitespace-nowrap">
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold whitespace-nowrap">
                 {['Asset ID', 'Name', 'Category', 'Room', 'Condition', 'Status'].map(h => (
                   <th key={h} className="px-6 py-4">{h}</th>
                 ))}
@@ -164,8 +216,8 @@ export const Dashboard = () => {
                 >
                   <td className="px-6 py-4.5 font-mono text-indigo-600 dark:text-indigo-400 font-bold">{f.id}</td>
                   <td className="px-6 py-4.5 font-bold text-slate-800 dark:text-slate-200">{f.name}</td>
-                  <td className="px-6 py-4.5 text-slate-550 dark:text-slate-400 font-medium">{f.category}</td>
-                  <td className="px-6 py-4.5 text-slate-555 dark:text-slate-400 font-medium">{f.room}</td>
+                  <td className="px-6 py-4.5 text-slate-500 dark:text-slate-400 font-medium">{f.category}</td>
+                  <td className="px-6 py-4.5 text-slate-500 dark:text-slate-400 font-medium">{f.room}</td>
                   <td className="px-6 py-4.5"><Badge label={f.condition} type="condition" /></td>
                   <td className="px-6 py-4.5"><Badge label={f.status} /></td>
                 </tr>

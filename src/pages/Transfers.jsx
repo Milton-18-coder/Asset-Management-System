@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addTransfer, approveTransfer, rejectTransfer } from '../store/transfersSlice';
 import { updateFurnitureLocation } from '../store/furnitureSlice';
+import { addNotification } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Select, Input, Icon } from '../components/UIComponents';
 
@@ -49,19 +50,45 @@ export const Transfers = () => {
     };
 
     dispatch(addTransfer(newTransfer));
+    dispatch(
+      addNotification({
+        title: 'New Transfer Requested',
+        message: `${currentUser.name} requested transfer of ${asset.name} (${selectedAssetId}) from ${fromRoom} to ${toRoom}.`,
+        type: 'transfer',
+        link: '/transfers',
+        department: asset.department,
+      })
+    );
     setSuccess(true);
   };
 
   const handleApprove = (id, assetId, destRoom) => {
-    dispatch(approveTransfer(id));
     const asset = furnitureList.find(f => f.id === assetId);
+    dispatch(approveTransfer(id));
     if (asset) {
       dispatch(updateFurnitureLocation({ id: assetId, room: destRoom, building: asset.building }));
+      dispatch(
+        addNotification({
+          title: 'Transfer Approved',
+          message: `Transfer ${id} approved. ${asset.name} moved to Room ${destRoom}.`,
+          type: 'transfer',
+          link: '/transfers',
+          department: asset.department,
+        })
+      );
     }
   };
 
   const handleReject = (id) => {
     dispatch(rejectTransfer(id));
+    dispatch(
+      addNotification({
+        title: 'Transfer Rejected',
+        message: `Transfer request ${id} was rejected by ${currentUser.name}.`,
+        type: 'transfer',
+        link: '/transfers',
+      })
+    );
   };
 
   const pendingCount = transfers.filter(t => t.status === 'Pending').length;

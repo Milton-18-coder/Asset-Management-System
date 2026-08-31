@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Icon } from './UIComponents';
+import { Bell } from 'lucide-react';
 
 export const Sidebar = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -9,6 +11,16 @@ export const Sidebar = ({ user, onLogout }) => {
   const [furnitureOpen, setFurnitureOpen] = useState(true);
   const [adminOpen, setAdminOpen] = useState(false);
   const isSuperAdmin = user?.role === 'superadmin';
+
+  const notificationsList = useSelector((state) => state.notifications?.list || []);
+
+  const unreadCount = useMemo(() => {
+    if (!user) return 0;
+    const scoped = isSuperAdmin
+      ? notificationsList
+      : notificationsList.filter((n) => !n.department || n.department === user.department);
+    return scoped.filter((n) => !n.read).length;
+  }, [notificationsList, user, isSuperAdmin]);
 
   const isNavActive = (path) => {
     if (path === '/dashboard') {
@@ -20,13 +32,13 @@ export const Sidebar = ({ user, onLogout }) => {
     return location.pathname === path;
   };
 
-  const navItem = (path, label, icon, indent = false) => {
+  const navItem = (path, label, icon, indent = false, badge = null) => {
     const active = isNavActive(path);
     return (
       <button
         key={path}
         onClick={() => navigate(path)}
-        className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
           indent ? 'ml-4 w-[calc(100%-1rem)]' : ''
         } ${
           active
@@ -34,10 +46,19 @@ export const Sidebar = ({ user, onLogout }) => {
             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
         }`}
       >
-        <span className={active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}>
-          {icon}
-        </span>
-        {label}
+        <div className="flex items-center gap-2.5">
+          <span className={active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}>
+            {icon}
+          </span>
+          <span>{label}</span>
+        </div>
+        {badge !== null && badge > 0 && (
+          <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+            active ? 'bg-white text-indigo-700' : 'bg-rose-500 text-white'
+          }`}>
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
       </button>
     );
   };
@@ -62,6 +83,7 @@ export const Sidebar = ({ user, onLogout }) => {
       {/* Nav */}
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
         {navItem('/dashboard', 'Dashboard', <Icon.Dashboard />)}
+        {navItem('/notifications', 'Notifications', <Bell size={18} />, false, unreadCount)}
 
         {/* Assets */}
         <button

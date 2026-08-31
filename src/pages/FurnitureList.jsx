@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { deleteFurniture } from '../store/furnitureSlice';
+import { addNotification } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Icon } from '../components/UIComponents';
 
@@ -48,7 +49,19 @@ export const FurnitureList = () => {
   }, [search, filterCat, filterStatus, filterCond, sourceList]);
 
   const handleDelete = (id) => {
+    const asset = furnitureList.find(f => f.id === id);
     dispatch(deleteFurniture(id));
+    if (asset) {
+      dispatch(
+        addNotification({
+          title: 'Asset Deleted',
+          message: `${asset.name} (${id}) was deleted by ${currentUser.name}.`,
+          type: 'asset',
+          link: '/assets',
+          department: asset.department,
+        })
+      );
+    }
     setDeleteId(null);
   };
 

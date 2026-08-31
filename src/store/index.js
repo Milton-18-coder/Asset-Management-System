@@ -4,6 +4,7 @@ import furnitureReducer from './furnitureSlice';
 import transfersReducer from './transfersSlice';
 import inspectionsReducer from './inspectionsSlice';
 import usersReducer from './usersSlice';
+import notificationsReducer from './notificationsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     transfers: transfersReducer,
     inspections: inspectionsReducer,
     users: usersReducer,
+    notifications: notificationsReducer,
   },
 });

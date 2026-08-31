@@ -2,6 +2,7 @@ import React, { useReducer, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { addFurniture, editFurniture } from '../store/furnitureSlice';
+import { addNotification } from '../store/notificationsSlice';
 import { Card, Btn, Input, Select, Badge, Icon } from '../components/UIComponents';
 
 const createInitialState = (editAsset, userDept) => {
@@ -71,8 +72,26 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
 
     if (selectedFurniture) {
       dispatch(editFurniture(formState));
+      dispatch(
+        addNotification({
+          title: 'Asset Updated',
+          message: `${formState.name} (${formState.id}) was modified by ${currentUser?.name || 'Admin'}.`,
+          type: 'asset',
+          link: `/assets/${formState.id}`,
+          department: formState.department,
+        })
+      );
     } else {
       dispatch(addFurniture(formState));
+      dispatch(
+        addNotification({
+          title: 'New Asset Registered',
+          message: `${formState.name} (${formState.id}) was registered in ${formState.department} (Room ${formState.room}).`,
+          type: 'asset',
+          link: `/assets/${formState.id}`,
+          department: formState.department,
+        })
+      );
     }
     setSuccess(true);
   };
