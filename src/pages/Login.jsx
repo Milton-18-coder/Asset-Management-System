@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { loginSuccess, DEMO_USERS } from '../store/authSlice';
 import { Icon } from '../components/UIComponents';
 
 export const Login = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { currentUser } = useSelector((state) => state.auth);
+  
+  // React useRef hooks
+  const usernameInputRef = useRef(null);
+  const forgotInputRef = useRef(null);
+  const googleButtonRef = useRef(null);
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -12,6 +21,26 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+
+  // Auto-focus username input on mount or when returning to login form
+  useEffect(() => {
+    if (!forgotMode && usernameInputRef.current) {
+      usernameInputRef.current.focus();
+    }
+  }, [forgotMode]);
+
+  // Auto-focus forgot password input when forgot mode is activated
+  useEffect(() => {
+    if (forgotMode && !forgotSent && forgotInputRef.current) {
+      forgotInputRef.current.focus();
+    }
+  }, [forgotMode, forgotSent]);
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const decodeJwt = (token) => {
     try {
@@ -73,14 +102,14 @@ export const Login = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID') {
       return;
     }
 
     const initGoogle = () => {
-      if (window.google?.accounts?.id) {
+      if (window.google?.accounts?.id && googleButtonRef.current) {
         window.google.accounts.id.initialize({
           client_id: clientId,
           callback: handleCredentialResponse,
@@ -89,7 +118,7 @@ export const Login = () => {
 
         const isDark = document.documentElement.classList.contains('dark');
         window.google.accounts.id.renderButton(
-          document.getElementById('google-signin-button'),
+          googleButtonRef.current,
           {
             theme: isDark ? 'filled_black' : 'outline',
             size: 'large',
@@ -137,6 +166,9 @@ export const Login = () => {
       } else {
         setError('Invalid username or password. Try superadmin / password123.');
         setLoading(false);
+        if (usernameInputRef.current) {
+          usernameInputRef.current.focus();
+        }
       }
     }, 800);
   };
@@ -154,7 +186,7 @@ export const Login = () => {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Password reset instructions sent to your registered email address.</p>
               <button 
                 onClick={() => { setForgotMode(false); setForgotSent(false); }}
-                className="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition"
+                className="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition cursor-pointer"
               >
                 Back to Login
               </button>
@@ -173,9 +205,10 @@ export const Login = () => {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">Username</label>
                   <input 
+                    ref={forgotInputRef}
                     type="text" 
                     placeholder="Enter your username" 
-                    className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
+                    className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
                   />
                 </div>
                 <button 
@@ -193,7 +226,7 @@ export const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex transition-colors duration-300 bg-slate-55 dark:bg-slate-950">
+    <div className="min-h-screen flex transition-colors duration-300 bg-slate-50 dark:bg-slate-950">
       {/* Left Panel */}
       <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 flex-col justify-between p-12 text-white">
         <div className="flex items-center gap-3">
@@ -203,30 +236,32 @@ export const Login = () => {
             </svg>
           </div>
           <div>
-            <p className="text-white font-bold text-sm font-display tracking-tight">AssetMS</p>
-            <p className="text-indigo-300 text-[10px]">National Engineering College 2026</p>
+            <p className="font-bold text-white tracking-tight font-display text-base">AssetMS</p>
+            <p className="text-xs text-indigo-300">National Engineering College</p>
           </div>
         </div>
 
-        <div>
-          <h2 className="text-4xl font-extrabold text-white leading-tight mb-4 font-display tracking-tight">
-            National Engineering<br />College Assets MS
+        <div className="max-w-md">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-800/60 border border-indigo-700 text-indigo-200 text-xs font-semibold mb-6">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Institutional Asset Intelligence
+          </div>
+          <h2 className="text-3xl font-extrabold text-white mb-4 font-display leading-tight">
+            Seamless Asset Audits & Campus Tracking
           </h2>
-          <p className="text-indigo-200 text-sm leading-relaxed max-w-sm font-medium">
-            Track furniture, equipment, and resources across all campus buildings, departments, and rooms — all in one unified platform.
+          <p className="text-indigo-200 text-sm leading-relaxed mb-8">
+            Centralized inventory lifecycle management, room allocations, real-time transfers, and physical condition inspections across all college departments.
           </p>
-          <div className="grid grid-cols-2 gap-4 mt-10">
-            {[
-              { label: 'Total Assets', value: '4,000+' },
-              { label: 'Buildings', value: '8' },
-              { label: 'Departments', value: '8' },
-              { label: 'Rooms', value: '320' },
-            ].map(s => (
-              <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <p className="text-2xl font-black text-white font-display leading-none">{s.value}</p>
-                <p className="text-indigo-300 text-xs mt-1.5 font-semibold">{s.label}</p>
-              </div>
-            ))}
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+              <p className="text-2xl font-bold text-white font-mono">1,240+</p>
+              <p className="text-xs text-indigo-300 mt-0.5 font-medium">Assets Tracked</p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+              <p className="text-2xl font-bold text-white font-mono">8 Blocks</p>
+              <p className="text-xs text-indigo-300 mt-0.5 font-medium">Campus Locations</p>
+            </div>
           </div>
         </div>
 
@@ -242,14 +277,14 @@ export const Login = () => {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
             </div>
-            <p className="font-bold text-slate-850 dark:text-white font-display">AssetMS</p>
+            <p className="font-bold text-slate-800 dark:text-white font-display">AssetMS</p>
           </div>
 
           <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-1.5 font-display tracking-tight leading-none">Welcome back</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 font-medium">Sign in to your administrator dashboard</p>
 
           {error && (
-            <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-455 text-xs rounded-xl p-3.5 mb-5 font-semibold">
+            <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-xs rounded-xl p-3.5 mb-5 font-semibold">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               {error}
             </div>
@@ -259,6 +294,7 @@ export const Login = () => {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block uppercase">Username</label>
               <input
+                ref={usernameInputRef}
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
@@ -274,7 +310,7 @@ export const Login = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Enter password"
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-805 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition placeholder:text-slate-400"
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition placeholder:text-slate-400"
                 required
               />
             </div>
@@ -325,7 +361,7 @@ export const Login = () => {
           </div>
 
           {import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'YOUR_GOOGLE_CLIENT_ID' ? (
-            <div id="google-signin-button" className="w-full flex justify-center"></div>
+            <div ref={googleButtonRef} className="w-full flex justify-center"></div>
           ) : (
             <button
               type="button"

@@ -1,14 +1,31 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Btn, Badge, Icon } from '../components/UIComponents';
 
-export const FurnitureDetail = ({ furniture, setPage }) => {
+export const FurnitureDetail = ({ furniture: propFurniture }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
+  const furnitureList = useSelector((state) => state.furniture.list);
   const transfersList = useSelector((state) => state.transfers.list);
   const inspectionsList = useSelector((state) => state.inspections.list);
 
-  if (!furniture || !currentUser) {
-    return <div className="p-8 text-center text-slate-400">No asset selected.</div>;
+  const furniture = propFurniture || furnitureList.find((f) => f.id === id);
+
+  if (!currentUser) return null;
+
+  if (!furniture) {
+    return (
+      <div className="p-12 text-center">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Icon.Furniture />
+        </div>
+        <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Asset Not Found</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">No asset exists with ID "{id}".</p>
+        <Btn onClick={() => navigate('/assets')}>Back to Asset List</Btn>
+      </div>
+    );
   }
 
   // Filter histories related to this specific asset
@@ -20,7 +37,7 @@ export const FurnitureDetail = ({ furniture, setPage }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setPage('furniture-list')} 
+            onClick={() => navigate('/assets')} 
             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer"
           >
             <Icon.ArrowLeft /> Back
@@ -35,7 +52,7 @@ export const FurnitureDetail = ({ furniture, setPage }) => {
         <div className="flex items-center gap-3 self-end sm:self-auto">
           <Badge label={furniture.condition} type="condition" />
           <Badge label={furniture.status} />
-          <Btn variant="secondary" onClick={() => setPage('furniture-add')} size="sm">
+          <Btn variant="secondary" onClick={() => navigate(`/assets/edit/${furniture.id}`)} size="sm">
             <Icon.Edit /> Edit Asset
           </Btn>
         </div>
@@ -64,7 +81,7 @@ export const FurnitureDetail = ({ furniture, setPage }) => {
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-col gap-1">
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{k}</span>
-                  <span className="font-bold text-slate-805 dark:text-slate-200">{v}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{v}</span>
                 </div>
               ))}
               <div className="sm:col-span-2 md:col-span-3 flex flex-col gap-1">
@@ -98,10 +115,10 @@ export const FurnitureDetail = ({ furniture, setPage }) => {
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
                     {transfers.map(t => (
                       <tr key={t.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition">
-                        <td className="px-5 py-3.5 font-mono text-indigo-650 dark:text-indigo-400 font-bold">{t.id}</td>
-                        <td className="px-5 py-3.5 text-slate-655 dark:text-slate-400 font-semibold">{t.source}</td>
-                        <td className="px-5 py-3.5 text-slate-655 dark:text-slate-400 font-semibold">{t.destination}</td>
-                        <td className="px-5 py-3.5 text-slate-500 dark:text-slate-550 font-medium">{t.date}</td>
+                        <td className="px-5 py-3.5 font-mono text-indigo-600 dark:text-indigo-400 font-bold">{t.id}</td>
+                        <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400 font-semibold">{t.source}</td>
+                        <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400 font-semibold">{t.destination}</td>
+                        <td className="px-5 py-3.5 text-slate-500 dark:text-slate-500 font-medium">{t.date}</td>
                         <td className="px-5 py-3.5"><Badge label={t.status} /></td>
                       </tr>
                     ))}
@@ -133,9 +150,9 @@ export const FurnitureDetail = ({ furniture, setPage }) => {
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
                     {inspections.map(i => (
                       <tr key={i.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition">
-                        <td className="px-5 py-3.5 font-mono text-indigo-650 dark:text-indigo-400 font-bold">{i.id}</td>
+                        <td className="px-5 py-3.5 font-mono text-indigo-600 dark:text-indigo-400 font-bold">{i.id}</td>
                         <td className="px-5 py-3.5 text-slate-700 dark:text-slate-300 font-bold">{i.inspector}</td>
-                        <td className="px-5 py-3.5 text-slate-500 dark:text-slate-555 font-medium">{i.date}</td>
+                        <td className="px-5 py-3.5 text-slate-500 dark:text-slate-500 font-medium">{i.date}</td>
                         <td className="px-5 py-3.5"><Badge label={i.condition} type="condition" /></td>
                         <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 font-medium max-w-xs truncate" title={i.notes}>
                           {i.notes}
@@ -182,7 +199,7 @@ export const FurnitureDetail = ({ furniture, setPage }) => {
                 variant="secondary" 
                 className="w-full justify-center cursor-pointer" 
                 size="sm" 
-                onClick={() => setPage('transfers')}
+                onClick={() => navigate('/transfers')}
               >
                 <Icon.Transfer /> Create Transfer Request
               </Btn>
@@ -190,7 +207,7 @@ export const FurnitureDetail = ({ furniture, setPage }) => {
                 variant="secondary" 
                 className="w-full justify-center cursor-pointer" 
                 size="sm" 
-                onClick={() => setPage('inspections')}
+                onClick={() => navigate('/inspections')}
               >
                 <Icon.Inspection /> Log New Inspection
               </Btn>

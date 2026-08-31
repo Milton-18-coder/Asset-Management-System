@@ -1,8 +1,9 @@
 import React, { useReducer, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useParams, useNavigate } from 'react-router-dom';
 import { addFurniture, editFurniture } from '../store/furnitureSlice';
 import { Card, Btn, Input, Select, Badge, Icon } from '../components/UIComponents';
-//milton
+
 const createInitialState = (editAsset, userDept) => {
   if (editAsset) return editAsset;
   return {
@@ -36,9 +37,14 @@ function formReducer(state, action) {
   }
 }
 
-export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurniture }) => {
+export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFurniture }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.auth);
+  const furnitureList = useSelector((state) => state.furniture.list);
+
+  const selectedFurniture = propSelected || (id ? furnitureList.find((f) => f.id === id) : null);
 
   const [success, setSuccess] = useState(false);
   const userDept = currentUser?.department || 'Computer Science';
@@ -72,8 +78,8 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
   };
 
   const handleCancel = () => {
-    clearSelectedFurniture();
-    setPage('furniture-list');
+    if (clearSelectedFurniture) clearSelectedFurniture();
+    navigate('/assets');
   };
 
   if (success) {
@@ -94,7 +100,7 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
             {!selectedFurniture && (
               <Btn onClick={() => {
                 setSuccess(false);
-                clearSelectedFurniture();
+                if (clearSelectedFurniture) clearSelectedFurniture();
                 formDispatch({ type: 'RESET_FORM', payload: createInitialState(null, userDept) });
               }}>Add Another</Btn>
             )}
@@ -111,63 +117,66 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={handleCancel} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-250 cursor-pointer transition">
+        <button 
+          onClick={handleCancel}
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer"
+        >
           <Icon.ArrowLeft /> Back
         </button>
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white font-display tracking-tight leading-none">
-            {selectedFurniture ? 'Edit Asset' : 'Add Asset'}
+            {selectedFurniture ? 'Edit Asset Profile' : 'Register New Asset'}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            {selectedFurniture ? 'Update asset registry profiles' : 'Register a new asset to campus database'}
-          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-mono mt-1">{formState.id}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-5">
-          {/* Basic Info */}
+        <div className="lg:col-span-2 space-y-6">
           <Card className="p-5">
-            <p className="text-sm font-bold text-slate-750 dark:text-slate-250 mb-4 font-display tracking-tight">Basic Information</p>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 font-display tracking-tight">Basic Information</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Asset ID" value={formState.id} readOnly className="bg-slate-50 dark:bg-slate-800 text-slate-550 dark:text-slate-400 font-mono font-bold" />
               <Input
-                label="Asset Name *"
+                label="Asset Name"
                 value={formState.name}
                 onChange={e => handleInputChange('name', e.target.value)}
-                placeholder="e.g. Faculty Chair"
+                placeholder="e.g. Ergonomic Office Chair"
                 required
               />
               <Select
-                label="Category *"
+                label="Category"
                 value={formState.category}
                 onChange={e => handleInputChange('category', e.target.value)}
-                options={['Desk', 'Chair', 'Table', 'Board', 'Electronics', 'Storage', 'Equipment', 'Other']}
+                options={['Desk', 'Chair', 'Table', 'Board', 'Storage', 'Electronics', 'Equipment', 'Other']}
               />
               <Input
-                label="Quantity *"
+                label="Quantity"
                 type="number"
+                min="1"
                 value={formState.quantity}
                 onChange={e => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-                min="1"
-                required
               />
-              <div className="sm:col-span-2 flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block uppercase">Description</label>
-                <textarea
-                  value={formState.description}
-                  onChange={e => handleInputChange('description', e.target.value)}
-                  rows={3}
-                  placeholder="Asset specifications, dimensions, features..."
-                  className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-805 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
-                />
-              </div>
+              <Input
+                label="Unit Cost (₹)"
+                type="number"
+                value={formState.cost}
+                onChange={e => handleInputChange('cost', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="mt-4">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">Description & Specifications</label>
+              <textarea
+                value={formState.description}
+                onChange={e => handleInputChange('description', e.target.value)}
+                placeholder="Detailed specifications, dimensions, serial number, etc."
+                rows={3}
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
+              />
             </div>
           </Card>
 
-          {/* Location details */}
           <Card className="p-5">
-            <p className="text-sm font-bold text-slate-750 dark:text-slate-250 mb-4 font-display tracking-tight">Location Details</p>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 font-display tracking-tight">Placement & Location</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Select
                 label="Building"
@@ -180,10 +189,9 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
                 value={formState.department}
                 onChange={e => handleInputChange('department', e.target.value)}
                 options={deptsOptions}
-                disabled={currentUser?.role !== 'superadmin'}
               />
               <Select
-                label="Room"
+                label="Room Assigned"
                 value={formState.room}
                 onChange={e => handleInputChange('room', e.target.value)}
                 options={roomsOptions}
@@ -191,10 +199,9 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
             </div>
           </Card>
 
-          {/* Financials */}
           <Card className="p-5">
-            <p className="text-sm font-bold text-slate-750 dark:text-slate-250 mb-4 font-display tracking-tight">Purchase & Warranty Details</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 font-display tracking-tight">Procurement & Warranty</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
                 label="Purchase Date"
                 type="date"
@@ -202,18 +209,10 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
                 onChange={e => handleInputChange('purchaseDate', e.target.value)}
               />
               <Input
-                label="Cost (₹) *"
-                type="number"
-                value={formState.cost}
-                onChange={e => handleInputChange('cost', parseFloat(e.target.value) || 0)}
-                placeholder="Cost amount in INR"
-                required
-              />
-              <Input
-                label="Supplier"
+                label="Supplier / Vendor"
                 value={formState.supplier}
                 onChange={e => handleInputChange('supplier', e.target.value)}
-                placeholder="e.g. FurnishPro India"
+                placeholder="e.g. FurnishPro Ltd"
               />
               <Input
                 label="Warranty Expiry"
@@ -225,13 +224,13 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
           </Card>
         </div>
 
-        {/* Condition details */}
-        <div className="space-y-5">
+        {/* Sidebar Status & Actions */}
+        <div className="space-y-6">
           <Card className="p-5">
-            <p className="text-sm font-bold text-slate-755 dark:text-slate-250 mb-4 font-display tracking-tight">Condition & Status</p>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 font-display tracking-tight">Status & Condition</p>
             <div className="space-y-4">
               <Select
-                label="Condition"
+                label="Current Condition"
                 value={formState.condition}
                 onChange={e => handleInputChange('condition', e.target.value)}
                 options={['Good', 'Fair', 'Poor', 'Damaged']}
@@ -243,7 +242,7 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
                 options={['Available', 'In Use', 'Needs Inspection', 'Retired']}
               />
             </div>
-            <div className="mt-5 p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-850 rounded-2xl flex flex-col gap-2">
+            <div className="mt-5 p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col gap-2">
               <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Visual Badges</span>
               <div className="flex gap-2">
                 <Badge label={formState.condition} type="condition" />
@@ -253,7 +252,7 @@ export const AddFurniture = ({ setPage, selectedFurniture, clearSelectedFurnitur
           </Card>
 
           <Card className="p-5">
-            <p className="text-sm font-bold text-slate-755 dark:text-slate-250 mb-4 font-display tracking-tight">Form Overview</p>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 font-display tracking-tight">Form Overview</p>
             <div className="space-y-3.5 text-xs font-semibold">
               {[
                 ['Asset ID', formState.id],

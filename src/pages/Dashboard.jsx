@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { TopBar } from '../components/TopBar';
 import { StatCard, Card, Badge, Btn, Icon } from '../components/UIComponents';
 import { DonutChart, BarChart } from '../components/Charts';
 
-export const Dashboard = ({ setPage, setSelectedFurniture }) => {
+export const Dashboard = () => {
+  const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
   const transfersList = useSelector((state) => state.transfers.list);
@@ -118,7 +120,7 @@ export const Dashboard = ({ setPage, setSelectedFurniture }) => {
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-bold text-slate-700 dark:text-slate-300 font-display tracking-tight">Recent Transfers</p>
-            <button onClick={() => setPage('transfers')} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">View all</button>
+            <button onClick={() => navigate('/transfers')} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">View all</button>
           </div>
           <div className="space-y-4">
             {recentTransfers.length === 0 ? (
@@ -142,7 +144,7 @@ export const Dashboard = ({ setPage, setSelectedFurniture }) => {
       <Card>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <p className="font-bold text-slate-800 dark:text-white font-display text-sm tracking-tight">Recent Assets</p>
-          <Btn variant="ghost" size="sm" onClick={() => setPage('furniture-list')}>View all</Btn>
+          <Btn variant="ghost" size="sm" onClick={() => navigate('/assets')}>View all</Btn>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -158,7 +160,7 @@ export const Dashboard = ({ setPage, setSelectedFurniture }) => {
                 <tr 
                   key={f.id} 
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition cursor-pointer" 
-                  onClick={() => { setSelectedFurniture(f); setPage('furniture-detail'); }}
+                  onClick={() => navigate(`/assets/${f.id}`)}
                 >
                   <td className="px-6 py-4.5 font-mono text-indigo-600 dark:text-indigo-400 font-bold">{f.id}</td>
                   <td className="px-6 py-4.5 font-bold text-slate-800 dark:text-slate-200">{f.name}</td>

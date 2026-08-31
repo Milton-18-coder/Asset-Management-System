@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from './store/authSlice';
 import { Sidebar } from './components/Sidebar';
@@ -19,74 +20,52 @@ import { Profile } from './pages/Profile';
 
 export default function App() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
-  
-  const [page, setPage] = useState('dashboard');
-  const [selectedFurniture, setSelectedFurniture] = useState(null);
 
   const handleLogout = () => {
     dispatch(logout());
-    setPage('dashboard');
-  };
-
-  const clearSelectedFurniture = () => {
-    setSelectedFurniture(null);
+    navigate('/login');
   };
 
   if (!currentUser) {
-    return <Login />;
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
-  const renderPage = () => {
-    switch (page) {
-      case 'dashboard':
-        return <Dashboard setPage={setPage} setSelectedFurniture={setSelectedFurniture} />;
-      case 'furniture-list':
-        return <FurnitureList setPage={setPage} setSelectedFurniture={setSelectedFurniture} />;
-      case 'furniture-add':
-        return (
-          <AddFurniture
-            setPage={setPage}
-            selectedFurniture={selectedFurniture}
-            clearSelectedFurniture={clearSelectedFurniture}
-          />
-        );
-      case 'furniture-detail':
-        return <FurnitureDetail furniture={selectedFurniture} setPage={setPage} />;
-      case 'category':
-        return <CategoryPage />;
-      case 'buildings':
-        return currentUser.role === 'superadmin' ? <Buildings /> : null;
-      case 'departments':
-        return currentUser.role === 'superadmin' ? <Departments /> : null;
-      case 'rooms':
-        return <Rooms />;
-      case 'transfers':
-        return <Transfers />;
-      case 'inspections':
-        return <Inspections />;
-      case 'users':
-        return currentUser.role === 'superadmin' ? <Users /> : null;
-      case 'settings':
-        return currentUser.role === 'superadmin' ? <Settings /> : null;
-      case 'profile':
-        return <Profile />;
-      default:
-        return <Dashboard setPage={setPage} setSelectedFurniture={setSelectedFurniture} />;
-    }
-  };
+  const isSuperAdmin = currentUser.role === 'superadmin';
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950/20 overflow-hidden transition-colors duration-300">
       <Sidebar
         user={currentUser}
-        currentPage={page}
-        setPage={setPage}
         onLogout={handleLogout}
       />
       <main className="flex-1 ml-64 overflow-y-auto">
         <div className="p-6 sm:p-8 max-w-[1280px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-          {renderPage()}
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/assets" element={<FurnitureList />} />
+            <Route path="/assets/new" element={<AddFurniture />} />
+            <Route path="/assets/edit/:id" element={<AddFurniture />} />
+            <Route path="/assets/:id" element={<FurnitureDetail />} />
+            <Route path="/category" element={<CategoryPage />} />
+            <Route path="/buildings" element={isSuperAdmin ? <Buildings /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/departments" element={isSuperAdmin ? <Departments /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/rooms" element={<Rooms />} />
+            <Route path="/transfers" element={<Transfers />} />
+            <Route path="/inspections" element={<Inspections />} />
+            <Route path="/users" element={isSuperAdmin ? <Users /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/settings" element={isSuperAdmin ? <Settings /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </div>
       </main>
     </div>

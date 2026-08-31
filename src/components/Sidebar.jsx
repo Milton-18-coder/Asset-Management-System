@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Icon } from './UIComponents';
 
-export const Sidebar = ({ user, currentPage, setPage, onLogout }) => {
+export const Sidebar = ({ user, onLogout }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [campusOpen, setCampusOpen] = useState(true);
   const [furnitureOpen, setFurnitureOpen] = useState(true);
   const [adminOpen, setAdminOpen] = useState(false);
-  const isSuperAdmin = user.role === 'superadmin';
+  const isSuperAdmin = user?.role === 'superadmin';
 
-  const navItem = (page, label, icon, indent = false) => {
-    const active = currentPage === page;
+  const isNavActive = (path) => {
+    if (path === '/dashboard') {
+      return location.pathname === '/' || location.pathname === '/dashboard';
+    }
+    if (path === '/assets') {
+      return location.pathname === '/assets' || (location.pathname.startsWith('/assets/') && location.pathname !== '/assets/new');
+    }
+    return location.pathname === path;
+  };
+
+  const navItem = (path, label, icon, indent = false) => {
+    const active = isNavActive(path);
     return (
       <button
-        key={page}
-        onClick={() => setPage(page)}
+        key={path}
+        onClick={() => navigate(path)}
         className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
           indent ? 'ml-4 w-[calc(100%-1rem)]' : ''
         } ${
@@ -48,7 +61,7 @@ export const Sidebar = ({ user, currentPage, setPage, onLogout }) => {
 
       {/* Nav */}
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        {navItem('dashboard', 'Dashboard', <Icon.Dashboard />)}
+        {navItem('/dashboard', 'Dashboard', <Icon.Dashboard />)}
 
         {/* Assets */}
         <button
@@ -60,31 +73,31 @@ export const Sidebar = ({ user, currentPage, setPage, onLogout }) => {
         </button>
         {furnitureOpen && (
           <div className="space-y-1 mt-1">
-            {navItem('furniture-list', 'All Assets', <Icon.Furniture />)}
-            {navItem('furniture-add', 'Add Asset', <Icon.Plus />)}
-            {navItem('category', 'Category', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>)}
+            {navItem('/assets', 'All Assets', <Icon.Furniture />)}
+            {navItem('/assets/new', 'Add Asset', <Icon.Plus />)}
+            {navItem('/category', 'Category', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>)}
           </div>
         )}
 
         {/* Campus */}
         <button
           onClick={() => setCampusOpen(v => !v)}
-          className="w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-4 hover:text-slate-650 dark:hover:text-slate-300 cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-4 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
         >
           <span>Campus</span>
           <span className={`transition-transform duration-200 ${campusOpen ? 'rotate-180' : ''}`}><Icon.ChevronDown /></span>
         </button>
         {campusOpen && (
           <div className="space-y-1 mt-1">
-            {isSuperAdmin && navItem('buildings', 'Buildings', <Icon.Building />)}
-            {isSuperAdmin && navItem('departments', 'Departments', <Icon.Department />)}
-            {navItem('rooms', 'Rooms', <Icon.Room />)}
+            {isSuperAdmin && navItem('/buildings', 'Buildings', <Icon.Building />)}
+            {isSuperAdmin && navItem('/departments', 'Departments', <Icon.Department />)}
+            {navItem('/rooms', 'Rooms', <Icon.Room />)}
           </div>
         )}
 
         <div className="mt-4 border-t border-slate-100 dark:border-slate-800/80 pt-4 space-y-1">
-          {navItem('transfers', 'Transfers', <Icon.Transfer />)}
-          {navItem('inspections', 'Inspections', <Icon.Inspection />)}
+          {navItem('/transfers', 'Transfers', <Icon.Transfer />)}
+          {navItem('/inspections', 'Inspections', <Icon.Inspection />)}
         </div>
 
         {/* Administration — Super Admin only */}
@@ -92,15 +105,15 @@ export const Sidebar = ({ user, currentPage, setPage, onLogout }) => {
           <>
             <button
               onClick={() => setAdminOpen(v => !v)}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-4 hover:text-slate-650 dark:hover:text-slate-300 cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-4 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
             >
               <span>Administration</span>
               <span className={`transition-transform duration-200 ${adminOpen ? 'rotate-180' : ''}`}><Icon.ChevronDown /></span>
             </button>
             {adminOpen && (
               <div className="space-y-1 mt-1">
-                {navItem('users', 'Users', <Icon.Users />)}
-                {navItem('settings', 'Settings', <Icon.Settings />)}
+                {navItem('/users', 'Users', <Icon.Users />)}
+                {navItem('/settings', 'Settings', <Icon.Settings />)}
               </div>
             )}
           </>
@@ -110,18 +123,18 @@ export const Sidebar = ({ user, currentPage, setPage, onLogout }) => {
       {/* User footer */}
       <div className="border-t border-slate-100 dark:border-slate-800 p-4">
         <button
-          onClick={() => setPage('profile')}
+          onClick={() => navigate('/profile')}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer mb-2 ${
-            currentPage === 'profile' ? 'bg-slate-100 dark:bg-slate-800' : ''
+            location.pathname === '/profile' ? 'bg-slate-100 dark:bg-slate-800' : ''
           }`}
         >
           <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
-            {user.avatar}
+            {user?.avatar || 'U'}
           </div>
           <div className="text-left overflow-hidden">
-            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate leading-none">{user.name}</p>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate leading-none">{user?.name}</p>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-1 font-medium capitalize">
-              {user.role === 'superadmin' ? 'Super Admin' : 'Dept Admin'}
+              {user?.role === 'superadmin' ? 'Super Admin' : 'Dept Admin'}
             </p>
           </div>
         </button>

@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { deleteFurniture } from '../store/furnitureSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Icon } from '../components/UIComponents';
 
-export const FurnitureList = ({ setPage, setSelectedFurniture }) => {
+export const FurnitureList = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
@@ -145,7 +147,7 @@ export const FurnitureList = ({ setPage, setSelectedFurniture }) => {
           </select>
 
           {/* Actions */}
-          <Btn onClick={() => setPage('furniture-add')}>
+          <Btn onClick={() => navigate('/assets/new')}>
             <Icon.Plus /> Add Asset
           </Btn>
           <Btn variant="secondary" onClick={handleExport}>
@@ -184,14 +186,14 @@ export const FurnitureList = ({ setPage, setSelectedFurniture }) => {
                     <td className="px-5 py-4.5">
                       <div className="flex items-center gap-1.5">
                         <button 
-                          onClick={() => { setSelectedFurniture(f); setPage('furniture-detail'); }} 
+                          onClick={() => navigate(`/assets/${f.id}`)} 
                           className="p-1.5 text-slate-455 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
                           title="View Details"
                         >
                           <Icon.Eye />
                         </button>
                         <button 
-                          onClick={() => { setSelectedFurniture(f); setPage('furniture-add'); }}
+                          onClick={() => navigate(`/assets/edit/${f.id}`)}
                           className="p-1.5 text-slate-455 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
                           title="Edit"
                         >
