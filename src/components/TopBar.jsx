@@ -1,16 +1,16 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } from '../store/notificationsSlice';
 import { Icon } from './UIComponents';
 import { useTheme } from '../context/ThemeContext';
+import { useClickOutside } from '../hooks/useClickOutside';
 import { Sun, Moon, CheckCheck, Trash2, ArrowRight } from 'lucide-react';
 
 export const TopBar = ({ title, subtitle, user: propUser }) => {
   const { theme, toggleTheme } = useTheme();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const notifDropdownRef = useRef(null);
 
   const authUser = useSelector((state) => state.auth.currentUser);
   const user = propUser || authUser;
@@ -37,20 +37,10 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
     return notifications;
   }, [notifications, filter]);
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
-        setOpenNotif(false);
-      }
-    };
-    if (openNotif) {
-      document.addEventListener('click', handleOutsideClick);
-    }
-    return () => {
-      document.removeEventListener('click', handleOutsideClick);
-    };
-  }, [openNotif]);
+  // Custom Hook: Closes notification dropdown automatically on outside click
+  const notifDropdownRef = useClickOutside(() => {
+    if (openNotif) setOpenNotif(false);
+  });
 
   const handleNotificationClick = (notif) => {
     if (!notif.read) {
