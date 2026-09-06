@@ -27,9 +27,26 @@ export const DEMO_USERS = {
   },
 };
 
+const getInitialUser = () => {
+  const saved = localStorage.getItem('asset_auth_user');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+  }
+  return DEMO_USERS.superadmin;
+};
+
+const initialUser = getInitialUser();
+
 const authSlice = createSlice({
   name: 'auth',
-  initialState: { currentUser: null, isAuthenticated: false },
+  initialState: { 
+    currentUser: initialUser, 
+    isAuthenticated: Boolean(initialUser) 
+  },
   reducers: {
     loginSuccess: (state, action) => {
       state.currentUser = action.payload;

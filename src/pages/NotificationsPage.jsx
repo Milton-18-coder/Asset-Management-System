@@ -7,6 +7,7 @@ import {
   deleteNotification,
   clearAllNotifications,
   addNotification,
+  addNotificationToSupabase,
 } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Icon } from '../components/UIComponents';
@@ -50,12 +51,12 @@ export const NotificationsPage = () => {
 
   const handleCreateDemoNotification = () => {
     dispatch(
-      addNotification({
-        title: 'System Audit Broadcast',
-        message: `Quarterly institutional physical asset audit initiated by ${currentUser?.name || 'Administrator'}.`,
-        type: 'system',
+      addNotificationToSupabase({
+        title: '📢 Campus-wide Asset Audit',
+        message: `Quarterly institutional physical asset audit initiated by ${currentUser?.name || 'Administrator'}. All department admins please verify lab furniture.`,
+        type: 'alert',
         link: '/inspections',
-        department: currentUser?.department || 'Administration',
+        department: 'All', // 'All' broadcasts this notification to every admin
       })
     );
   };

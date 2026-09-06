@@ -1,22 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { deleteFurniture } from '../store/furnitureSlice';
-import { addNotification } from '../store/notificationsSlice';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { deleteFurniture, deleteAssetFromSupabase } from '../store/furnitureSlice';
+import { addNotification, addNotificationToSupabase } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Icon } from '../components/UIComponents';
 
 export const FurnitureList = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
 
   const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState('All');
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [filterCond, setFilterCond] = useState('All');
+  const [filterCat, setFilterCat] = useState(searchParams.get('category') || 'All');
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || 'All');
+  const [filterCond, setFilterCond] = useState(searchParams.get('condition') || 'All');
   const [deleteId, setDeleteId] = useState(null);
+
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const condition = searchParams.get('condition');
+    const category = searchParams.get('category');
+    if (status) setFilterStatus(status);
+    if (condition) setFilterCond(condition);
+    if (category) setFilterCat(category);
+  }, [searchParams]);
 
   if (!currentUser) return null;
 
@@ -51,9 +62,10 @@ export const FurnitureList = () => {
   const handleDelete = (id) => {
     const asset = furnitureList.find(f => f.id === id);
     dispatch(deleteFurniture(id));
+    dispatch(deleteAssetFromSupabase(id));
     if (asset) {
       dispatch(
-        addNotification({
+        addNotificationToSupabase({
           title: 'Asset Deleted',
           message: `${asset.name} (${id}) was deleted by ${currentUser.name}.`,
           type: 'asset',

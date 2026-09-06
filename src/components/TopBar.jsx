@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } from '../store/notificationsSlice';
@@ -18,6 +18,20 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
   const notificationsList = useSelector((state) => state.notifications?.list || []);
   const [openNotif, setOpenNotif] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all' | 'unread'
+  const hoverTimerRef = useRef(null);
+
+  const handleMouseEnter = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+    }
+    setOpenNotif(true);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimerRef.current = setTimeout(() => {
+      setOpenNotif(false);
+    }, 250);
+  };
 
   // Filter notifications by user role (superadmin sees all, deptadmin sees their own department + general)
   const notifications = useMemo(() => {
@@ -98,8 +112,13 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        {/* Notifications Button & Dropdown Popover */}
-        <div className="relative" ref={notifDropdownRef}>
+        {/* Notifications Button & Dropdown Popover (Opens on hover and click) */}
+        <div 
+          className="relative" 
+          ref={notifDropdownRef}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
           <button
             type="button"
             onClick={(e) => {
@@ -111,7 +130,7 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
                 ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-500'
                 : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
-            title="Toggle Notifications"
+            title="Notifications"
           >
             <Icon.Bell />
             {unreadCount > 0 && (
@@ -123,124 +142,128 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
 
           {/* Small Floating Notification Dropdown Widget */}
           {openNotif && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/20 dark:shadow-black/70 overflow-hidden z-50"
-              style={{ minWidth: '280px' }}
+            <div 
+              className="absolute right-0 top-full pt-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
+              style={{ minWidth: '320px', maxWidth: '380px' }}
             >
-              {/* Header */}
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/80">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-900 dark:text-white text-xs font-display uppercase tracking-wide">Notifications</h3>
-                  {unreadCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white">
-                      {unreadCount} new
-                    </span>
-                  )}
-                </div>
-                {notifications.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => dispatch(markAllAsRead())}
-                      className="px-2 py-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg font-bold flex items-center gap-1 transition cursor-pointer"
-                      title="Mark all as read"
-                    >
-                      <CheckCheck size={13} /> Mark read
-                    </button>
-                    <button
-                      onClick={() => dispatch(clearAllNotifications())}
-                      className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition cursor-pointer"
-                      title="Clear all"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/15 dark:shadow-black/70 overflow-hidden"
+              >
+                {/* Header */}
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/90">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs font-display uppercase tracking-wide">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white">
+                        {unreadCount} new
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="flex border-b border-slate-100 dark:border-slate-800 px-3 pt-2 bg-slate-50/40 dark:bg-slate-900/40 text-xs font-semibold">
-                <button
-                  onClick={() => setFilter('all')}
-                  className={`pb-2 px-3 border-b-2 transition cursor-pointer ${
-                    filter === 'all'
-                      ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-                      : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                  }`}
-                >
-                  All ({notifications.length})
-                </button>
-                <button
-                  onClick={() => setFilter('unread')}
-                  className={`pb-2 px-3 border-b-2 transition cursor-pointer ${
-                    filter === 'unread'
-                      ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-                      : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                  }`}
-                >
-                  Unread ({unreadCount})
-                </button>
-              </div>
-
-              {/* Notification Items List */}
-              <div className="max-h-[320px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                {displayedNotifications.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Icon.Check />
-                    </div>
-                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">All caught up!</p>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">No notifications in this view.</p>
-                  </div>
-                ) : (
-                  displayedNotifications.map((n) => (
-                    <div
-                      key={n.id}
-                      onClick={() => handleNotificationClick(n)}
-                      className={`p-3.5 transition flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 relative ${
-                        !n.read ? 'bg-indigo-50/30 dark:bg-indigo-950/25' : ''
-                      }`}
-                    >
-                      {getTypeIcon(n.type)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1 mb-0.5">
-                          <p className={`text-xs truncate ${!n.read ? 'font-black text-slate-900 dark:text-white' : 'font-bold text-slate-700 dark:text-slate-300'}`}>
-                            {n.title}
-                          </p>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium whitespace-nowrap">
-                            {n.timestamp}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug line-clamp-2">
-                          {n.message}
-                        </p>
-                      </div>
+                  {notifications.length > 0 && (
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          dispatch(deleteNotification(n.id));
-                        }}
-                        className="text-slate-300 hover:text-rose-500 dark:text-slate-600 dark:hover:text-rose-400 p-1 rounded transition flex-shrink-0"
-                        title="Delete"
+                        onClick={() => dispatch(markAllAsRead())}
+                        className="px-2 py-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg font-bold flex items-center gap-1 transition cursor-pointer"
+                        title="Mark all as read"
                       >
-                        <Icon.Cross />
+                        <CheckCheck size={13} /> Mark read
+                      </button>
+                      <button
+                        onClick={() => dispatch(clearAllNotifications())}
+                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition cursor-pointer"
+                        title="Clear all"
+                      >
+                        <Trash2 size={13} />
                       </button>
                     </div>
-                  ))
-                )}
-              </div>
+                  )}
+                </div>
 
-              {/* View all activity footer */}
-              <div className="p-2.5 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 text-center">
-                <button
-                  onClick={() => {
-                    setOpenNotif(false);
-                    navigate('/notifications');
-                  }}
-                  className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer"
-                >
-                  Open Full Activity Center <ArrowRight size={12} />
-                </button>
+                {/* Filter Tabs */}
+                <div className="flex border-b border-slate-100 dark:border-slate-800 px-3 pt-2 bg-slate-50/40 dark:bg-slate-900/40 text-xs font-semibold">
+                  <button
+                    onClick={() => setFilter('all')}
+                    className={`pb-2 px-3 border-b-2 transition cursor-pointer ${
+                      filter === 'all'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    All ({notifications.length})
+                  </button>
+                  <button
+                    onClick={() => setFilter('unread')}
+                    className={`pb-2 px-3 border-b-2 transition cursor-pointer ${
+                      filter === 'unread'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    Unread ({unreadCount})
+                  </button>
+                </div>
+
+                {/* Notification Items List */}
+                <div className="max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                  {displayedNotifications.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Icon.Check />
+                      </div>
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300">All caught up!</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">No notifications in this view.</p>
+                    </div>
+                  ) : (
+                    displayedNotifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n)}
+                        className={`p-3.5 transition flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 relative ${
+                          !n.read ? 'bg-indigo-50/30 dark:bg-indigo-950/25' : ''
+                        }`}
+                      >
+                        {getTypeIcon(n.type)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <p className={`text-xs truncate ${!n.read ? 'font-black text-slate-900 dark:text-white' : 'font-bold text-slate-700 dark:text-slate-300'}`}>
+                              {n.title}
+                            </p>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium whitespace-nowrap">
+                              {n.timestamp}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug line-clamp-2">
+                            {n.message}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(deleteNotification(n.id));
+                          }}
+                          className="text-slate-300 hover:text-rose-500 dark:text-slate-600 dark:hover:text-rose-400 p-1 rounded transition flex-shrink-0"
+                          title="Delete"
+                        >
+                          <Icon.X />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* View all activity footer */}
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 text-center">
+                  <button
+                    onClick={() => {
+                      setOpenNotif(false);
+                      navigate('/notifications');
+                    }}
+                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                  >
+                    Open Full Activity Center <ArrowRight size={12} />
+                  </button>
+                </div>
               </div>
             </div>
           )}

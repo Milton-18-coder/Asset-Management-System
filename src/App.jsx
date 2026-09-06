@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from './store/authSlice';
+import { fetchAssetsFromSupabase, addFurniture, editFurniture, deleteFurniture } from './store/furnitureSlice';
+import { fetchNotificationsFromSupabase, addNotification } from './store/notificationsSlice';
+import { supabase } from './lib/supabaseClient';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -23,6 +26,96 @@ export default function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
+
+  // 1. Fetch initial data from Supabase on application load
+  useEffect(() => {
+    dispatch(fetchAssetsFromSupabase());
+    dispatch(fetchNotificationsFromSupabase());
+  }, [dispatch]);
+
+  // 2. Setup Realtime subscription to live sync updates across all devices/tabs
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'assets' },
+        (payload) => {
+          if (payload.new) {
+            dispatch(addFurniture({
+              id: payload.new.code || `AST-${payload.new.id}`,
+              name: payload.new.name,
+              category: payload.new.category,
+              building: payload.new.building || 'Main Block',
+              department: payload.new.department,
+              room: payload.new.room,
+              condition: payload.new.condition,
+              status: payload.new.status,
+              purchaseDate: payload.new.purchase_date,
+              cost: Number(payload.new.cost || 0),
+              supplier: payload.new.supplier,
+              warranty: payload.new.warranty,
+              quantity: Number(payload.new.quantity || 1),
+              description: payload.new.description,
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'assets' },
+        (payload) => {
+          if (payload.new) {
+            dispatch(editFurniture({
+              id: payload.new.code || `AST-${payload.new.id}`,
+              name: payload.new.name,
+              category: payload.new.category,
+              building: payload.new.building || 'Main Block',
+              department: payload.new.department,
+              room: payload.new.room,
+              condition: payload.new.condition,
+              status: payload.new.status,
+              purchaseDate: payload.new.purchase_date,
+              cost: Number(payload.new.cost || 0),
+              supplier: payload.new.supplier,
+              warranty: payload.new.warranty,
+              quantity: Number(payload.new.quantity || 1),
+              description: payload.new.description,
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'assets' },
+        (payload) => {
+          if (payload.old?.code) {
+            dispatch(deleteFurniture(payload.old.code));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload) => {
+          if (payload.new) {
+            dispatch(addNotification({
+              id: `NOTIF-${payload.new.id}`,
+              title: payload.new.title,
+              message: payload.new.message,
+              type: payload.new.type || 'info',
+              department: payload.new.department || 'All',
+              read: Boolean(payload.new.is_read),
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());

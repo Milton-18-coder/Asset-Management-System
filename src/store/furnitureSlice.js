@@ -1,4 +1,119 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { supabase } from '../lib/supabaseClient';
+
+export const mapDbToAsset = (row) => ({
+  id: row.code || `AST-${String(row.id).padStart(3, '0')}`,
+  db_id: row.id,
+  name: row.name || '',
+  category: row.category || 'General',
+  building: row.building || 'Main Block',
+  department: row.department || 'Administration',
+  room: row.room || 'Unassigned',
+  condition: row.condition || 'Good',
+  status: row.status || 'Available',
+  purchaseDate: row.purchase_date || '',
+  cost: Number(row.cost || 0),
+  supplier: row.supplier || '',
+  warranty: row.warranty || '',
+  quantity: Number(row.quantity || 1),
+  description: row.description || '',
+});
+
+export const mapAssetToDb = (item) => ({
+  code: item.id || item.code,
+  name: item.name,
+  category: item.category,
+  building: item.building,
+  department: item.department,
+  room: item.room,
+  condition: item.condition,
+  status: item.status,
+  purchase_date: item.purchaseDate || null,
+  cost: item.cost ? Number(item.cost) : null,
+  supplier: item.supplier || null,
+  warranty: item.warranty || null,
+  quantity: item.quantity ? Number(item.quantity) : 1,
+  description: item.description || null,
+});
+
+// Async Thunk: Fetch from Supabase
+export const fetchAssetsFromSupabase = createAsyncThunk(
+  'furniture/fetchAssets',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) throw error;
+      return (data || []).map(mapDbToAsset);
+    } catch (err) {
+      console.warn('Supabase fetch failed, using local/cached state:', err.message);
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+// Async Thunk: Add Asset to Supabase
+export const addAssetToSupabase = createAsyncThunk(
+  'furniture/addAsset',
+  async (assetData, { rejectWithValue }) => {
+    try {
+      const dbPayload = mapAssetToDb(assetData);
+      const { data, error } = await supabase
+        .from('assets')
+        .insert([dbPayload])
+        .select();
+
+      if (error) throw error;
+      return mapDbToAsset(data[0]);
+    } catch (err) {
+      console.error('Supabase add asset failed:', err.message);
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+// Async Thunk: Update Asset in Supabase
+export const updateAssetInSupabase = createAsyncThunk(
+  'furniture/updateAsset',
+  async (assetData, { rejectWithValue }) => {
+    try {
+      const dbPayload = mapAssetToDb(assetData);
+      const { data, error } = await supabase
+        .from('assets')
+        .update(dbPayload)
+        .eq('code', assetData.id)
+        .select();
+
+      if (error) throw error;
+      return mapDbToAsset(data[0] || assetData);
+    } catch (err) {
+      console.error('Supabase update asset failed:', err.message);
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+// Async Thunk: Delete Asset from Supabase
+export const deleteAssetFromSupabase = createAsyncThunk(
+  'furniture/deleteAsset',
+  async (assetId, { rejectWithValue }) => {
+    try {
+      const { error } = await supabase
+        .from('assets')
+        .delete()
+        .eq('code', assetId);
+
+      if (error) throw error;
+      return assetId;
+    } catch (err) {
+      console.error('Supabase delete asset failed:', err.message);
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 const getInitialFurniture = () => {
   const saved = localStorage.getItem('furniture_list');
@@ -9,32 +124,27 @@ const getInitialFurniture = () => {
       // ignore
     }
   }
-
-  const initial = [
-    { id: 'AST-001', name: 'Student Desk', category: 'Desk', building: 'Engineering Block', department: 'Computer Science', room: 'CS-101', condition: 'Good', status: 'In Use', purchaseDate: '2022-06-15', cost: 4500, supplier: 'FurnishPro Ltd', warranty: '2025-06-15', quantity: 30, description: 'Standard student writing desk' },
-    { id: 'AST-002', name: 'Faculty Chair', category: 'Chair', building: 'Engineering Block', department: 'Computer Science', room: 'CS-102', condition: 'Good', status: 'In Use', purchaseDate: '2022-06-15', cost: 3200, supplier: 'OfficeComfort Co', warranty: '2025-06-15', quantity: 2, description: 'Ergonomic faculty chair' },
-    { id: 'AST-003', name: 'LCD Projector', category: 'Electronics', building: 'Engineering Block', department: 'Computer Science', room: 'CS-101', condition: 'Fair', status: 'Needs Inspection', purchaseDate: '2021-03-10', cost: 45000, supplier: 'TechVision India', warranty: '2024-03-10', quantity: 1, description: 'Full HD classroom projector' },
-    { id: 'AST-004', name: 'Whiteboard', category: 'Board', building: 'Science Block', department: 'Physics', room: 'PH-201', condition: 'Good', status: 'In Use', purchaseDate: '2023-01-20', cost: 8500, supplier: 'EduSupply Co', warranty: '2028-01-20', quantity: 1, description: 'Large magnetic whiteboard' },
-    { id: 'AST-005', name: 'Lab Bench', category: 'Table', building: 'Science Block', department: 'Chemistry', room: 'CH-301', condition: 'Fair', status: 'In Use', purchaseDate: '2020-08-05', cost: 12000, supplier: 'LabFurnish Ltd', warranty: '2023-08-05', quantity: 15, description: 'Chemical resistant lab bench' },
-    { id: 'AST-006', name: 'Computer Workstation', category: 'Electronics', building: 'Engineering Block', department: 'Computer Science', room: 'CS-Lab1', condition: 'Good', status: 'In Use', purchaseDate: '2023-07-12', cost: 65000, supplier: 'Dell India', warranty: '2026-07-12', quantity: 40, description: 'Core i7 workstation for labs' },
-    { id: 'AST-007', name: 'Bookshelf', category: 'Storage', building: 'Library', department: 'Administration', room: 'LIB-01', condition: 'Good', status: 'In Use', purchaseDate: '2019-04-22', cost: 6000, supplier: 'WoodCraft Furniture', warranty: '2024-04-22', quantity: 50, description: 'Wooden bookshelf 6-tier' },
-    { id: 'AST-008', name: 'Conference Table', category: 'Table', building: 'Admin Block', department: 'Administration', room: 'ADM-Hall', condition: 'Good', status: 'Available', purchaseDate: '2022-11-30', cost: 35000, supplier: 'PremiumFurnish', warranty: '2027-11-30', quantity: 1, description: '12-seater conference table' },
-    { id: 'AST-009', name: 'Student Chair', category: 'Chair', building: 'Engineering Block', department: 'Mechanical', room: 'ME-101', condition: 'Poor', status: 'Needs Inspection', purchaseDate: '2018-09-01', cost: 1200, supplier: 'LocalFurnish Co', warranty: '2021-09-01', quantity: 45, description: 'Standard plastic chair' },
-    { id: 'AST-010', name: 'Smart Board', category: 'Electronics', building: 'Science Block', department: 'Physics', room: 'PH-202', condition: 'Good', status: 'In Use', purchaseDate: '2023-12-01', cost: 125000, supplier: 'SmartTech India', warranty: '2028-12-01', quantity: 1, description: 'Interactive smart board 86"' },
-    { id: 'AST-011', name: 'Filing Cabinet', category: 'Storage', building: 'Admin Block', department: 'Administration', room: 'ADM-102', condition: 'Good', status: 'Available', purchaseDate: '2021-05-14', cost: 9500, supplier: 'OfficeWorld', warranty: '2026-05-14', quantity: 8, description: '4-drawer steel filing cabinet' },
-    { id: 'AST-012', name: 'Oscilloscope', category: 'Equipment', building: 'Engineering Block', department: 'ECE', room: 'ECE-Lab2', condition: 'Damaged', status: 'Needs Inspection', purchaseDate: '2019-10-08', cost: 28000, supplier: 'LabEquip India', warranty: '2022-10-08', quantity: 5, description: 'Digital storage oscilloscope' }
-  ];
-  localStorage.setItem('furniture_list', JSON.stringify(initial));
-  return initial;
+  return [];
 };
 
 const furnitureSlice = createSlice({
   name: 'furniture',
-  initialState: { list: getInitialFurniture() },
+  initialState: {
+    list: getInitialFurniture(),
+    loading: false,
+    error: null,
+  },
   reducers: {
-    addFurniture: (state, action) => {
-      state.list.push(action.payload);
+    setFurnitureList: (state, action) => {
+      state.list = action.payload;
       localStorage.setItem('furniture_list', JSON.stringify(state.list));
+    },
+    addFurniture: (state, action) => {
+      const exists = state.list.some(f => f.id === action.payload.id);
+      if (!exists) {
+        state.list.unshift(action.payload);
+        localStorage.setItem('furniture_list', JSON.stringify(state.list));
+      }
     },
     editFurniture: (state, action) => {
       const idx = state.list.findIndex(f => f.id === action.payload.id);
@@ -61,9 +171,55 @@ const furnitureSlice = createSlice({
         item.condition = action.payload.condition;
         localStorage.setItem('furniture_list', JSON.stringify(state.list));
       }
-    }
-  }
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAssetsFromSupabase.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchAssetsFromSupabase.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload && action.payload.length > 0) {
+          state.list = action.payload;
+          localStorage.setItem('furniture_list', JSON.stringify(state.list));
+        }
+      })
+      .addCase(fetchAssetsFromSupabase.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(addAssetToSupabase.fulfilled, (state, action) => {
+        const exists = state.list.some(f => f.id === action.payload.id);
+        if (!exists) {
+          state.list.unshift(action.payload);
+        } else {
+          const idx = state.list.findIndex(f => f.id === action.payload.id);
+          state.list[idx] = action.payload;
+        }
+        localStorage.setItem('furniture_list', JSON.stringify(state.list));
+      })
+      .addCase(updateAssetInSupabase.fulfilled, (state, action) => {
+        const idx = state.list.findIndex(f => f.id === action.payload.id);
+        if (idx !== -1) {
+          state.list[idx] = action.payload;
+          localStorage.setItem('furniture_list', JSON.stringify(state.list));
+        }
+      })
+      .addCase(deleteAssetFromSupabase.fulfilled, (state, action) => {
+        state.list = state.list.filter(f => f.id !== action.payload);
+        localStorage.setItem('furniture_list', JSON.stringify(state.list));
+      });
+  },
 });
 
-export const { addFurniture, editFurniture, deleteFurniture, updateFurnitureLocation, updateFurnitureCondition } = furnitureSlice.actions;
+export const {
+  setFurnitureList,
+  addFurniture,
+  editFurniture,
+  deleteFurniture,
+  updateFurnitureLocation,
+  updateFurnitureCondition,
+} = furnitureSlice.actions;
+
 export default furnitureSlice.reducer;

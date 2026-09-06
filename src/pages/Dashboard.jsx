@@ -88,6 +88,7 @@ export const Dashboard = () => {
           label="Total Assets" 
           value={stats.total} 
           sub="units recorded" 
+          onClick={() => navigate('/assets')}
           color="bg-indigo-50 border-indigo-150 text-indigo-600 dark:bg-indigo-950/20 dark:border-indigo-900/50 dark:text-indigo-400" 
         />
         <StatCard 
@@ -95,6 +96,7 @@ export const Dashboard = () => {
           label="Available" 
           value={stats.available} 
           sub="ready for use" 
+          onClick={() => navigate('/assets?status=Available')}
           color="bg-emerald-50 border-emerald-150 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900/50 dark:text-emerald-400" 
         />
         <StatCard 
@@ -102,6 +104,7 @@ export const Dashboard = () => {
           label="In Use" 
           value={stats.inUse} 
           sub="currently assigned" 
+          onClick={() => navigate('/assets?status=In Use')}
           color="bg-violet-50 border-violet-150 text-violet-600 dark:bg-violet-950/20 dark:border-violet-900/50 dark:text-violet-400" 
         />
         <StatCard 
@@ -109,6 +112,7 @@ export const Dashboard = () => {
           label="Needs Care" 
           value={stats.needsInspection} 
           sub="requires review" 
+          onClick={() => navigate('/assets?status=Needs Inspection')}
           color="bg-amber-50 border-amber-150 text-amber-600 dark:bg-amber-950/20 dark:border-amber-900/50 dark:text-amber-400" 
         />
       </div>

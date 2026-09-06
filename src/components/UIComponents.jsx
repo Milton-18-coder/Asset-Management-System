@@ -99,6 +99,11 @@ export const Icon = {
       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   ),
+  Cross: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
   Check: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
       <polyline points="20 6 9 17 4 12"/>
@@ -217,24 +222,42 @@ export function Select({ label, options, className = '', ...props }) {
   );
 }
 
-export function Card({ children, className = '' }) {
+export function Card({ children, className = '', onClick, ...props }) {
   return (
-    <div className={`bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm shadow-slate-100/50 dark:shadow-none overflow-hidden transition-all duration-300 ${className}`}>
+    <div 
+      onClick={onClick}
+      className={`bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm shadow-slate-100/50 dark:shadow-none overflow-hidden transition-all duration-300 ${className}`}
+      {...props}
+    >
       {children}
     </div>
   );
 }
 
-export function StatCard({ icon, label, value, sub, color }) {
+export function StatCard({ icon, label, value, sub, color, onClick }) {
   return (
-    <Card className="p-5 hover:translate-y-[-2px] hover:shadow-md transition-all duration-300">
+    <Card 
+      onClick={onClick}
+      className={`p-5 transition-all duration-300 ${
+        onClick 
+          ? 'cursor-pointer hover:translate-y-[-3px] hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-600 active:scale-[0.99] group' 
+          : 'hover:translate-y-[-2px] hover:shadow-md'
+      }`}
+    >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">{label}</p>
-          <p className="text-3xl font-extrabold text-slate-900 dark:text-white font-display tracking-tight leading-none">{value}</p>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{label}</p>
+            {onClick && (
+              <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all duration-200">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </span>
+            )}
+          </div>
+          <p className="text-3xl font-extrabold text-slate-900 dark:text-white font-display tracking-tight leading-none group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{value}</p>
           {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">{sub}</p>}
         </div>
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-sm ${color}`}>
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 group-hover:scale-105 ${color}`}>
           {icon}
         </div>
       </div>
