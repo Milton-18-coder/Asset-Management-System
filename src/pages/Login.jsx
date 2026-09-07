@@ -178,7 +178,7 @@ export const Login = () => {
       if (u && password === 'password123') {
         dispatch(loginSuccess({ ...u, remember }));
       } else {
-        setError('Invalid username or password. Try superadmin / password123.');
+        setError('Invalid username or password.');
         setLoading(false);
         if (usernameInputRef.current) {
           usernameInputRef.current.focus();
@@ -312,7 +312,7 @@ export const Login = () => {
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="e.g. superadmin, deptadmin"
+                placeholder="Enter your username"
                 className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/25 transition placeholder:text-slate-400"
                 required
               />
@@ -403,14 +403,6 @@ export const Login = () => {
               Sign in with Google
             </button>
           )}
-
-          <div className="mt-8 p-4 bg-indigo-50/60 dark:bg-slate-800/40 border border-indigo-100 dark:border-slate-850 rounded-2xl">
-            <p className="text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-2">Demo Credentials</p>
-            <div className="space-y-1 text-xs text-indigo-700 dark:text-indigo-400 font-medium">
-              <p><span className="font-bold">Super Admin:</span> superadmin / password123</p>
-              <p><span className="font-bold">Dept Admin:</span> deptadmin / password123</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
