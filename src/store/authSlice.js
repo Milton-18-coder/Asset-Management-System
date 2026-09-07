@@ -101,41 +101,38 @@ export const DEMO_USERS = {
   },
 };
 
-const getInitialUser = () => {
-  const saved = localStorage.getItem('asset_auth_user');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-  }
-  return null;
-};
-
-const initialUser = getInitialUser();
-
 const authSlice = createSlice({
   name: 'auth',
   initialState: { 
-    currentUser: initialUser, 
-    isAuthenticated: Boolean(initialUser) 
+    currentUser: null, 
+    isAuthenticated: false 
   },
   reducers: {
     loginSuccess: (state, action) => {
       state.currentUser = action.payload;
       state.isAuthenticated = true;
-      localStorage.setItem('asset_auth_user', JSON.stringify(action.payload));
+      if (action.payload?.remember) {
+        localStorage.setItem('asset_auth_user', JSON.stringify(action.payload));
+      } else {
+        sessionStorage.setItem('asset_auth_user', JSON.stringify(action.payload));
+        localStorage.removeItem('asset_auth_user');
+      }
     },
     logout: (state) => {
       state.currentUser = null;
       state.isAuthenticated = false;
       localStorage.removeItem('asset_auth_user');
+      sessionStorage.removeItem('asset_auth_user');
     },
     updateProfileSuccess: (state, action) => {
       if (state.currentUser) {
         state.currentUser = { ...state.currentUser, ...action.payload };
-        localStorage.setItem('asset_auth_user', JSON.stringify(state.currentUser));
+        if (localStorage.getItem('asset_auth_user')) {
+          localStorage.setItem('asset_auth_user', JSON.stringify(state.currentUser));
+        }
+        if (sessionStorage.getItem('asset_auth_user')) {
+          sessionStorage.setItem('asset_auth_user', JSON.stringify(state.currentUser));
+        }
       }
     }
   },

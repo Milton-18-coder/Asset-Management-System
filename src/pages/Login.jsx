@@ -176,7 +176,7 @@ export const Login = () => {
     setTimeout(() => {
       const u = DEMO_USERS[username.toLowerCase()];
       if (u && password === 'password123') {
-        dispatch(loginSuccess(u));
+        dispatch(loginSuccess({ ...u, remember }));
       } else {
         setError('Invalid username or password. Try superadmin / password123.');
         setLoading(false);
