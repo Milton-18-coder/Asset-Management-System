@@ -12,6 +12,17 @@ import storageImg from '../assets/category/storage.jpg';
 import equipmentImg from '../assets/category/equipment.jpg';
 import otherImg from '../assets/category/other.jpg';
 
+const categoryFallbackEmojis = {
+  Desk: '🖥️',
+  Chair: '🪑',
+  Table: '🪵',
+  Board: '📋',
+  Electronics: '💻',
+  Storage: '🗄️',
+  Equipment: '🔬',
+  Other: '📦',
+};
+
 const defaultCategories = [
   { id: 'C01', name: 'Desk', icon: deskImg, description: 'Writing and work desks for classrooms and offices', count: 0, color: 'bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/50' },
   { id: 'C02', name: 'Chair', icon: chairImg, description: 'Student, faculty and ergonomic chairs', count: 0, color: 'bg-violet-50 border-violet-100 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-900/50' },
@@ -22,6 +33,49 @@ const defaultCategories = [
   { id: 'C07', name: 'Equipment', icon: equipmentImg, description: 'Lab instruments, oscilloscopes and specialised tools', count: 0, color: 'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/50' },
   { id: 'C08', name: 'Other', icon: otherImg, description: 'Miscellaneous assets not covered by other categories', count: 0, color: 'bg-slate-50 border-slate-200 text-slate-650 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700/50' },
 ];
+
+const CategoryIcon = ({ category, size = 'large' }) => {
+  const [currentSrc, setCurrentSrc] = useState(category.icon);
+  const [hasError, setHasError] = useState(false);
+
+  const isImg = typeof currentSrc === 'string' && (
+    currentSrc.startsWith('/') || 
+    currentSrc.startsWith('http') || 
+    currentSrc.startsWith('data:') || 
+    currentSrc.includes('.jpg') || 
+    currentSrc.includes('.png') || 
+    currentSrc.includes('.webp') ||
+    currentSrc.includes('.svg')
+  );
+
+  const fallback = categoryFallbackEmojis[category.name] || '📦';
+  const sizeClasses = size === 'small' 
+    ? 'w-8 h-8 rounded-lg text-xs' 
+    : 'w-12 h-12 rounded-xl text-xl shadow-sm';
+
+  const handleError = () => {
+    if (currentSrc !== `/images/${category.name.toLowerCase()}.jpg`) {
+      setCurrentSrc(`/images/${category.name.toLowerCase()}.jpg`);
+    } else {
+      setHasError(true);
+    }
+  };
+
+  return (
+    <div className={`${sizeClasses} flex items-center justify-center border overflow-hidden flex-shrink-0 ${category.color ? category.color.split(' ')[0] : 'bg-slate-100'} transition-all`}>
+      {isImg && !hasError ? (
+        <img 
+          src={currentSrc} 
+          alt={category.name} 
+          className="w-full h-full object-cover" 
+          onError={handleError}
+        />
+      ) : (
+        <span className="select-none leading-none">{fallback}</span>
+      )}
+    </div>
+  );
+};
 
 export const CategoryPage = () => {
   const { currentUser } = useSelector((state) => state.auth);
@@ -65,48 +119,6 @@ export const CategoryPage = () => {
     setDeleteId(null);
   };
 
-  const renderCategoryIcon = (c, size = 'large') => {
-    const isImg = typeof c.icon === 'string' && (c.icon.startsWith('/') || c.icon.startsWith('data:') || c.icon.startsWith('http') || c.icon.includes('/assets/') || c.icon.includes('.jpg') || c.icon.includes('.png') || c.icon.includes('.webp') || c.icon.includes('.svg'));
-    
-    if (size === 'small') {
-      return (
-        <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs border overflow-hidden flex-shrink-0 ${c.color.split(' ')[0]}`}>
-          {isImg ? (
-            <img 
-              src={c.icon} 
-              alt={c.name} 
-              className="w-full h-full object-cover" 
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.style.display = 'none';
-              }}
-            />
-          ) : (
-            c.icon
-          )}
-        </span>
-      );
-    }
-
-    return (
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl border overflow-hidden shadow-sm flex-shrink-0 ${c.color.split(' ')[0]}`}>
-        {isImg ? (
-          <img 
-            src={c.icon} 
-            alt={c.name} 
-            className="w-full h-full object-cover" 
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.style.display = 'none';
-            }}
-          />
-        ) : (
-          c.icon
-        )}
-      </div>
-    );
-  };
-
   return (
     <div>
       <TopBar title="Asset Categories" subtitle={`${categories.length} categories defined`} user={currentUser} />
@@ -125,7 +137,7 @@ export const CategoryPage = () => {
         {categories.map(c => (
           <Card key={c.id} className="p-5 border-2 border-slate-100 dark:border-slate-800 hover:shadow-md hover:translate-y-[-2px] transition-all duration-300">
             <div className="flex items-start justify-between mb-3">
-              {renderCategoryIcon(c, 'large')}
+              <CategoryIcon category={c} size="large" />
               <div className="flex gap-1">
                 <button
                   onClick={() => setEditId(c.id === editId ? null : c.id)}
@@ -195,7 +207,7 @@ export const CategoryPage = () => {
                     <td className="px-5 py-4 font-mono text-slate-400 dark:text-slate-550">{c.id}</td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2.5">
-                        {renderCategoryIcon(c, 'small')}
+                        <CategoryIcon category={c} size="small" />
                         <span className="font-bold text-slate-800 dark:text-slate-200">{c.name}</span>
                       </div>
                     </td>
