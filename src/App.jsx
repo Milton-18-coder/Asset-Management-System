@@ -4,6 +4,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from './store/authSlice';
 import { fetchAssetsFromSupabase, addFurniture, editFurniture, deleteFurniture } from './store/furnitureSlice';
 import { fetchNotificationsFromSupabase, addNotification } from './store/notificationsSlice';
+import { fetchInspectionsFromSupabase, addInspection, mapDbToInspection } from './store/inspectionsSlice';
+import { fetchTransfersFromSupabase, addTransfer, approveTransfer, rejectTransfer, completeTransfer, mapDbToTransfer } from './store/transfersSlice';
+import { fetchUsersFromSupabase, addUser, editUser, deleteUser, mapDbToUser } from './store/usersSlice';
 import { supabase } from './lib/supabaseClient';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/Login';
@@ -31,6 +34,9 @@ export default function App() {
   useEffect(() => {
     dispatch(fetchAssetsFromSupabase());
     dispatch(fetchNotificationsFromSupabase());
+    dispatch(fetchInspectionsFromSupabase());
+    dispatch(fetchTransfersFromSupabase());
+    dispatch(fetchUsersFromSupabase());
   }, [dispatch]);
 
   // 2. Setup Realtime subscription to live sync updates across all devices/tabs
@@ -107,6 +113,62 @@ export default function App() {
               department: payload.new.department || 'All',
               read: Boolean(payload.new.is_read),
             }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'inspections' },
+        (payload) => {
+          if (payload.new) {
+            dispatch(addInspection(mapDbToInspection(payload.new)));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'transfers' },
+        (payload) => {
+          if (payload.new) {
+            dispatch(addTransfer(mapDbToTransfer(payload.new)));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'transfers' },
+        (payload) => {
+          if (payload.new?.code && payload.new?.status) {
+            if (payload.new.status === 'Approved') dispatch(approveTransfer(payload.new.code));
+            else if (payload.new.status === 'Rejected') dispatch(rejectTransfer(payload.new.code));
+            else if (payload.new.status === 'Completed') dispatch(completeTransfer(payload.new.code));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'profiles' },
+        (payload) => {
+          if (payload.new) {
+            dispatch(addUser(mapDbToUser(payload.new)));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles' },
+        (payload) => {
+          if (payload.new) {
+            dispatch(editUser(mapDbToUser(payload.new)));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'profiles' },
+        (payload) => {
+          if (payload.old?.code) {
+            dispatch(deleteUser(payload.old.code));
           }
         }
       )

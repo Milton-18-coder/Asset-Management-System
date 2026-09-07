@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addInspection } from '../store/inspectionsSlice';
+import { addInspection, addInspectionToSupabase } from '../store/inspectionsSlice';
 import { updateFurnitureCondition } from '../store/furnitureSlice';
-import { addNotification } from '../store/notificationsSlice';
+import { addNotification, addNotificationToSupabase } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Select, Input, Icon } from '../components/UIComponents';
 
@@ -40,16 +40,18 @@ export const Inspections = () => {
     };
 
     dispatch(addInspection(newInspection));
+    dispatch(addInspectionToSupabase(newInspection));
     dispatch(updateFurnitureCondition({ id: selectedAssetId, condition }));
-    dispatch(
-      addNotification({
-        title: `Asset Inspected: ${condition}`,
-        message: `${currentUser.name} audited ${asset.name} (${selectedAssetId}) in ${asset.room}. Condition marked as ${condition}.`,
-        type: 'inspection',
-        link: `/assets/${selectedAssetId}`,
-        department: asset.department,
-      })
-    );
+    
+    const notif = {
+      title: `Asset Inspected: ${condition}`,
+      message: `${currentUser.name} audited ${asset.name} (${selectedAssetId}) in ${asset.room}. Condition marked as ${condition}.`,
+      type: 'inspection',
+      link: `/assets/${selectedAssetId}`,
+      department: asset.department,
+    };
+    dispatch(addNotification(notif));
+    dispatch(addNotificationToSupabase(notif));
     setSuccess(true);
   };
 
