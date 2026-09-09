@@ -1,130 +1,1073 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { supabase } from '../lib/supabaseClient';
+import { createSlice } from '@reduxjs/toolkit';
 
-export const mapDbToAsset = (row) => ({
-  id: row.code || `AST-${String(row.id).padStart(3, '0')}`,
-  db_id: row.id,
-  name: row.name || '',
-  category: row.category || 'General',
-  building: row.building || 'Main Block',
-  department: row.department || 'Administration',
-  room: row.room || 'Unassigned',
-  condition: row.condition || 'Good',
-  status: row.status || 'Available',
-  purchaseDate: row.purchase_date || '',
-  cost: Number(row.cost || 0),
-  supplier: row.supplier || '',
-  warranty: row.warranty || '',
-  quantity: Number(row.quantity || 1),
-  description: row.description || '',
-});
+export const initialAssets = [
+  // =========================================================================
+  // 1. FURNITURE -> CHAIR (Subcategory: Chair)
+  // =========================================================================
+  {
+    id: 'AST-001',
+    name: 'Ergonomic High-Back Mesh Task Chair',
+    mainCategory: 'Furniture',
+    category: 'Chair',
+    itemType: 'Task Chair',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-Lab1',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'Lab In-Charge & Faculty',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-03-12',
+    cost: 5400,
+    supplier: 'Featherlite Seating Ltd',
+    warranty: '3 Years (Till Mar 2027)',
+    quantity: 40,
+    description: 'High-back breathable mesh task chairs with adjustable lumbar support and pneumatic height lift for CS Lab workstations.',
+  },
+  {
+    id: 'AST-002',
+    name: 'Student Chair with Wooden Writing Pad',
+    mainCategory: 'Furniture',
+    category: 'Chair',
+    itemType: 'Student Chair with Writing Pad',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-101',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Classroom Coordinator',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-08-10',
+    cost: 2100,
+    supplier: 'Godrej Interio',
+    warranty: '2 Years (Till Aug 2025)',
+    quantity: 60,
+    description: 'Heavy-duty steel tubular framed student lecture chairs with laminated writing pad and lower wire storage basket.',
+  },
+  {
+    id: 'AST-003',
+    name: 'Moulded Polypropylene Student Chair',
+    mainCategory: 'Furniture',
+    category: 'Chair',
+    itemType: 'Student Chair',
+    building: 'Engineering Block',
+    department: 'Mechanical',
+    room: 'ME-101',
+    assignedTo: 'Prof. Kavitha Raj',
+    assignedRole: 'Dept Coordinator',
+    assignedEmail: 'kavitha.raj@nec.edu.in',
+    condition: 'Fair',
+    status: 'In Use',
+    purchaseDate: '2022-07-20',
+    cost: 1450,
+    supplier: 'Nilkamal Industries',
+    warranty: '1 Year (Expired)',
+    quantity: 65,
+    description: 'Stackable high-durability polymer chairs with MS powder-coated legs for engineering workshops and classrooms.',
+  },
+  {
+    id: 'AST-004',
+    name: 'Executive High-Back Leatherette Faculty Chair',
+    mainCategory: 'Furniture',
+    category: 'Chair',
+    itemType: 'Faculty Chair',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-101',
+    assignedTo: 'Dr. Rajesh Kumar',
+    assignedRole: 'Principal & Super Admin',
+    assignedEmail: 'rajesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-01-15',
+    cost: 12500,
+    supplier: 'Durian Furniture',
+    warranty: '5 Years (Till Jan 2029)',
+    quantity: 6,
+    description: 'Premium leatherette ergonomic executive swivel chair with multi-position synchro tilt lock and cushioned headrest.',
+  },
+  {
+    id: 'AST-005',
+    name: 'Chrome Sled-Base Cushioned Visitor Chair',
+    mainCategory: 'Furniture',
+    category: 'Chair',
+    itemType: 'Visitor Chair',
+    building: 'Science Block',
+    department: 'Physics',
+    room: 'PH-201',
+    assignedTo: 'Prof. Dinesh Kumar',
+    assignedRole: 'Head of Department',
+    assignedEmail: 'dinesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-11-04',
+    cost: 1850,
+    supplier: 'Methodex Systems',
+    warranty: '2 Years (Till Nov 2025)',
+    quantity: 16,
+    description: 'Sled base anti-tip chrome finished visitor chairs with high-density anti-sag foam cushioning for faculty offices.',
+  },
+  {
+    id: 'AST-006',
+    name: 'Heavy Duty Stackable Seminar Visitor Chair',
+    mainCategory: 'Furniture',
+    category: 'Chair',
+    itemType: 'Visitor Chair',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-Hall',
+    assignedTo: 'Mr. Ravi Shankar',
+    assignedRole: 'Event Coordinator',
+    assignedEmail: 'ravi.shankar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-09-15',
+    cost: 1650,
+    supplier: 'Godrej Interio',
+    warranty: '2 Years (Till Sep 2025)',
+    quantity: 80,
+    description: 'Stackable conference chairs with upholstered seat and back cushions for boardrooms and guest seminars.',
+  },
 
-export const mapAssetToDb = (item) => ({
-  code: item.id || item.code,
-  name: item.name,
-  category: item.category,
-  building: item.building,
-  department: item.department,
-  room: item.room,
-  condition: item.condition,
-  status: item.status,
-  purchase_date: item.purchaseDate || null,
-  cost: item.cost ? Number(item.cost) : null,
-  supplier: item.supplier || null,
-  warranty: item.warranty || null,
-  quantity: item.quantity ? Number(item.quantity) : 1,
-  description: item.description || null,
-});
+  // =========================================================================
+  // 2. FURNITURE -> TABLE (Subcategory: Table)
+  // =========================================================================
+  {
+    id: 'AST-007',
+    name: 'Granite Top 3-Person Student Lab Table',
+    mainCategory: 'Furniture',
+    category: 'Table',
+    itemType: 'Student Table',
+    building: 'Science Block',
+    department: 'Chemistry',
+    room: 'CH-301',
+    assignedTo: 'Dr. Lalitha Devi',
+    assignedRole: 'Chemistry Lab Supervisor',
+    assignedEmail: 'lalitha.devi@nec.edu.in',
+    condition: 'Fair',
+    status: 'In Use',
+    purchaseDate: '2021-10-12',
+    cost: 7800,
+    supplier: 'National Furnishers',
+    warranty: '2 Years (Expired)',
+    quantity: 12,
+    description: 'Chemical and acid-resistant jet black granite top laboratory student work table with reagent shelves.',
+  },
+  {
+    id: 'AST-008',
+    name: 'Dual Seater Integrated Student Desk & Bench',
+    mainCategory: 'Furniture',
+    category: 'Table',
+    itemType: 'Student Bench',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-102',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Dept Admin',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-06-25',
+    cost: 4800,
+    supplier: 'Godrej Interio',
+    warranty: '3 Years (Till Jun 2026)',
+    quantity: 30,
+    description: 'Two-seater integrated dual desk-bench with rounded edge PVC beading, bag hooks, and under-desk book rack.',
+  },
+  {
+    id: 'AST-009',
+    name: 'Executive Teak Wood Faculty Work Desk',
+    mainCategory: 'Furniture',
+    category: 'Table',
+    itemType: 'Faculty Table',
+    building: 'Engineering Block',
+    department: 'ECE',
+    room: 'ECE-Lab2',
+    assignedTo: 'Prof. Ramesh Nair',
+    assignedRole: 'ECE Dept In-Charge',
+    assignedEmail: 'ramesh.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2022-09-18',
+    cost: 16500,
+    supplier: 'Royaloak Furniture',
+    warranty: '3 Years (Expired)',
+    quantity: 4,
+    description: '5x3 ft melamine finished faculty desk with 3-drawer side pedestal, central lock, and cable pass-through port.',
+  },
+  {
+    id: 'AST-010',
+    name: 'Boardroom Oval Office Table (12-Seater)',
+    mainCategory: 'Furniture',
+    category: 'Table',
+    itemType: 'Office Table',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-Hall',
+    assignedTo: 'Dr. Rajesh Kumar',
+    assignedRole: 'Administrative Board',
+    assignedEmail: 'rajesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-02-10',
+    cost: 45000,
+    supplier: 'Featherlite Seating Ltd',
+    warranty: '5 Years (Till Feb 2029)',
+    quantity: 2,
+    description: 'Boat-shaped executive conference table with integrated pop-up motorized power sockets and HDMI pass-throughs.',
+  },
+  {
+    id: 'AST-011',
+    name: 'Modular Library Reading & Study Table (6-Seater)',
+    mainCategory: 'Furniture',
+    category: 'Table',
+    itemType: 'Student Table',
+    building: 'Library',
+    department: 'Administration',
+    room: 'LIB-01',
+    assignedTo: 'Ms. Geeta Nair',
+    assignedRole: 'Chief Librarian',
+    assignedEmail: 'geeta.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-03-20',
+    cost: 14200,
+    supplier: 'Methodex Systems',
+    warranty: '3 Years (Till Mar 2026)',
+    quantity: 18,
+    description: 'Heavy-duty 6-seater library study tables with frosted acrylic privacy dividers and built-in USB charging ports.',
+  },
 
-// Async Thunk: Fetch from Supabase
-export const fetchAssetsFromSupabase = createAsyncThunk(
-  'furniture/fetchAssets',
-  async (_, { rejectWithValue }) => {
-    try {
-      const { data, error } = await supabase
-        .from('assets')
-        .select('*')
-        .order('id', { ascending: true });
+  // =========================================================================
+  // 3. FURNITURE -> CUPBOARD & STORAGE (Subcategory: Cupboard & Storage)
+  // =========================================================================
+  {
+    id: 'AST-012',
+    name: 'Heavy-Gauge Steel Storage Almirah / Cupboard (78x36)',
+    mainCategory: 'Furniture',
+    category: 'Cupboard & Storage',
+    itemType: 'Steel Cupboard',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-101',
+    assignedTo: 'Ms. Priya Mehta',
+    assignedRole: 'Estate Officer & Records Custodian',
+    assignedEmail: 'priya.mehta@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-04-18',
+    cost: 14200,
+    supplier: 'Godrej Security & Storage',
+    warranty: '5 Years (Till Apr 2028)',
+    quantity: 8,
+    description: 'CRCA steel storage almirah with 3-way shoot bolt locking mechanism and 4 height-adjustable reinforced shelves.',
+  },
+  {
+    id: 'AST-013',
+    name: 'Teak Wood Display Cupboard with Toughened Glass Doors',
+    mainCategory: 'Furniture',
+    category: 'Cupboard & Storage',
+    itemType: 'Wooden Cupboard',
+    building: 'Science Block',
+    department: 'Physics',
+    room: 'PH-201',
+    assignedTo: 'Prof. Dinesh Kumar',
+    assignedRole: 'Dept Head',
+    assignedEmail: 'dinesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-01-20',
+    cost: 19500,
+    supplier: 'Durian Furniture',
+    warranty: '3 Years (Till Jan 2026)',
+    quantity: 3,
+    description: 'Toughened glass door specimen and delicate optical instrument display cupboard with lockable bottom drawers.',
+  },
+  {
+    id: 'AST-014',
+    name: '4-Drawer Vertical Heavy Duty Steel Filing Cabinet',
+    mainCategory: 'Furniture',
+    category: 'Cupboard & Storage',
+    itemType: 'Filing Cabinet',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-101',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Department Administrator',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-05-15',
+    cost: 9800,
+    supplier: 'Godrej Interio',
+    warranty: '3 Years (Till May 2026)',
+    quantity: 5,
+    description: 'Centralized locking telescopic ball-bearing runner vertical filing cabinet for confidential student records.',
+  },
+  {
+    id: 'AST-015',
+    name: 'Heavy Duty Metal Tool & Equipment Storage Cabinet',
+    mainCategory: 'Furniture',
+    category: 'Cupboard & Storage',
+    itemType: 'Storage Cabinet',
+    building: 'Engineering Block',
+    department: 'ECE',
+    room: 'ECE-Lab2',
+    assignedTo: 'Prof. Ramesh Nair',
+    assignedRole: 'Lab Custodian',
+    assignedEmail: 'ramesh.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-09-12',
+    cost: 11200,
+    supplier: 'Methodex Systems',
+    warranty: '3 Years (Till Sep 2026)',
+    quantity: 6,
+    description: 'Reinforced dual-door multi-tier equipment storage cabinet for electronic breadboards and test kits.',
+  },
+  {
+    id: 'AST-016',
+    name: 'Double-Sided Heavy Steel Library Book Rack Stack',
+    mainCategory: 'Furniture',
+    category: 'Cupboard & Storage',
+    itemType: 'Book Rack',
+    building: 'Library',
+    department: 'Administration',
+    room: 'LIB-01',
+    assignedTo: 'Ms. Geeta Nair',
+    assignedRole: 'Chief Librarian',
+    assignedEmail: 'geeta.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2022-04-10',
+    cost: 18500,
+    supplier: 'Methodex Systems',
+    warranty: '5 Years (Till Apr 2027)',
+    quantity: 24,
+    description: 'Modular 5-tier double-faced steel book stack unit with acrylic label holders and book stop partitions.',
+  },
+  {
+    id: 'AST-017',
+    name: '18-Locker Personal Student Belongings Locker Unit',
+    mainCategory: 'Furniture',
+    category: 'Cupboard & Storage',
+    itemType: 'Locker',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-Lab1',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'Lab In-Charge',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-05-02',
+    cost: 26000,
+    supplier: 'Godrej Security',
+    warranty: '3 Years (Till May 2027)',
+    quantity: 4,
+    description: 'Individual key and padlock-compatible personal student lockers with louvers for internal air ventilation.',
+  },
+  {
+    id: 'AST-018',
+    name: 'Mobile Pedestal 3-Drawer Under-Desk Storage Unit',
+    mainCategory: 'Furniture',
+    category: 'Cupboard & Storage',
+    itemType: 'Drawer Unit',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-101',
+    assignedTo: 'Ms. Priya Mehta',
+    assignedRole: 'Office Staff In-Charge',
+    assignedEmail: 'priya.mehta@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-02-14',
+    cost: 4200,
+    supplier: 'Featherlite',
+    warranty: '2 Years (Till Feb 2026)',
+    quantity: 12,
+    description: 'Under-desk mobile metal pedestal on 5 castor wheels with centralized anti-tilt lock mechanism.',
+  },
 
-      if (error) throw error;
-      return (data || []).map(mapDbToAsset);
-    } catch (err) {
-      console.warn('Supabase fetch failed, using local/cached state:', err.message);
-      return rejectWithValue(err.message);
-    }
+  // =========================================================================
+  // 4. FURNITURE -> OTHER FURNITURE (Subcategory: Other Furniture)
+  // =========================================================================
+  {
+    id: 'AST-019',
+    name: 'Acoustic Wooden Podium / Lectern with Mic Mount',
+    mainCategory: 'Furniture',
+    category: 'Other Furniture',
+    itemType: 'Lectern',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-101',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Lecture In-Charge',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-07-19',
+    cost: 11000,
+    supplier: 'Ahuja Sound Systems',
+    warranty: '2 Years (Till Jul 2025)',
+    quantity: 2,
+    description: 'Teak wood teacher podium with gooseneck microphone XLR socket and integrated reading light fixture.',
+  },
+  {
+    id: 'AST-020',
+    name: 'Executive Acrylic Podium with Lamp & Logo Emblem',
+    mainCategory: 'Furniture',
+    category: 'Other Furniture',
+    itemType: 'Lectern',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-Hall',
+    assignedTo: 'Dr. Rajesh Kumar',
+    assignedRole: 'Boardroom Supervisor',
+    assignedEmail: 'rajesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-01-10',
+    cost: 18000,
+    supplier: 'Alkosign Display Systems',
+    warranty: '2 Years (Till Jan 2026)',
+    quantity: 1,
+    description: 'Clear transparent acrylic conference podium with frosted college crest engraving and brass base.',
+  },
+  {
+    id: 'AST-021',
+    name: 'Lockable Acrylic Shutter Pinup Notice Board (6x4 ft)',
+    mainCategory: 'Furniture',
+    category: 'Other Furniture',
+    itemType: 'Notice Board',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-101',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'Student Affairs Coordinator',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-03-10',
+    cost: 3600,
+    supplier: 'Alkosign Display Systems',
+    warranty: '1 Year (Expired)',
+    quantity: 6,
+    description: 'Anodized aluminium framed high-density felt pinboard with sliding clear acrylic shutter and security lock.',
+  },
+  {
+    id: 'AST-022',
+    name: 'Double-Sided Mobile Rolling Notice Board with Wheels',
+    mainCategory: 'Furniture',
+    category: 'Other Furniture',
+    itemType: 'Notice Board',
+    building: 'Library',
+    department: 'Administration',
+    room: 'LIB-01',
+    assignedTo: 'Ms. Geeta Nair',
+    assignedRole: 'Library Coordinator',
+    assignedEmail: 'geeta.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-11-12',
+    cost: 4900,
+    supplier: 'Whitemark Boards',
+    warranty: '2 Years (Till Nov 2025)',
+    quantity: 3,
+    description: 'Castor-mounted double-sided fabric bulletin display board for campus announcements and newsletters.',
+  },
+
+  // =========================================================================
+  // 5. TEACHING EQUIPMENT -> CAMERA & AV (Subcategory: Camera & AV)
+  // =========================================================================
+  {
+    id: 'AST-023',
+    name: 'Logitech Brio 4K Ultra-HD Auto-Framing Webcam',
+    mainCategory: 'Teaching Equipment',
+    category: 'Camera & AV',
+    itemType: 'Web cam',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-Lab1',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'Online Lecture In-Charge',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-02-18',
+    cost: 18500,
+    supplier: 'Logitech India',
+    warranty: '3 Years (Till Feb 2027)',
+    quantity: 4,
+    description: '4K HDR webcam with AI face auto-tracking, dual noise-cancelling microphones and privacy shutter.',
+  },
+  {
+    id: 'AST-024',
+    name: 'AverMedia 1080p 60FPS Broadcaster Webcam with Tripod',
+    mainCategory: 'Teaching Equipment',
+    category: 'Camera & AV',
+    itemType: 'Web cam',
+    building: 'Science Block',
+    department: 'Physics',
+    room: 'PH-202',
+    assignedTo: 'Prof. Dinesh Kumar',
+    assignedRole: 'Smart Classroom Supervisor',
+    assignedEmail: 'dinesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-10-15',
+    cost: 9500,
+    supplier: 'AverMedia Technologies',
+    warranty: '2 Years (Till Oct 2025)',
+    quantity: 3,
+    description: 'Full HD wide-angle broadcast web camera with omnidirectional stereo mic and flexible desktop tripod stand.',
+  },
+
+  // =========================================================================
+  // 6. TEACHING EQUIPMENT -> BOARDS (Subcategory: Boards)
+  // =========================================================================
+  {
+    id: 'AST-025',
+    name: 'Magnetic Ceramic Non-Ghosting Whiteboard (8x4 ft)',
+    mainCategory: 'Teaching Equipment',
+    category: 'Boards',
+    itemType: 'Whiteboard',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-102',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Faculty Coordinator',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-01-20',
+    cost: 5200,
+    supplier: 'Alkosign Systems',
+    warranty: '5 Years Surface (Till Jan 2029)',
+    quantity: 4,
+    description: 'Porcelain enameled steel surface with aluminum trim, ABS corners, and integrated full-width dry-erase marker tray.',
+  },
+  {
+    id: 'AST-026',
+    name: 'Vitreous Steel Anti-Glare Green Chalkboard (8x4 ft)',
+    mainCategory: 'Teaching Equipment',
+    category: 'Boards',
+    itemType: 'Green Board',
+    building: 'Engineering Block',
+    department: 'Mechanical',
+    room: 'ME-101',
+    assignedTo: 'Prof. Kavitha Raj',
+    assignedRole: 'Dept Coordinator',
+    assignedEmail: 'kavitha.raj@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2022-08-14',
+    cost: 3900,
+    supplier: 'Whitemark Boards',
+    warranty: '2 Years (Expired)',
+    quantity: 4,
+    description: 'Heavy-duty ceramic vitreous steel green chalkboard with anti-glare matte finish for traditional mathematics and mechanics.',
+  },
+  {
+    id: 'AST-027',
+    name: 'Interactive 75" 4K UHD Multi-Touch Smart Display Board',
+    mainCategory: 'Teaching Equipment',
+    category: 'Boards',
+    itemType: 'Interactive Smart Board',
+    building: 'Science Block',
+    department: 'Physics',
+    room: 'PH-202',
+    assignedTo: 'Prof. Dinesh Kumar',
+    assignedRole: 'Smart Classroom Supervisor',
+    assignedEmail: 'dinesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-06-10',
+    cost: 145000,
+    supplier: 'ViewSonic / BenQ',
+    warranty: '3 Years Comprehensive (Till Jun 2027)',
+    quantity: 2,
+    description: '20-point touch capacitive smart board with dual OS (Android 13 + Windows OPS PC module) and wireless screen sharing.',
+  },
+  {
+    id: 'AST-028',
+    name: 'Motorized Electric High-Gain Projection Board Screen (100")',
+    mainCategory: 'Teaching Equipment',
+    category: 'Boards',
+    itemType: 'Projection Board',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-Hall',
+    assignedTo: 'Mr. Ravi Shankar',
+    assignedRole: 'Auditor & Event In-Charge',
+    assignedEmail: 'ravi.shankar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-09-05',
+    cost: 13500,
+    supplier: 'InFocus Displays',
+    warranty: '2 Years (Till Sep 2025)',
+    quantity: 2,
+    description: 'High-gain matte white motorized 16:9 projection screen with RF wireless remote control and silent tubular motor.',
+  },
+
+  // =========================================================================
+  // 7. TEACHING EQUIPMENT -> PROJECTOR (Subcategory: Projector)
+  // =========================================================================
+  {
+    id: 'AST-029',
+    name: 'Epson 4200 Lumens WUXGA 3LCD Classroom Projector',
+    mainCategory: 'Teaching Equipment',
+    category: 'Projector',
+    itemType: 'LCD Projector',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-101',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Faculty In-Charge',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Fair',
+    status: 'In Use',
+    purchaseDate: '2023-02-18',
+    cost: 48000,
+    supplier: 'Epson India Pvt Ltd',
+    warranty: '2 Years (Till Feb 2025)',
+    quantity: 1,
+    description: 'Full HD WUXGA 3LCD ceiling mounted projector with dual HDMI, USB viewer, and Miracast wireless casting.',
+  },
+  {
+    id: 'AST-030',
+    name: 'ViewSonic Portable 3000-Lumens LED Smart Projector',
+    mainCategory: 'Teaching Equipment',
+    category: 'Projector',
+    itemType: 'LED Projector',
+    building: 'Engineering Block',
+    department: 'ECE',
+    room: 'ECE-Lab2',
+    assignedTo: 'Prof. Ramesh Nair',
+    assignedRole: 'ECE Dept In-Charge',
+    assignedEmail: 'ramesh.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'Available',
+    purchaseDate: '2024-03-01',
+    cost: 38000,
+    supplier: 'ViewSonic',
+    warranty: '3 Years (Till Mar 2027)',
+    quantity: 2,
+    description: 'Compact 3000-lumen LED projector with Harman Kardon speaker and instant power-on for departmental seminars.',
+  },
+  {
+    id: 'AST-031',
+    name: 'Sony 4K Laser Solid-State Projector (6000 Lumens)',
+    mainCategory: 'Teaching Equipment',
+    category: 'Projector',
+    itemType: 'Laser Projector',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-Hall',
+    assignedTo: 'Dr. Rajesh Kumar',
+    assignedRole: 'Conference Hall Custodian',
+    assignedEmail: 'rajesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-04-12',
+    cost: 195000,
+    supplier: 'Sony Professional Solutions',
+    warranty: '5 Years (Till Apr 2029)',
+    quantity: 1,
+    description: 'Z-Phosphor laser light source 20,000-hour maintenance-free projector with motorized lens shift and 4K upscaling.',
+  },
+  {
+    id: 'AST-032',
+    name: 'Optoma High-Contrast Short-Throw Laser Projector',
+    mainCategory: 'Teaching Equipment',
+    category: 'Projector',
+    itemType: 'Laser Projector',
+    building: 'Science Block',
+    department: 'Physics',
+    room: 'PH-202',
+    assignedTo: 'Prof. Dinesh Kumar',
+    assignedRole: 'Smart Classroom Supervisor',
+    assignedEmail: 'dinesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-12-05',
+    cost: 110000,
+    supplier: 'Optoma Technology',
+    warranty: '3 Years (Till Dec 2026)',
+    quantity: 1,
+    description: 'Short throw laser projector paired with interactive whiteboard to eliminate presenter shadows.',
+  },
+
+  // =========================================================================
+  // 8. TEACHING EQUIPMENT -> MICROPHONE (Subcategory: Microphone)
+  // =========================================================================
+  {
+    id: 'AST-033',
+    name: 'Shure SM58 Cardioid Dynamic Wired Vocal Microphone',
+    mainCategory: 'Teaching Equipment',
+    category: 'Microphone',
+    itemType: 'Wired Microphone',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-101',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Dept Coordinator',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-06-15',
+    cost: 8900,
+    supplier: 'Shure Audio India',
+    warranty: '2 Years (Till Jun 2025)',
+    quantity: 2,
+    description: 'Industry standard cardioid vocal microphone with 10-meter balanced low-noise XLR cable and shock mount clip.',
+  },
+  {
+    id: 'AST-034',
+    name: 'Sennheiser Wireless UHF Handheld Dual-Microphone Kit',
+    mainCategory: 'Teaching Equipment',
+    category: 'Microphone',
+    itemType: 'Wireless Microphone',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-Hall',
+    assignedTo: 'Mr. Ravi Shankar',
+    assignedRole: 'Auditorium AV Tech',
+    assignedEmail: 'ravi.shankar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-11-20',
+    cost: 22500,
+    supplier: 'Sennheiser Electronics',
+    warranty: '2 Years (Till Nov 2025)',
+    quantity: 4,
+    description: 'Dual-channel true diversity receiver with dynamic wireless handheld microphones for stage events.',
+  },
+  {
+    id: 'AST-035',
+    name: 'Ahuja Pro Wireless Collar / Lapel Clip-on Microphone',
+    mainCategory: 'Teaching Equipment',
+    category: 'Microphone',
+    itemType: 'Collar/Lapel Microphone',
+    building: 'Science Block',
+    department: 'Physics',
+    room: 'PH-202',
+    assignedTo: 'Prof. Dinesh Kumar',
+    assignedRole: 'Smart Classroom Supervisor',
+    assignedEmail: 'dinesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-01-10',
+    cost: 7500,
+    supplier: 'Ahuja Radios',
+    warranty: '1 Year (Till Jan 2025)',
+    quantity: 3,
+    description: 'Bodypack transmitter with omnidirectional condenser lavalier microphone for handsfree lecturing in lecture theaters.',
+  },
+  {
+    id: 'AST-036',
+    name: 'Rode Wireless GO II Compact Lapel Dual System',
+    mainCategory: 'Teaching Equipment',
+    category: 'Microphone',
+    itemType: 'Collar/Lapel Microphone',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-Lab1',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'Multimedia Coordinator',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-04-18',
+    cost: 28000,
+    supplier: 'Rode Microphones',
+    warranty: '2 Years (Till Apr 2026)',
+    quantity: 2,
+    description: 'Dual-channel ultra-compact digital wireless lapel microphone system with onboard audio recording capability.',
+  },
+
+  // =========================================================================
+  // 9. ELECTRICALS -> FANS & COOLING (Subcategory: Fans & Cooling)
+  // =========================================================================
+  {
+    id: 'AST-037',
+    name: 'Havells 1200mm High-Speed BLDC Energy-Saving Ceiling Fan',
+    mainCategory: 'Electricals',
+    category: 'Fans & Cooling',
+    itemType: 'Ceiling Fan',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-101',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Dept Admin',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-08-12',
+    cost: 3200,
+    supplier: 'Havells India Ltd',
+    warranty: '3 Years (Till Aug 2026)',
+    quantity: 8,
+    description: '28W energy-saving brushless DC motor ceiling fan with RF wireless speed regulator and sleep timer.',
+  },
+  {
+    id: 'AST-038',
+    name: 'Crompton 450mm High-Velocity Heavy Wall Fan',
+    mainCategory: 'Electricals',
+    category: 'Fans & Cooling',
+    itemType: 'Wall Fan',
+    building: 'Engineering Block',
+    department: 'Mechanical',
+    room: 'ME-101',
+    assignedTo: 'Prof. Kavitha Raj',
+    assignedRole: 'Lab Supervisor',
+    assignedEmail: 'kavitha.raj@nec.edu.in',
+    condition: 'Fair',
+    status: 'In Use',
+    purchaseDate: '2022-09-02',
+    cost: 2800,
+    supplier: 'Crompton Greaves',
+    warranty: '2 Years (Expired)',
+    quantity: 6,
+    description: 'Aerodynamic metal blade wall mounted oscillating fan with pull cord controls for high airflow in mechanical shops.',
+  },
+  {
+    id: 'AST-039',
+    name: 'Daikin 2.0 Ton 5-Star Inverter Split Air Conditioner',
+    mainCategory: 'Electricals',
+    category: 'Fans & Cooling',
+    itemType: 'Split AC',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-Lab1',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'Lab In-Charge',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-05-10',
+    cost: 56000,
+    supplier: 'Daikin Airconditioning India',
+    warranty: '5 Years Compressor (Till May 2028)',
+    quantity: 4,
+    description: '100% copper condenser high ambient cooling split AC unit with PM2.5 air filtration filter and stabilizer-free operation.',
+  },
+  {
+    id: 'AST-040',
+    name: 'Voltas 1.5 Ton Commercial Cassette Air Conditioner',
+    mainCategory: 'Electricals',
+    category: 'Fans & Cooling',
+    itemType: 'Split AC',
+    building: 'Admin Block',
+    department: 'Administration',
+    room: 'ADM-Hall',
+    assignedTo: 'Dr. Rajesh Kumar',
+    assignedRole: 'Facility Custodian',
+    assignedEmail: 'rajesh.kumar@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-03-05',
+    cost: 68000,
+    supplier: 'Voltas Ltd',
+    warranty: '5 Years (Till Mar 2029)',
+    quantity: 2,
+    description: 'Ceiling mounted 360-degree round flow cassette AC for even cooling across the main executive boardroom.',
+  },
+
+  // =========================================================================
+  // 10. ELECTRICALS -> LIGHTING (Subcategory: Lighting)
+  // =========================================================================
+  {
+    id: 'AST-041',
+    name: 'Philips 36W Recessed Square LED Panel Light (2x2 ft)',
+    mainCategory: 'Electricals',
+    category: 'Lighting',
+    itemType: 'LED Light',
+    building: 'Library',
+    department: 'Administration',
+    room: 'LIB-01',
+    assignedTo: 'Ms. Geeta Nair',
+    assignedRole: 'Librarian In-Charge',
+    assignedEmail: 'geeta.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-01-10',
+    cost: 1600,
+    supplier: 'Signify / Philips Lighting',
+    warranty: '2 Years (Till Jan 2026)',
+    quantity: 32,
+    description: 'Cool white 6500K flicker-free eye-comfort LED grid panel for reading hall glare-free illumination.',
+  },
+  {
+    id: 'AST-042',
+    name: 'Wipro 20W Polycarbonate Batten Tube Light',
+    mainCategory: 'Electricals',
+    category: 'Lighting',
+    itemType: 'Tube Light',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-102',
+    assignedTo: 'Prof. Anitha Sharma',
+    assignedRole: 'Classroom Coordinator',
+    assignedEmail: 'anitha.sharma@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-10-05',
+    cost: 450,
+    supplier: 'Wipro Consumer Care',
+    warranty: '2 Years (Till Oct 2025)',
+    quantity: 12,
+    description: 'Surge-protected 2400 lumens energy-saving slim LED batten tube fixtures with robust polycarbonate housing.',
+  },
+  {
+    id: 'AST-043',
+    name: 'Havells 50W High-Bay Industrial LED Light',
+    mainCategory: 'Electricals',
+    category: 'Lighting',
+    itemType: 'LED Light',
+    building: 'Engineering Block',
+    department: 'Mechanical',
+    room: 'ME-101',
+    assignedTo: 'Prof. Kavitha Raj',
+    assignedRole: 'Workshop In-Charge',
+    assignedEmail: 'kavitha.raj@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-04-14',
+    cost: 3800,
+    supplier: 'Havells India',
+    warranty: '3 Years (Till Apr 2026)',
+    quantity: 8,
+    description: 'Die-cast aluminium high-bay luminaires designed for high-ceiling mechanical workshops and labs.',
+  },
+
+  // =========================================================================
+  // 11. ELECTRICALS -> POWER & DISTRIBUTION (Subcategory: Power & Distribution)
+  // =========================================================================
+  {
+    id: 'AST-044',
+    name: 'Legrand 16A Modular Lab Electrical Switchboard with MCB',
+    mainCategory: 'Electricals',
+    category: 'Power & Distribution',
+    itemType: 'Electrical Switchboard',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-Lab1',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'Lab Technical In-Charge',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-04-22',
+    cost: 2900,
+    supplier: 'Legrand India',
+    warranty: '5 Years (Till Apr 2028)',
+    quantity: 10,
+    description: 'Fire-retardant 8-module switchboard with individual circuit breaker MCB protection and earthing indicator.',
+  },
+  {
+    id: 'AST-045',
+    name: 'Schneider 6/16A Dual Shuttered Safety Power Socket Plate',
+    mainCategory: 'Electricals',
+    category: 'Power & Distribution',
+    itemType: 'Power Socket',
+    building: 'Science Block',
+    department: 'Chemistry',
+    room: 'CH-301',
+    assignedTo: 'Dr. Lalitha Devi',
+    assignedRole: 'Chemistry Supervisor',
+    assignedEmail: 'lalitha.devi@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-06-18',
+    cost: 850,
+    supplier: 'Schneider Electric',
+    warranty: '2 Years (Till Jun 2025)',
+    quantity: 24,
+    description: 'Splash-resistant safety shutter power sockets for chemistry lab analytical apparatus and centrifuges.',
+  },
+  {
+    id: 'AST-046',
+    name: 'Goldmedal Heavy-Duty 6-Way Spike Extension Board',
+    mainCategory: 'Electricals',
+    category: 'Power & Distribution',
+    itemType: 'Extension Board',
+    building: 'Engineering Block',
+    department: 'ECE',
+    room: 'ECE-Lab2',
+    assignedTo: 'Prof. Ramesh Nair',
+    assignedRole: 'ECE Dept In-Charge',
+    assignedEmail: 'ramesh.nair@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-03-25',
+    cost: 1450,
+    supplier: 'Goldmedal Electricals',
+    warranty: '2 Years (Till Mar 2026)',
+    quantity: 8,
+    description: 'Surge suppressor 5-meter heavy copper cord extension strip with individual illuminated switches and safety fuse.',
+  },
+  {
+    id: 'AST-047',
+    name: 'APC 1000VA Smart-UPS Rackmount Power Distribution Unit',
+    mainCategory: 'Electricals',
+    category: 'Power & Distribution',
+    itemType: 'Electrical Switchboard',
+    building: 'Engineering Block',
+    department: 'Computer Science',
+    room: 'CS-Lab1',
+    assignedTo: 'Prof. Suresh Babu',
+    assignedRole: 'System Admin',
+    assignedEmail: 'suresh.babu@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2024-02-01',
+    cost: 32000,
+    supplier: 'Schneider Electric / APC',
+    warranty: '3 Years (Till Feb 2027)',
+    quantity: 2,
+    description: 'Line interactive sine-wave rackmount UPS with automated battery self-test and surge protection.',
+  },
+  {
+    id: 'AST-048',
+    name: 'Havells Heavy Duty Industrial Floor Extension Reel (25m)',
+    mainCategory: 'Electricals',
+    category: 'Power & Distribution',
+    itemType: 'Extension Board',
+    building: 'Engineering Block',
+    department: 'Mechanical',
+    room: 'ME-101',
+    assignedTo: 'Prof. Kavitha Raj',
+    assignedRole: 'Workshop In-Charge',
+    assignedEmail: 'kavitha.raj@nec.edu.in',
+    condition: 'Good',
+    status: 'In Use',
+    purchaseDate: '2023-11-19',
+    cost: 4600,
+    supplier: 'Havells India',
+    warranty: '2 Years (Till Nov 2025)',
+    quantity: 3,
+    description: 'Heavy duty 25-meter rotating drum extension cord with thermal overload cut-off and 4 universal 16A sockets.',
   }
-);
-
-// Async Thunk: Add Asset to Supabase
-export const addAssetToSupabase = createAsyncThunk(
-  'furniture/addAsset',
-  async (assetData, { rejectWithValue }) => {
-    try {
-      const dbPayload = mapAssetToDb(assetData);
-      const { data, error } = await supabase
-        .from('assets')
-        .insert([dbPayload])
-        .select();
-
-      if (error) throw error;
-      return mapDbToAsset(data[0]);
-    } catch (err) {
-      console.error('Supabase add asset failed:', err.message);
-      return rejectWithValue(err.message);
-    }
-  }
-);
-
-// Async Thunk: Update Asset in Supabase
-export const updateAssetInSupabase = createAsyncThunk(
-  'furniture/updateAsset',
-  async (assetData, { rejectWithValue }) => {
-    try {
-      const dbPayload = mapAssetToDb(assetData);
-      const { data, error } = await supabase
-        .from('assets')
-        .update(dbPayload)
-        .eq('code', assetData.id)
-        .select();
-
-      if (error) throw error;
-      return mapDbToAsset(data[0] || assetData);
-    } catch (err) {
-      console.error('Supabase update asset failed:', err.message);
-      return rejectWithValue(err.message);
-    }
-  }
-);
-
-// Async Thunk: Delete Asset from Supabase
-export const deleteAssetFromSupabase = createAsyncThunk(
-  'furniture/deleteAsset',
-  async (assetId, { rejectWithValue }) => {
-    try {
-      const { error } = await supabase
-        .from('assets')
-        .delete()
-        .eq('code', assetId);
-
-      if (error) throw error;
-      return assetId;
-    } catch (err) {
-      console.error('Supabase delete asset failed:', err.message);
-      return rejectWithValue(err.message);
-    }
-  }
-);
+];
 
 const getInitialFurniture = () => {
   const saved = localStorage.getItem('furniture_list');
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length >= 45) {
+        return parsed;
+      }
     } catch {
       // ignore
     }
   }
-  return [];
+  localStorage.setItem('furniture_list', JSON.stringify(initialAssets));
+  return initialAssets;
 };
 
 const furnitureSlice = createSlice({
@@ -140,16 +1083,23 @@ const furnitureSlice = createSlice({
       localStorage.setItem('furniture_list', JSON.stringify(state.list));
     },
     addFurniture: (state, action) => {
-      const exists = state.list.some(f => f.id === action.payload.id);
+      const payload = { ...action.payload };
+      const exists = state.list.some(f => f.id === payload.id);
       if (!exists) {
-        state.list.unshift(action.payload);
-        localStorage.setItem('furniture_list', JSON.stringify(state.list));
+        state.list.unshift(payload);
+      } else {
+        const idx = state.list.findIndex(f => f.id === payload.id);
+        state.list[idx] = payload;
       }
+      localStorage.setItem('furniture_list', JSON.stringify(state.list));
     },
     editFurniture: (state, action) => {
       const idx = state.list.findIndex(f => f.id === action.payload.id);
       if (idx !== -1) {
-        state.list[idx] = action.payload;
+        state.list[idx] = { 
+          ...state.list[idx], 
+          ...action.payload
+        };
         localStorage.setItem('furniture_list', JSON.stringify(state.list));
       }
     },
@@ -160,8 +1110,18 @@ const furnitureSlice = createSlice({
     updateFurnitureLocation: (state, action) => {
       const item = state.list.find(f => f.id === action.payload.id);
       if (item) {
-        item.room = action.payload.room;
-        item.building = action.payload.building;
+        if (action.payload.room) item.room = action.payload.room;
+        if (action.payload.building) item.building = action.payload.building;
+        if (action.payload.department) item.department = action.payload.department;
+        localStorage.setItem('furniture_list', JSON.stringify(state.list));
+      }
+    },
+    updateFurnitureCustodian: (state, action) => {
+      const item = state.list.find(f => f.id === action.payload.id);
+      if (item) {
+        if (action.payload.assignedTo !== undefined) item.assignedTo = action.payload.assignedTo;
+        if (action.payload.assignedRole !== undefined) item.assignedRole = action.payload.assignedRole;
+        if (action.payload.assignedEmail !== undefined) item.assignedEmail = action.payload.assignedEmail;
         localStorage.setItem('furniture_list', JSON.stringify(state.list));
       }
     },
@@ -172,44 +1132,21 @@ const furnitureSlice = createSlice({
         localStorage.setItem('furniture_list', JSON.stringify(state.list));
       }
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchAssetsFromSupabase.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchAssetsFromSupabase.fulfilled, (state, action) => {
-        state.loading = false;
-        if (action.payload && action.payload.length > 0) {
-          state.list = action.payload;
-          localStorage.setItem('furniture_list', JSON.stringify(state.list));
+    bulkAssignCustodians: (state, action) => {
+      const { assetIds, assignedTo, assignedRole, assignedEmail } = action.payload;
+      state.list.forEach((item) => {
+        if (assetIds.includes(item.id)) {
+          if (assignedTo !== undefined) item.assignedTo = assignedTo;
+          if (assignedRole !== undefined) item.assignedRole = assignedRole;
+          if (assignedEmail !== undefined) item.assignedEmail = assignedEmail;
         }
-      })
-      .addCase(fetchAssetsFromSupabase.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(addAssetToSupabase.fulfilled, (state, action) => {
-        const exists = state.list.some(f => f.id === action.payload.id);
-        if (!exists) {
-          state.list.unshift(action.payload);
-        } else {
-          const idx = state.list.findIndex(f => f.id === action.payload.id);
-          state.list[idx] = action.payload;
-        }
-        localStorage.setItem('furniture_list', JSON.stringify(state.list));
-      })
-      .addCase(updateAssetInSupabase.fulfilled, (state, action) => {
-        const idx = state.list.findIndex(f => f.id === action.payload.id);
-        if (idx !== -1) {
-          state.list[idx] = action.payload;
-          localStorage.setItem('furniture_list', JSON.stringify(state.list));
-        }
-      })
-      .addCase(deleteAssetFromSupabase.fulfilled, (state, action) => {
-        state.list = state.list.filter(f => f.id !== action.payload);
-        localStorage.setItem('furniture_list', JSON.stringify(state.list));
       });
+      localStorage.setItem('furniture_list', JSON.stringify(state.list));
+    },
+    resetToDefaultCatalog: (state) => {
+      state.list = initialAssets;
+      localStorage.setItem('furniture_list', JSON.stringify(initialAssets));
+    },
   },
 });
 
@@ -219,7 +1156,10 @@ export const {
   editFurniture,
   deleteFurniture,
   updateFurnitureLocation,
+  updateFurnitureCustodian,
   updateFurnitureCondition,
+  bulkAssignCustodians,
+  resetToDefaultCatalog,
 } = furnitureSlice.actions;
 
 export default furnitureSlice.reducer;

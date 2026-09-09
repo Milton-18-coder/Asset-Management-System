@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addInspection, addInspectionToSupabase } from '../store/inspectionsSlice';
+import { addInspection } from '../store/inspectionsSlice';
 import { updateFurnitureCondition } from '../store/furnitureSlice';
-import { addNotification, addNotificationToSupabase } from '../store/notificationsSlice';
+import { addNotification } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Select, Input, Icon } from '../components/UIComponents';
 
@@ -40,7 +40,6 @@ export const Inspections = () => {
     };
 
     dispatch(addInspection(newInspection));
-    dispatch(addInspectionToSupabase(newInspection));
     dispatch(updateFurnitureCondition({ id: selectedAssetId, condition }));
     
     const notif = {
@@ -51,7 +50,6 @@ export const Inspections = () => {
       department: asset.department,
     };
     dispatch(addNotification(notif));
-    dispatch(addNotificationToSupabase(notif));
     setSuccess(true);
   };
 

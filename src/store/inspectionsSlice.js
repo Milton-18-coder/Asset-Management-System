@@ -1,67 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { supabase } from '../lib/supabaseClient';
-
-export const mapDbToInspection = (row) => ({
-  id: row.code || `INS-${String(row.id).padStart(3, '0')}`,
-  db_id: row.id,
-  assetId: row.asset_id || row.assetId || '',
-  furniture: row.furniture_name || row.furniture || '',
-  location: row.location || '',
-  condition: row.condition || 'Good',
-  inspector: row.inspector || '',
-  date: row.inspection_date || row.date || new Date().toISOString().split('T')[0],
-  notes: row.notes || '',
-});
-
-export const mapInspectionToDb = (item) => ({
-  code: item.id,
-  asset_id: item.assetId,
-  furniture_name: item.furniture,
-  location: item.location,
-  condition: item.condition,
-  inspector: item.inspector,
-  inspection_date: item.date,
-  notes: item.notes,
-});
-
-// Async Thunk: Fetch Inspections from Supabase
-export const fetchInspectionsFromSupabase = createAsyncThunk(
-  'inspections/fetchInspections',
-  async (_, { rejectWithValue }) => {
-    try {
-      const { data, error } = await supabase
-        .from('inspections')
-        .select('*')
-        .order('id', { ascending: false });
-
-      if (error) throw error;
-      return (data || []).map(mapDbToInspection);
-    } catch (err) {
-      console.warn('Supabase inspections fetch failed, using local/cached state:', err.message);
-      return rejectWithValue(err.message);
-    }
-  }
-);
-
-// Async Thunk: Add Inspection to Supabase
-export const addInspectionToSupabase = createAsyncThunk(
-  'inspections/addInspection',
-  async (inspectionData, { rejectWithValue }) => {
-    try {
-      const dbPayload = mapInspectionToDb(inspectionData);
-      const { data, error } = await supabase
-        .from('inspections')
-        .insert([dbPayload])
-        .select();
-
-      if (error) throw error;
-      return mapDbToInspection(data[0]);
-    } catch (err) {
-      console.error('Supabase add inspection failed:', err.message);
-      return rejectWithValue(err.message);
-    }
-  }
-);
+import { createSlice } from '@reduxjs/toolkit';
 
 const getInitialInspections = () => {
   const saved = localStorage.getItem('inspections_list');
@@ -116,36 +53,8 @@ const inspectionsSlice = createSlice({
         localStorage.setItem('inspections_list', JSON.stringify(state.list));
       }
     }
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchInspectionsFromSupabase.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchInspectionsFromSupabase.fulfilled, (state, action) => {
-        state.loading = false;
-        if (action.payload && action.payload.length > 0) {
-          state.list = action.payload;
-          localStorage.setItem('inspections_list', JSON.stringify(state.list));
-        }
-      })
-      .addCase(fetchInspectionsFromSupabase.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(addInspectionToSupabase.fulfilled, (state, action) => {
-        const exists = state.list.some(i => i.id === action.payload.id);
-        if (!exists) {
-          state.list.unshift(action.payload);
-        } else {
-          const idx = state.list.findIndex(i => i.id === action.payload.id);
-          state.list[idx] = action.payload;
-        }
-        localStorage.setItem('inspections_list', JSON.stringify(state.list));
-      });
   }
 });
 
 export const { setInspectionsList, addInspection } = inspectionsSlice.actions;
 export default inspectionsSlice.reducer;
-

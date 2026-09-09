@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addUser, editUser, deleteUser, addUserToSupabase, updateUserInSupabase, deleteUserFromSupabase } from '../store/usersSlice';
+import { addUser, editUser, deleteUser } from '../store/usersSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Input, Select, Icon } from '../components/UIComponents';
 
@@ -62,10 +62,8 @@ export const Users = () => {
 
     if (editSelection) {
       dispatch(editUser(payload));
-      dispatch(updateUserInSupabase(payload));
     } else {
       dispatch(addUser(payload));
-      dispatch(addUserToSupabase(payload));
     }
     setSuccess(true);
   };
@@ -73,7 +71,6 @@ export const Users = () => {
   const handleDeleteUser = (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       dispatch(deleteUser(id));
-      dispatch(deleteUserFromSupabase(id));
     }
   };
 

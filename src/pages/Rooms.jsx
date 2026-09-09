@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Modal, Badge, Icon } from '../components/UIComponents';
+import { MapPin, User, ArrowUpRight } from 'lucide-react';
 
 const roomsData = [
-  { id: 'R01', number: 'CS-101', building: 'Engineering Block', department: 'Computer Science', floor: 1, type: 'Classroom', capacity: 60, assetCount: 32 },
-  { id: 'R02', number: 'CS-102', building: 'Engineering Block', department: 'Computer Science', floor: 1, type: 'Classroom', capacity: 60, assetCount: 28 },
-  { id: 'R03', number: 'CS-Lab1', building: 'Engineering Block', department: 'Computer Science', floor: 2, type: 'Laboratory', capacity: 40, assetCount: 45 },
-  { id: 'R04', number: 'PH-201', building: 'Science Block', department: 'Physics', floor: 2, type: 'Classroom', capacity: 50, assetCount: 22 },
-  { id: 'R05', number: 'CH-301', building: 'Science Block', department: 'Chemistry', floor: 3, type: 'Laboratory', capacity: 30, assetCount: 38 },
-  { id: 'R06', number: 'ME-101', building: 'Engineering Block', department: 'Mechanical', floor: 1, type: 'Classroom', capacity: 60, assetCount: 48 },
-  { id: 'R07', number: 'ECE-Lab2', building: 'Engineering Block', department: 'ECE', floor: 3, type: 'Laboratory', capacity: 25, assetCount: 36 },
-  { id: 'R08', number: 'LIB-01', building: 'Library', department: 'Administration', floor: 1, type: 'Reading Hall', capacity: 200, assetCount: 52 },
-  { id: 'R09', number: 'ADM-Hall', building: 'Admin Block', department: 'Administration', floor: 1, type: 'Conference Room', capacity: 20, assetCount: 12 },
-  { id: 'R10', number: 'PH-202', building: 'Science Block', department: 'Physics', floor: 2, type: 'Smart Classroom', capacity: 50, assetCount: 18 },
+  { id: 'R01', number: 'CS-101', building: 'Engineering Block', department: 'Computer Science', floor: 1, type: 'Smart Classroom', capacity: 60 },
+  { id: 'R02', number: 'CS-102', building: 'Engineering Block', department: 'Computer Science', floor: 1, type: 'Lecture Hall', capacity: 60 },
+  { id: 'R03', number: 'CS-Lab1', building: 'Engineering Block', department: 'Computer Science', floor: 2, type: 'Computer Laboratory', capacity: 40 },
+  { id: 'R04', number: 'PH-201', building: 'Science Block', department: 'Physics', floor: 2, type: 'Physics Lab & Classroom', capacity: 50 },
+  { id: 'R05', number: 'CH-301', building: 'Science Block', department: 'Chemistry', floor: 3, type: 'Chemistry Research Lab', capacity: 30 },
+  { id: 'R06', number: 'ME-101', building: 'Engineering Block', department: 'Mechanical', floor: 1, type: 'Mechanical Workshop Hall', capacity: 60 },
+  { id: 'R07', number: 'ECE-Lab2', building: 'Engineering Block', department: 'ECE', floor: 3, type: 'VLSI & Embedded Lab', capacity: 25 },
+  { id: 'R08', number: 'LIB-01', building: 'Library', department: 'Administration', floor: 1, type: 'Central Reading Hall', capacity: 200 },
+  { id: 'R09', number: 'ADM-Hall', building: 'Admin Block', department: 'Administration', floor: 1, type: 'Main Boardroom', capacity: 25 },
+  { id: 'R10', number: 'PH-202', building: 'Science Block', department: 'Physics', floor: 2, type: 'Digital Smart Classroom', capacity: 50 },
 ];
 
 export const Rooms = () => {
+  const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
   const [selected, setSelected] = useState(null);
@@ -28,59 +31,126 @@ export const Rooms = () => {
     : roomsData.filter(r => r.department === currentUser.department);
 
   return (
-    <div>
-      <TopBar title="Rooms" subtitle={`${source.length} rooms`} user={currentUser} />
+    <div className="space-y-6 pb-12">
+      <TopBar title="Campus Rooms & Space Inventory" subtitle={`${source.length} rooms tracked`} user={currentUser} />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {source.map(r => (
-          <Card key={r.id} className="p-5 hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 cursor-pointer" onClick={() => setSelected(r)}>
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-150 dark:border-indigo-900 flex items-center justify-center text-indigo-650 dark:text-indigo-400"><Icon.Room /></div>
-              <span className="text-xs bg-slate-100 dark:bg-slate-805 text-slate-600 dark:text-slate-400 rounded-lg px-2 py-0.5 font-bold">{r.type}</span>
-            </div>
-            <h3 className="font-extrabold text-slate-800 dark:text-white text-base mb-0.5 font-display">{r.number}</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mb-4 font-semibold">{r.department} · Floor {r.floor}</p>
-            <div className="grid grid-cols-2 gap-2.5 text-center font-bold">
-              <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-100/50 dark:border-slate-800/50">
-                <p className="text-sm font-extrabold text-slate-850 dark:text-slate-200">{r.capacity}</p>
-                <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase mt-1">Capacity</p>
+        {source.map(r => {
+          const roomAssets = furnitureList.filter(f => f.room === r.number);
+          const totalUnits = roomAssets.reduce((s, f) => s + (f.quantity || 1), 0);
+          const custodians = Array.from(new Set(roomAssets.map(f => f.assignedTo).filter(Boolean)));
+
+          return (
+            <Card key={r.id} className="p-5 hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 cursor-pointer" onClick={() => setSelected(r)}>
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-150 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                  <Icon.Room />
+                </div>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg px-2 py-0.5 font-bold">
+                  {r.type}
+                </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-100/50 dark:border-slate-800/50">
-                <p className="text-sm font-extrabold text-slate-855 dark:text-slate-200">{r.assetCount}</p>
-                <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase mt-1">Assets Qty</p>
+              <h3 className="font-extrabold text-slate-800 dark:text-white text-base mb-0.5 font-display">{r.number}</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4 font-semibold">{r.department} · {r.building}</p>
+              
+              <div className="grid grid-cols-2 gap-2.5 text-center font-bold mb-3">
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-100/50 dark:border-slate-800/50">
+                  <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">{r.capacity}</p>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase mt-0.5">Capacity</p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-100/50 dark:border-slate-800/50">
+                  <p className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400 font-mono">{totalUnits}</p>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase mt-0.5">Assets Qty</p>
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
+
+              {custodians.length > 0 && (
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <User className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
+                  <span className="truncate font-medium">{custodians.join(', ')}</span>
+                </div>
+              )}
+            </Card>
+          );
+        })}
       </div>
 
       {selected && (
-        <Modal title={`Room Details - ${selected.number}`} onClose={() => setSelected(null)}>
-          <div className="space-y-3.5 text-sm font-semibold">
-            {[
-              ['Room Number', selected.number],
-              ['Building Block', selected.building],
-              ['Department', selected.department],
-              ['Floor Level', `Floor ${selected.floor}`],
-              ['Space Type', selected.type],
-              ['Max Capacity', `${selected.capacity} persons`],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-400 dark:text-slate-500">{k}</span>
-                <span className="text-slate-800 dark:text-slate-200">{v}</span>
+        <Modal title={`Room Details & Asset Custody — ${selected.number}`} onClose={() => setSelected(null)}>
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div>
+                <span className="text-slate-400 font-medium">Building:</span>
+                <p className="font-bold text-slate-800 dark:text-white">{selected.building}</p>
               </div>
-            ))}
-            <div className="pt-2">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Assets allocated in this room</p>
-              <div className="space-y-2">
+              <div>
+                <span className="text-slate-400 font-medium">Department:</span>
+                <p className="font-bold text-slate-800 dark:text-white">{selected.department}</p>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium">Space Type:</span>
+                <p className="font-bold text-slate-800 dark:text-white">{selected.type}</p>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium">Capacity:</span>
+                <p className="font-bold text-slate-800 dark:text-white">{selected.capacity} persons</p>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-bold text-slate-800 dark:text-white font-display text-sm">
+                  Assets Allocated in Room {selected.number}
+                </p>
+                <button
+                  onClick={() => {
+                    setSelected(null);
+                    navigate(`/category`);
+                  }}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                >
+                  Locate all →
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {furnitureList.filter(f => f.room === selected.number).map(f => (
-                  <div key={f.id} className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/40 border border-slate-100/50 dark:border-slate-800/50 rounded-xl px-3.5 py-2.5">
-                    <span className="font-bold text-slate-700 dark:text-slate-300">{f.name}</span>
-                    <span className="text-slate-400 font-bold">{f.quantity} units</span>
-                    <Badge label={f.condition} type="condition" />
+                  <div key={f.id} className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-xl p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{f.name}</span>
+                          <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">({f.id})</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                          {f.category} · {f.itemType || 'General'}
+                        </p>
+                        {f.assignedTo && (
+                          <p className="text-[11px] text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1 truncate">
+                            <User className="w-3 h-3 flex-shrink-0" /> Using: {f.assignedTo}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      <span className="text-slate-700 dark:text-slate-300 font-mono font-bold">{f.quantity || 1} units</span>
+                      <Badge label={f.condition} type="condition" />
+                      <button
+                        onClick={() => {
+                          setSelected(null);
+                          navigate(`/assets/${f.id}`);
+                        }}
+                        className="p-1 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+                      >
+                        <ArrowUpRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {furnitureList.filter(f => f.room === selected.number).length === 0 && (
-                  <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">No assets currently assigned to this room.</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-6">
+                    No assets currently assigned to this room.
+                  </p>
                 )}
               </div>
             </div>

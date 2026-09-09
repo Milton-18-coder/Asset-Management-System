@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginSuccess, DEMO_USERS } from '../store/authSlice';
-import { supabase } from '../lib/supabaseClient';
 import { Icon } from '../components/UIComponents';
 
 export const Login = () => {
@@ -152,21 +151,8 @@ export const Login = () => {
     }
   }, []);
 
-  const handleGoogleSignInFallback = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/dashboard',
-        },
-      });
-      if (error) throw error;
-    } catch (err) {
-      setError(err.message || 'Failed to initialize Google Sign-In.');
-      setLoading(false);
-    }
+  const handleGoogleSignInFallback = () => {
+    setError('Google Sign-In requires a valid VITE_GOOGLE_CLIENT_ID configured in your environment.');
   };
 
   const handleLogin = (e) => {

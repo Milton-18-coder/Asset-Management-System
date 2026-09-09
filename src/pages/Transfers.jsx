@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addTransfer, approveTransfer, rejectTransfer, addTransferToSupabase, updateTransferStatusInSupabase } from '../store/transfersSlice';
-import { updateFurnitureLocation, updateAssetInSupabase } from '../store/furnitureSlice';
-import { addNotification, addNotificationToSupabase } from '../store/notificationsSlice';
+import { addTransfer, approveTransfer, rejectTransfer } from '../store/transfersSlice';
+import { updateFurnitureLocation } from '../store/furnitureSlice';
+import { addNotification } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Select, Input, Icon } from '../components/UIComponents';
 
@@ -50,7 +50,6 @@ export const Transfers = () => {
     };
 
     dispatch(addTransfer(newTransfer));
-    dispatch(addTransferToSupabase(newTransfer));
 
     const notif = {
       title: 'New Transfer Requested',
@@ -60,18 +59,14 @@ export const Transfers = () => {
       department: asset.department,
     };
     dispatch(addNotification(notif));
-    dispatch(addNotificationToSupabase(notif));
     setSuccess(true);
   };
 
   const handleApprove = (id, assetId, destRoom) => {
     const asset = furnitureList.find(f => f.id === assetId);
     dispatch(approveTransfer(id));
-    dispatch(updateTransferStatusInSupabase({ id, status: 'Approved' }));
     if (asset) {
-      const updatedAsset = { ...asset, room: destRoom };
       dispatch(updateFurnitureLocation({ id: assetId, room: destRoom, building: asset.building }));
-      dispatch(updateAssetInSupabase(updatedAsset));
 
       const notif = {
         title: 'Transfer Approved',
@@ -81,13 +76,11 @@ export const Transfers = () => {
         department: asset.department,
       };
       dispatch(addNotification(notif));
-      dispatch(addNotificationToSupabase(notif));
     }
   };
 
   const handleReject = (id) => {
     dispatch(rejectTransfer(id));
-    dispatch(updateTransferStatusInSupabase({ id, status: 'Rejected' }));
 
     const notif = {
       title: 'Transfer Rejected',
@@ -96,7 +89,6 @@ export const Transfers = () => {
       link: '/transfers',
     };
     dispatch(addNotification(notif));
-    dispatch(addNotificationToSupabase(notif));
   };
 
   const pendingCount = transfers.filter(t => t.status === 'Pending').length;
