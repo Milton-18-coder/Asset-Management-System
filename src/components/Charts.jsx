@@ -5,7 +5,8 @@ export function DonutChart({ data, title }) {
   const r = 52, cx = 70, cy = 70, stroke = 18;
   const circumference = 2 * Math.PI * r;
 
-  const slices = data.reduce((acc, d) => {
+  const validSlices = data.filter(d => d.value > 0);
+  const slices = validSlices.reduce((acc, d) => {
     const prev = acc.length > 0 ? acc[acc.length - 1] : null;
     const prevOffset = prev ? prev.offset + prev.d.value / total : 0;
     return [...acc, { d, offset: prevOffset }];
@@ -49,13 +50,19 @@ export function DonutChart({ data, title }) {
           </div>
         </div>
         <div className="flex flex-col gap-2.5 flex-1 w-full">
-          {data.map(d => (
-            <div key={d.label} className="flex items-center gap-2.5 text-xs">
-              <span className="w-3 h-3 rounded-md flex-shrink-0 shadow-sm" style={{ backgroundColor: d.color }} />
-              <span className="text-slate-600 dark:text-slate-400 font-medium">{d.label}</span>
-              <span className="text-slate-800 dark:text-slate-200 font-bold ml-auto">{d.value}</span>
-            </div>
-          ))}
+          {data.map(d => {
+            const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+            return (
+              <div key={d.label} className="flex items-center gap-2 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: d.color }} />
+                <span className="text-slate-600 dark:text-slate-400 font-medium">{d.label}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
+                  {pct}%
+                </span>
+                <span className="text-slate-800 dark:text-slate-200 font-bold ml-auto">{d.value}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

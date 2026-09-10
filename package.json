@@ -5,13 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "server": "node server/index.js",
+    "dev:all": "concurrently \"node server/index.js\" \"vite --host 0.0.0.0\"",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.5.1",
+    "concurrently": "^10.0.5",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "graphify": "^1.0.0",
     "lucide-react": "^0.475.0",
+    "mysql2": "^3.24.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",

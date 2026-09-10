@@ -62,7 +62,7 @@ export const Dashboard = () => {
       { label: 'Fair', value: fair, color: '#f59e0b' },
       { label: 'Poor', value: poor, color: '#f97316' },
       { label: 'Damaged', value: damaged, color: '#ef4444' },
-    ].filter(d => d.value > 0);
+    ];
   }, [deptFurniture]);
 
   const recentTransfers = useMemo(() => {

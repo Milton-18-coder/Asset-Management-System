@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from './store/authSlice';
+import { setFurnitureList } from './store/furnitureSlice';
+import { setTransfersList } from './store/transfersSlice';
+import { setInspectionsList } from './store/inspectionsSlice';
+import { setUsersList } from './store/usersSlice';
+import { setNotificationsList } from './store/notificationsSlice';
+import { api } from './api';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -23,6 +29,41 @@ export default function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
+
+  // Synchronize with MySQL database on mount
+  useEffect(() => {
+    async function syncDatabase() {
+      try {
+        const [assets, transfers, inspections, users, notifications] = await Promise.allSettled([
+          api.getAssets(),
+          api.getTransfers(),
+          api.getInspections(),
+          api.getUsers(),
+          api.getNotifications(),
+        ]);
+
+        if (assets.status === 'fulfilled' && Array.isArray(assets.value) && assets.value.length > 0) {
+          dispatch(setFurnitureList(assets.value));
+        }
+        if (transfers.status === 'fulfilled' && Array.isArray(transfers.value) && transfers.value.length > 0) {
+          dispatch(setTransfersList(transfers.value));
+        }
+        if (inspections.status === 'fulfilled' && Array.isArray(inspections.value) && inspections.value.length > 0) {
+          dispatch(setInspectionsList(inspections.value));
+        }
+        if (users.status === 'fulfilled' && Array.isArray(users.value) && users.value.length > 0) {
+          dispatch(setUsersList(users.value));
+        }
+        if (notifications.status === 'fulfilled' && Array.isArray(notifications.value) && notifications.value.length > 0) {
+          dispatch(setNotificationsList(notifications.value));
+        }
+      } catch (err) {
+        console.warn('Backend sync warning (fallback to local state):', err.message);
+      }
+    }
+
+    syncDatabase();
+  }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());

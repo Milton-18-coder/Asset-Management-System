@@ -101,7 +101,7 @@ export const initialAssets = [
     assignedRole: 'Head of Department',
     assignedEmail: 'dinesh.kumar@nec.edu.in',
     condition: 'Good',
-    status: 'In Use',
+    status: 'Available',
     purchaseDate: '2023-11-04',
     cost: 1850,
     supplier: 'Methodex Systems',
@@ -360,7 +360,7 @@ export const initialAssets = [
     assignedTo: 'Prof. Suresh Babu',
     assignedRole: 'Lab In-Charge',
     assignedEmail: 'suresh.babu@nec.edu.in',
-    condition: 'Good',
+    condition: 'Fair',
     status: 'In Use',
     purchaseDate: '2024-05-02',
     cost: 26000,
@@ -382,7 +382,7 @@ export const initialAssets = [
     assignedRole: 'Office Staff In-Charge',
     assignedEmail: 'priya.mehta@nec.edu.in',
     condition: 'Good',
-    status: 'In Use',
+    status: 'Available',
     purchaseDate: '2024-02-14',
     cost: 4200,
     supplier: 'Featherlite',
@@ -448,7 +448,7 @@ export const initialAssets = [
     assignedTo: 'Prof. Suresh Babu',
     assignedRole: 'Student Affairs Coordinator',
     assignedEmail: 'suresh.babu@nec.edu.in',
-    condition: 'Good',
+    condition: 'Fair',
     status: 'In Use',
     purchaseDate: '2023-03-10',
     cost: 3600,
@@ -561,8 +561,8 @@ export const initialAssets = [
     assignedTo: 'Prof. Kavitha Raj',
     assignedRole: 'Dept Coordinator',
     assignedEmail: 'kavitha.raj@nec.edu.in',
-    condition: 'Good',
-    status: 'In Use',
+    condition: 'Poor',
+    status: 'Needs Inspection',
     purchaseDate: '2022-08-14',
     cost: 3900,
     supplier: 'Whitemark Boards',
@@ -691,8 +691,8 @@ export const initialAssets = [
     assignedTo: 'Prof. Dinesh Kumar',
     assignedRole: 'Smart Classroom Supervisor',
     assignedEmail: 'dinesh.kumar@nec.edu.in',
-    condition: 'Good',
-    status: 'In Use',
+    condition: 'Damaged',
+    status: 'Needs Inspection',
     purchaseDate: '2023-12-05',
     cost: 110000,
     supplier: 'Optoma Technology',
@@ -758,7 +758,7 @@ export const initialAssets = [
     assignedTo: 'Prof. Dinesh Kumar',
     assignedRole: 'Smart Classroom Supervisor',
     assignedEmail: 'dinesh.kumar@nec.edu.in',
-    condition: 'Good',
+    condition: 'Fair',
     status: 'In Use',
     purchaseDate: '2024-01-10',
     cost: 7500,
@@ -825,8 +825,8 @@ export const initialAssets = [
     assignedTo: 'Prof. Kavitha Raj',
     assignedRole: 'Lab Supervisor',
     assignedEmail: 'kavitha.raj@nec.edu.in',
-    condition: 'Fair',
-    status: 'In Use',
+    condition: 'Poor',
+    status: 'Needs Inspection',
     purchaseDate: '2022-09-02',
     cost: 2800,
     supplier: 'Crompton Greaves',
@@ -913,7 +913,7 @@ export const initialAssets = [
     assignedTo: 'Prof. Anitha Sharma',
     assignedRole: 'Classroom Coordinator',
     assignedEmail: 'anitha.sharma@nec.edu.in',
-    condition: 'Good',
+    condition: 'Fair',
     status: 'In Use',
     purchaseDate: '2023-10-05',
     cost: 450,
@@ -934,8 +934,8 @@ export const initialAssets = [
     assignedTo: 'Prof. Kavitha Raj',
     assignedRole: 'Workshop In-Charge',
     assignedEmail: 'kavitha.raj@nec.edu.in',
-    condition: 'Good',
-    status: 'In Use',
+    condition: 'Damaged',
+    status: 'Needs Inspection',
     purchaseDate: '2023-04-14',
     cost: 3800,
     supplier: 'Havells India',
@@ -1002,7 +1002,7 @@ export const initialAssets = [
     assignedRole: 'ECE Dept In-Charge',
     assignedEmail: 'ramesh.nair@nec.edu.in',
     condition: 'Good',
-    status: 'In Use',
+    status: 'Available',
     purchaseDate: '2024-03-25',
     cost: 1450,
     supplier: 'Goldmedal Electricals',
@@ -1043,8 +1043,8 @@ export const initialAssets = [
     assignedTo: 'Prof. Kavitha Raj',
     assignedRole: 'Workshop In-Charge',
     assignedEmail: 'kavitha.raj@nec.edu.in',
-    condition: 'Good',
-    status: 'In Use',
+    condition: 'Poor',
+    status: 'Needs Inspection',
     purchaseDate: '2023-11-19',
     cost: 4600,
     supplier: 'Havells India',
@@ -1054,9 +1054,15 @@ export const initialAssets = [
   }
 ];
 
+const ASSET_CATALOG_VERSION = 'v2_conditions_filled';
+
 const getInitialFurniture = () => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return initialAssets;
+  }
+  const version = localStorage.getItem('furniture_version');
   const saved = localStorage.getItem('furniture_list');
-  if (saved) {
+  if (saved && version === ASSET_CATALOG_VERSION) {
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length >= 45) {
@@ -1066,6 +1072,7 @@ const getInitialFurniture = () => {
       // ignore
     }
   }
+  localStorage.setItem('furniture_version', ASSET_CATALOG_VERSION);
   localStorage.setItem('furniture_list', JSON.stringify(initialAssets));
   return initialAssets;
 };
