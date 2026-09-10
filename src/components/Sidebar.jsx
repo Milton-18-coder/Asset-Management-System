@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Icon } from './UIComponents';
-import { Bell } from 'lucide-react';
+import { Bell, Wrench, Store, ShieldCheck } from 'lucide-react';
 
 export const Sidebar = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -134,6 +134,9 @@ export const Sidebar = ({ user, onLogout }) => {
             </button>
             {adminOpen && (
               <div className="space-y-1 mt-1">
+                {navItem('/maintenance', 'Maintenance', <Wrench size={18} />)}
+                {navItem('/vendors', 'Vendors & Suppliers', <Store size={18} />)}
+                {navItem('/audit-logs', 'Audit Trail', <ShieldCheck size={18} />)}
                 {navItem('/users', 'Users', <Icon.Users />)}
                 {navItem('/settings', 'Settings', <Icon.Settings />)}
               </div>

@@ -24,6 +24,9 @@ import { Users } from './pages/Users';
 import { Settings } from './pages/Settings';
 import { Profile } from './pages/Profile';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { Maintenance } from './pages/Maintenance';
+import { Vendors } from './pages/Vendors';
+import { AuditLogs } from './pages/AuditLogs';
 
 export default function App() {
   const dispatch = useDispatch();
@@ -104,6 +107,9 @@ export default function App() {
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/transfers" element={<Transfers />} />
             <Route path="/inspections" element={<Inspections />} />
+            <Route path="/maintenance" element={isSuperAdmin ? <Maintenance /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/vendors" element={isSuperAdmin ? <Vendors /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/audit-logs" element={isSuperAdmin ? <AuditLogs /> : <Navigate to="/dashboard" replace />} />
             <Route path="/users" element={isSuperAdmin ? <Users /> : <Navigate to="/dashboard" replace />} />
             <Route path="/settings" element={isSuperAdmin ? <Settings /> : <Navigate to="/dashboard" replace />} />
             <Route path="/profile" element={<Profile />} />
