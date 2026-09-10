@@ -1,22 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Modal, Input, Icon } from '../components/UIComponents';
-
-const departmentsData = [
-  { id: 'D01', name: 'Computer Science', code: 'CSE', building: 'Engineering Block', hod: 'Prof. S. Krishnamurthy', rooms: 8, assets: 145, admin: 'Prof. Anitha Sharma' },
-  { id: 'D02', name: 'Electronics & Communication', code: 'ECE', building: 'Engineering Block', hod: 'Dr. M. Venkatesh', rooms: 7, assets: 112, admin: 'Prof. Ramesh Nair' },
-  { id: 'D03', name: 'Mechanical Engineering', code: 'ME', building: 'Engineering Block', hod: 'Dr. P. Subramaniam', rooms: 6, assets: 63, admin: 'Prof. Kavitha Raj' },
-  { id: 'D04', name: 'Physics', code: 'PHY', building: 'Science Block', hod: 'Dr. Nalini Patel', rooms: 5, assets: 78, admin: 'Prof. Dinesh Kumar' },
-  { id: 'D05', name: 'Chemistry', code: 'CHEM', building: 'Science Block', hod: 'Dr. Lalitha Devi', rooms: 5, assets: 132, admin: 'Prof. Suresh Iyer' },
-  { id: 'D06', name: 'Administration', code: 'ADM', building: 'Admin Block', hod: 'Dr. Rajesh Kumar', rooms: 12, assets: 85, admin: 'Ms. Priya Mehta' },
-  { id: 'D07', name: 'Mathematics', code: 'MATH', building: 'Science Block', hod: 'Dr. Karthik Rajan', rooms: 6, assets: 72, admin: 'Prof. Meena Sundaram' },
-  { id: 'D08', name: 'Civil Engineering', code: 'CIVIL', building: 'IT Block', hod: 'Dr. Senthil Kumar', rooms: 8, assets: 98, admin: 'Prof. Aruna Devi' },
-];
+import { api } from '../api';
 
 export const Departments = () => {
   const { currentUser } = useSelector((state) => state.auth);
+  const furnitureList = useSelector((state) => state.furniture.list) || [];
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    code: '',
+    building: '',
+    hod: '',
+    admin: '',
+  });
+
+  const loadDepartments = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getDepartments();
+      setDepartments(data);
+    } catch (err) {
+      console.error('Failed to load departments:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDepartments();
+  }, []);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.code) return;
+    try {
+      await api.addDepartment(formData);
+      setShowAdd(false);
+      setFormData({ name: '', code: '', building: '', hod: '', admin: '' });
+      await loadDepartments();
+    } catch (err) {
+      alert('Error adding department: ' + err.message);
+    }
+  };
 
   if (!currentUser) return null;
 
@@ -31,43 +60,86 @@ export const Departments = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold whitespace-nowrap">
-                {['Code', 'Department', 'Building Sector', 'HOD', 'Dept Admin', 'Rooms Count', 'Assets Qty'].map(h => (
+                {['Code', 'Department', 'Building Sector', 'HOD', 'Dept Admin', 'Assets Qty'].map(h => (
                   <th key={h} className="px-5 py-4">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
-              {departmentsData.map(d => (
-                <tr key={d.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition">
-                  <td className="px-5 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{d.code}</td>
-                  <td className="px-5 py-4 font-bold text-slate-800 dark:text-slate-200">{d.name}</td>
-                  <td className="px-5 py-4 text-slate-550 dark:text-slate-400 font-semibold">{d.building}</td>
-                  <td className="px-5 py-4 text-slate-550 dark:text-slate-400 font-semibold">{d.hod}</td>
-                  <td className="px-5 py-4 text-slate-550 dark:text-slate-400 font-semibold">{d.admin}</td>
-                  <td className="px-5 py-4 text-center font-bold text-slate-700 dark:text-slate-300">{d.rooms}</td>
-                  <td className="px-5 py-4 text-center font-bold text-slate-700 dark:text-slate-300">{d.assets}</td>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-slate-400">Loading departments...</td>
                 </tr>
-              ))}
+              ) : departments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-slate-400">No departments found.</td>
+                </tr>
+              ) : (
+                departments.map(d => {
+                  const deptAssets = furnitureList.filter(f => f.department === d.name || f.department === d.code);
+                  const totalUnits = deptAssets.reduce((sum, f) => sum + (f.quantity || 1), 0);
+
+                  return (
+                    <tr key={d.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition">
+                      <td className="px-5 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{d.code}</td>
+                      <td className="px-5 py-4 font-bold text-slate-800 dark:text-slate-200">{d.name}</td>
+                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-semibold">{d.building || 'Main Campus'}</td>
+                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-semibold">{d.hod || '—'}</td>
+                      <td className="px-5 py-4 text-slate-500 dark:text-slate-400 font-semibold">{d.admin || '—'}</td>
+                      <td className="px-5 py-4 text-center font-bold text-slate-700 dark:text-slate-300 font-mono">{totalUnits}</td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </Card>
       {showAdd && (
         <Modal title="Add College Department" onClose={() => setShowAdd(false)}>
-          <div className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Department Name *" placeholder="e.g. Mathematics" />
-              <Input label="Code *" placeholder="e.g. MATH" />
+              <Input
+                label="Department Name *"
+                placeholder="e.g. Mathematics"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <Input
+                label="Code *"
+                placeholder="e.g. MATH"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                required
+              />
             </div>
-            <Input label="Head of Department" placeholder="Prof. Name" />
-            <Input label="Department Admin" placeholder="Prof. Name" />
+            <Input
+              label="Building Sector"
+              placeholder="e.g. Science Block"
+              value={formData.building}
+              onChange={(e) => setFormData({ ...formData, building: e.target.value })}
+            />
+            <Input
+              label="Head of Department"
+              placeholder="Prof. Name"
+              value={formData.hod}
+              onChange={(e) => setFormData({ ...formData, hod: e.target.value })}
+            />
+            <Input
+              label="Department Admin"
+              placeholder="Prof. Name"
+              value={formData.admin}
+              onChange={(e) => setFormData({ ...formData, admin: e.target.value })}
+            />
             <div className="flex gap-3 justify-end pt-2">
-              <Btn variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Btn>
-              <Btn onClick={() => setShowAdd(false)}>Save Department</Btn>
+              <Btn variant="secondary" type="button" onClick={() => setShowAdd(false)}>Cancel</Btn>
+              <Btn type="submit">Save Department</Btn>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
     </div>
   );
 };
+export default Departments;

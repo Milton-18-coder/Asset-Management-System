@@ -176,4 +176,217 @@ export const api = {
     if (!res.ok) throw new Error('Failed to mark all read');
     return res.json();
   },
+
+  // Departments
+  async getDepartments() {
+    const res = await fetch(`${API_BASE}/departments`);
+    if (!res.ok) throw new Error('Failed to fetch departments');
+    return res.json();
+  },
+  async addDepartment(dept) {
+    const res = await fetch(`${API_BASE}/departments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dept),
+    });
+    if (!res.ok) throw new Error('Failed to add department');
+    return res.json();
+  },
+  async updateDepartment(id, dept) {
+    const res = await fetch(`${API_BASE}/departments/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dept),
+    });
+    if (!res.ok) throw new Error('Failed to update department');
+    return res.json();
+  },
+  async deleteDepartment(id) {
+    const res = await fetch(`${API_BASE}/departments/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete department');
+    return res.json();
+  },
+
+  // Buildings
+  async getBuildings() {
+    const res = await fetch(`${API_BASE}/buildings`);
+    if (!res.ok) throw new Error('Failed to fetch buildings');
+    return res.json();
+  },
+  async addBuilding(bldg) {
+    const res = await fetch(`${API_BASE}/buildings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bldg),
+    });
+    if (!res.ok) throw new Error('Failed to add building');
+    return res.json();
+  },
+  async updateBuilding(id, bldg) {
+    const res = await fetch(`${API_BASE}/buildings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bldg),
+    });
+    if (!res.ok) throw new Error('Failed to update building');
+    return res.json();
+  },
+  async deleteBuilding(id) {
+    const res = await fetch(`${API_BASE}/buildings/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete building');
+    return res.json();
+  },
+
+  // Rooms
+  async getRooms(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/rooms${query ? `?${query}` : ''}`);
+    if (!res.ok) throw new Error('Failed to fetch rooms');
+    return res.json();
+  },
+  async addRoom(room) {
+    const res = await fetch(`${API_BASE}/rooms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(room),
+    });
+    if (!res.ok) throw new Error('Failed to add room');
+    return res.json();
+  },
+  async updateRoom(id, room) {
+    const res = await fetch(`${API_BASE}/rooms/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(room),
+    });
+    if (!res.ok) throw new Error('Failed to update room');
+    return res.json();
+  },
+  async deleteRoom(id) {
+    const res = await fetch(`${API_BASE}/rooms/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete room');
+    return res.json();
+  },
+
+  // Maintenance
+  async getMaintenanceLogs() {
+    const res = await fetch(`${API_BASE}/maintenance`);
+    if (!res.ok) throw new Error('Failed to fetch maintenance logs');
+    return res.json();
+  },
+  async addMaintenanceLog(log) {
+    const res = await fetch(`${API_BASE}/maintenance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(log),
+    });
+    if (!res.ok) throw new Error('Failed to add maintenance log');
+    return res.json();
+  },
+  async updateMaintenanceStatus(id, statusData) {
+    const res = await fetch(`${API_BASE}/maintenance/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(statusData),
+    });
+    if (!res.ok) throw new Error('Failed to update maintenance status');
+    return res.json();
+  },
+  async deleteMaintenanceLog(id) {
+    const res = await fetch(`${API_BASE}/maintenance/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete maintenance log');
+    return res.json();
+  },
+
+  // Disposals
+  async getDisposals() {
+    const res = await fetch(`${API_BASE}/disposals`);
+    if (!res.ok) throw new Error('Failed to fetch disposals');
+    return res.json();
+  },
+  async addDisposal(disp) {
+    const res = await fetch(`${API_BASE}/disposals`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(disp),
+    });
+    if (!res.ok) throw new Error('Failed to add disposal');
+    return res.json();
+  },
+
+  // Vendors
+  async getVendors() {
+    const res = await fetch(`${API_BASE}/vendors`);
+    if (!res.ok) throw new Error('Failed to fetch vendors');
+    return res.json();
+  },
+  async addVendor(vendor) {
+    const res = await fetch(`${API_BASE}/vendors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(vendor),
+    });
+    if (!res.ok) throw new Error('Failed to add vendor');
+    return res.json();
+  },
+  async updateVendor(id, vendor) {
+    const res = await fetch(`${API_BASE}/vendors/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(vendor),
+    });
+    if (!res.ok) throw new Error('Failed to update vendor');
+    return res.json();
+  },
+  async deleteVendor(id) {
+    const res = await fetch(`${API_BASE}/vendors/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete vendor');
+    return res.json();
+  },
+
+  // Audit Logs
+  async getAuditLogs(limit = 100) {
+    const res = await fetch(`${API_BASE}/audit-logs?limit=${limit}`);
+    if (!res.ok) throw new Error('Failed to fetch audit logs');
+    return res.json();
+  },
+  async addAuditLog(log) {
+    const res = await fetch(`${API_BASE}/audit-logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(log),
+    });
+    if (!res.ok) throw new Error('Failed to log audit record');
+    return res.json();
+  },
+
+  // Categories
+  async getCategories() {
+    const res = await fetch(`${API_BASE}/categories`);
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    return res.json();
+  },
+  async addCategory(cat) {
+    const res = await fetch(`${API_BASE}/categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cat),
+    });
+    if (!res.ok) throw new Error('Failed to add category');
+    return res.json();
+  },
+  async updateCategory(id, cat) {
+    const res = await fetch(`${API_BASE}/categories/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cat),
+    });
+    if (!res.ok) throw new Error('Failed to update category');
+    return res.json();
+  },
+  async deleteCategory(id) {
+    const res = await fetch(`${API_BASE}/categories/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete category');
+    return res.json();
+  },
 };

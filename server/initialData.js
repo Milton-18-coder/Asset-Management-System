@@ -35,3 +35,67 @@ export const initialNotifications = [
   { id: 'NOTIF-002', title: 'Campus-wide Asset Audit', message: 'Quarterly institutional physical asset audit initiated across all science laboratories.', time: '1 hour ago', read: false, department: 'All', type: 'system', link: '/inspections' },
   { id: 'NOTIF-003', title: 'New Asset Registered', message: 'Ergonomic Chair (AST-001) was registered in CS-Lab1.', time: '2 hours ago', read: false, department: 'Computer Science', type: 'asset', link: '/assets/AST-001' },
 ];
+
+export const initialDepartments = [
+  { id: 'D01', name: 'Computer Science & Engineering', code: 'CSE', building: 'Engineering Block', hod: 'Prof. S. Krishnamurthy', admin: 'Prof. Anitha Sharma' },
+  { id: 'D02', name: 'Electronics & Communication', code: 'ECE', building: 'Engineering Block', hod: 'Dr. M. Venkatesh', admin: 'Prof. Ramesh Nair' },
+  { id: 'D03', name: 'Mechanical Engineering', code: 'ME', building: 'Engineering Block', hod: 'Dr. P. Subramaniam', admin: 'Prof. Kavitha Raj' },
+  { id: 'D04', name: 'Physics', code: 'PHY', building: 'Science Block', hod: 'Dr. Nalini Patel', admin: 'Prof. Dinesh Kumar' },
+  { id: 'D05', name: 'Chemistry', code: 'CHEM', building: 'Science Block', hod: 'Dr. Lalitha Devi', admin: 'Prof. Suresh Iyer' },
+  { id: 'D06', name: 'Administration', code: 'ADM', building: 'Admin Block', hod: 'Dr. Rajesh Kumar', admin: 'Ms. Priya Mehta' },
+  { id: 'D07', name: 'Mathematics', code: 'MATH', building: 'Science Block', hod: 'Dr. Karthik Rajan', admin: 'Prof. Meena Sundaram' },
+  { id: 'D08', name: 'Civil Engineering', code: 'CIVIL', building: 'IT Block', hod: 'Dr. Senthil Kumar', admin: 'Prof. Aruna Devi' },
+];
+
+export const initialBuildings = [
+  { id: 'B01', name: 'Engineering Block', code: 'ENG', floors: 4 },
+  { id: 'B02', name: 'Science Block', code: 'SCI', floors: 3 },
+  { id: 'B03', name: 'Admin Block', code: 'ADM', floors: 2 },
+  { id: 'B04', name: 'Central Library', code: 'LIB', floors: 3 },
+  { id: 'B05', name: 'IT Block', code: 'ITB', floors: 4 },
+  { id: 'B06', name: 'Management Block', code: 'MBA', floors: 3 },
+  { id: 'B07', name: 'Humanities Block', code: 'HUM', floors: 3 },
+  { id: 'B08', name: 'Sports & Arts Complex', code: 'SAC', floors: 2 },
+];
+
+export const initialRooms = [
+  { id: 'R01', number: 'CS-101', building: 'Engineering Block', department: 'Computer Science & Engineering', floor: 1, type: 'Smart Classroom', capacity: 60 },
+  { id: 'R02', number: 'CS-102', building: 'Engineering Block', department: 'Computer Science & Engineering', floor: 1, type: 'Lecture Hall', capacity: 60 },
+  { id: 'R03', number: 'CS-Lab1', building: 'Engineering Block', department: 'Computer Science & Engineering', floor: 2, type: 'Computer Laboratory', capacity: 40 },
+  { id: 'R04', number: 'PH-201', building: 'Science Block', department: 'Physics', floor: 2, type: 'Physics Lab & Classroom', capacity: 50 },
+  { id: 'R05', number: 'CH-301', building: 'Science Block', department: 'Chemistry', floor: 3, type: 'Chemistry Research Lab', capacity: 30 },
+  { id: 'R06', number: 'ME-101', building: 'Engineering Block', department: 'Mechanical Engineering', floor: 1, type: 'Mechanical Workshop Hall', capacity: 60 },
+  { id: 'R07', number: 'ECE-Lab2', building: 'Engineering Block', department: 'Electronics & Communication', floor: 3, type: 'VLSI & Embedded Lab', capacity: 25 },
+  { id: 'R08', number: 'LIB-01', building: 'Central Library', department: 'Administration', floor: 1, type: 'Central Reading Hall', capacity: 200 },
+  { id: 'R09', number: 'ADM-Hall', building: 'Admin Block', department: 'Administration', floor: 1, type: 'Main Boardroom', capacity: 25 },
+  { id: 'R10', number: 'PH-202', building: 'Science Block', department: 'Physics', floor: 2, type: 'Digital Smart Classroom', capacity: 50 },
+];
+
+export const initialMaintenanceLogs = [
+  { id: 'MNT-001', assetId: 'AST-029', furniture: 'LCD Projector', issueDescription: 'Lamp dimming below acceptable lumens threshold', scheduledDate: '2026-09-15', completedDate: null, cost: 3500.00, status: 'Scheduled', vendor: 'Apex AV Solutions', technicianNotes: 'OEM replacement lamp scheduled for delivery' },
+  { id: 'MNT-002', assetId: 'AST-032', furniture: 'Optoma Short-Throw Laser Projector', issueDescription: 'Power ballast issue causing periodic rebooting', scheduledDate: '2026-09-02', completedDate: '2026-09-07', cost: 7200.00, status: 'Completed', vendor: 'Matrix Electronics Care', technicianNotes: 'Replaced power supply unit and verified cooling fan' },
+];
+
+export const initialDisposals = [
+  { id: 'DSP-001', assetId: 'AST-OLD-01', furniture: 'Cathode Ray Tube Monitors (Batch of 8)', disposalDate: '2026-08-15', reason: 'Scrapped', resaleValue: 1200.00, approvedBy: 'Dr. Rajesh Kumar', notes: 'E-waste handed over to authorized certified recycling partner GreenTech E-Waste.' },
+];
+
+export const initialVendors = [
+  { id: 'VND-001', name: 'Apex AV Solutions', contactPerson: 'Arun Varma', email: 'sales@apexav.com', phone: '+91 98765 43210', address: 'Tech Park Zone, Bangalore', gstin: '29ABCDE1234F1Z5', rating: 4.8, services: 'Audio-Visual, Smart Boards, Projectors' },
+  { id: 'VND-002', name: 'ErgoDesign Workspaces', contactPerson: 'Sunita Rao', email: 'support@ergodesign.in', phone: '+91 98111 22334', address: 'Industrial Area Phase 2, Chennai', gstin: '33ABCDE5678G2Z1', rating: 4.6, services: 'Modular Desks, Chairs, Lab Benches' },
+  { id: 'VND-003', name: 'Matrix Electronics Care', contactPerson: 'Karan Malhotra', email: 'service@matrixcare.co.in', phone: '+91 94444 88899', address: 'Electronics City, Hyderabad', gstin: '36ABCDE9876H3Z8', rating: 4.5, services: 'AMC, Computer Repair, Network Hardware' },
+];
+
+export const initialAuditLogs = [
+  { id: 'AUD-001', userId: 'USR-001', userName: 'Dr. Rajesh Kumar', userRole: 'superadmin', action: 'CREATE', entity: 'Asset', entityId: 'AST-001', details: 'Added new Ergonomic Task Chair to CS-Lab1', created_at: new Date().toISOString() },
+  { id: 'AUD-002', userId: 'USR-002', userName: 'Prof. Anitha Sharma', userRole: 'deptadmin', action: 'TRANSFER', entity: 'Asset', entityId: 'AST-029', details: 'Transferred LCD Projector from CS-101 to CS-102', created_at: new Date().toISOString() },
+];
+
+export const initialCategories = [
+  { id: 'CAT-001', name: 'Chairs & Seating', mainCategory: 'Furniture', code: 'CHR', icon: 'Chair', depreciationRate: 15.00, usefulLifeYears: 7, description: 'Task chairs, executive chairs, conference chairs, and lab stools' },
+  { id: 'CAT-002', name: 'Desks & Tables', mainCategory: 'Furniture', code: 'DSK', icon: 'Table', depreciationRate: 10.00, usefulLifeYears: 10, description: 'Faculty desks, student benches, podiums, conference tables' },
+  { id: 'CAT-003', name: 'Display & Boards', mainCategory: 'Furniture', code: 'BRD', icon: 'Tv', depreciationRate: 12.50, usefulLifeYears: 8, description: 'Whiteboards, smart boards, pin-up notice boards' },
+  { id: 'CAT-004', name: 'AV & Electronic Equipment', mainCategory: 'Electronics', code: 'AVE', icon: 'Monitor', depreciationRate: 20.00, usefulLifeYears: 5, description: 'Projectors, sound systems, presentation remotes' },
+  { id: 'CAT-005', name: 'Storage & Cupboards', mainCategory: 'Furniture', code: 'STR', icon: 'Archive', depreciationRate: 10.00, usefulLifeYears: 12, description: 'Steel almirahs, filing cabinets, book racks' },
+];
+
