@@ -317,12 +317,12 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
             </div>
           </Card>
 
-          {/* Whom the People Using It? */}
+          {/* Custodian & In-Charge Details */}
           <Card className="p-5 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-slate-800 dark:text-white font-display flex items-center gap-2">
                 <User className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                Whom the People Using It? (Custodian / In-Charge)
+                Custodian & In-Charge Details
               </p>
               <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">
                 Auto-assign from Staff

@@ -996,7 +996,7 @@ export const CategoryPage = () => {
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
                           <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
                             <User className="w-3 h-3 text-violet-600 flex-shrink-0" />
-                            <span className="truncate">Whom? (User)</span>
+                            <span className="truncate">Custodian</span>
                           </div>
                           <div>
                             <p className="font-bold text-slate-800 dark:text-slate-200 mt-1 truncate" title={asset.assignedTo}>
@@ -1054,8 +1054,8 @@ export const CategoryPage = () => {
                       </th>
                       <th className="px-4 py-3">Asset Code & Item</th>
                       <th className="px-4 py-3">Category Taxonomy</th>
-                      <th className="px-4 py-3">Location (Where?)</th>
-                      <th className="px-4 py-3">Custodian (Whom?)</th>
+                      <th className="px-4 py-3">Location</th>
+                      <th className="px-4 py-3">Custodian</th>
                       <th className="px-4 py-3 text-center">Units</th>
                       <th className="px-4 py-3">Condition</th>
                       <th className="px-4 py-3 text-right">Actions</th>

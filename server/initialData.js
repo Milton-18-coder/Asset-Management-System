@@ -617,7 +617,7 @@ export const initialVendors = [
   {
     id: 'VND-005',
     name: 'Dell India Enterprise',
-    contactPerson: 'Pooja Hegde',
+    contactPerson: 'Vikram Malhotra',
     email: 'enterprise_sales@dell.com',
     phone: '+91 80 4123 5500',
     address: 'Divyasree Greens, Koramangala, Bangalore, Karnataka',

@@ -145,7 +145,7 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
             <Card className="p-4 border-2 border-violet-100 dark:border-violet-900/40 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-slate-900">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-violet-700 dark:text-violet-400 text-xs font-bold uppercase tracking-wider">
-                  <User className="w-4 h-4" /> Whom the people using it?
+                  <User className="w-4 h-4" /> Assigned Custodian
                 </div>
                 <button
                   onClick={handleOpenReassign}

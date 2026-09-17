@@ -103,7 +103,7 @@ export const ASSET_CATEGORIES = {
   Electricals: {
     name: 'Electricals',
     icon: '⚡',
-    description: 'Campus electrical appliances, cooling fixtures, and power distribution',
+    description: 'Campus electrical appliances and cooling fixtures',
     color: 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50',
     subCategories: {
       'Fans & Cooling': {
@@ -123,16 +123,6 @@ export const ASSET_CATEGORIES = {
         items: [
           'LED Light',
           'Tube Light'
-        ]
-      },
-      'Power & Distribution': {
-        name: 'Power & Distribution',
-        icon: '🔌',
-        description: 'Switchboards, heavy-duty surge extension boxes and power outlets',
-        items: [
-          'Electrical Switchboard',
-          'Power Socket',
-          'Extension Board'
         ]
       }
     }

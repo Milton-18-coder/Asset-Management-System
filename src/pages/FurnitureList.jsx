@@ -198,7 +198,7 @@ export const FurnitureList = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold whitespace-nowrap">
-                {['Asset ID', 'Name & Type', 'Category', 'Location (Where?)', 'Custodian (Whom?)', 'Qty', 'Condition', 'Status', 'Actions'].map(h => (
+                {['Asset ID', 'Name & Type', 'Category', 'Location', 'Custodian', 'Qty', 'Condition', 'Status', 'Actions'].map(h => (
                   <th key={h} className="px-5 py-4">{h}</th>
                 ))}
               </tr>
