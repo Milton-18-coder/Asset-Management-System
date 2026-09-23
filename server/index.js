@@ -82,7 +82,7 @@ async function startServer() {
     );
     
     app.listen(PORT, () => {
-      console.log(`🚀 Asset Management API Server running on http://localhost:${PORT}`);
+      console.log(`Asset Management API Server running on http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

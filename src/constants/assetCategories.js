@@ -1,13 +1,11 @@
 export const ASSET_CATEGORIES = {
   Furniture: {
     name: 'Furniture',
-    icon: '🪑',
     description: 'Classroom, lab, faculty, and administrative furniture fixtures',
     color: 'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/50',
     subCategories: {
       Chair: {
         name: 'Chair',
-        icon: '💺',
         description: 'Student, faculty, executive and task seating',
         items: [
           'Student Chair',
@@ -19,7 +17,6 @@ export const ASSET_CATEGORIES = {
       },
       Table: {
         name: 'Table',
-        icon: '🪵',
         description: 'Classroom benches, conference and faculty desks',
         items: [
           'Student Table',
@@ -30,7 +27,6 @@ export const ASSET_CATEGORIES = {
       },
       'Cupboard & Storage': {
         name: 'Cupboard & Storage',
-        icon: '🗄️',
         description: 'Cabinets, racks, lockers, and filing storage',
         items: [
           'Steel Cupboard',
@@ -44,7 +40,6 @@ export const ASSET_CATEGORIES = {
       },
       'Other Furniture': {
         name: 'Other Furniture',
-        icon: '📦',
         description: 'Podiums, podium lecterns, and display notice boards',
         items: [
           'Lectern',
@@ -55,13 +50,11 @@ export const ASSET_CATEGORIES = {
   },
   'Teaching Equipment': {
     name: 'Teaching Equipment',
-    icon: '🎓',
     description: 'Classroom instruction, presentation, and audio-visual technologies',
     color: 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50',
     subCategories: {
       Boards: {
         name: 'Boards',
-        icon: '📋',
         description: 'Writing, ceramic, interactive and projection boards',
         items: [
           'Whiteboard',
@@ -72,7 +65,6 @@ export const ASSET_CATEGORIES = {
       },
       Projector: {
         name: 'Projector',
-        icon: '📽️',
         description: 'High-definition digital projectors for lecture halls and seminar rooms',
         items: [
           'LCD Projector',
@@ -82,7 +74,6 @@ export const ASSET_CATEGORIES = {
       },
       Microphone: {
         name: 'Microphone',
-        icon: '🎙️',
         description: 'Wired, wireless and lapel microphones for auditoriums and smart halls',
         items: [
           'Wired Microphone',
@@ -92,7 +83,6 @@ export const ASSET_CATEGORIES = {
       },
       'Camera & AV': {
         name: 'Camera & AV',
-        icon: '📹',
         description: 'High-res webcams and digital recording cameras',
         items: [
           'Web cam'
@@ -102,13 +92,11 @@ export const ASSET_CATEGORIES = {
   },
   Electricals: {
     name: 'Electricals',
-    icon: '⚡',
     description: 'Campus electrical appliances and cooling fixtures',
     color: 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50',
     subCategories: {
       'Fans & Cooling': {
         name: 'Fans & Cooling',
-        icon: '❄️',
         description: 'Air conditioners, ceiling fans, and high-velocity wall fans',
         items: [
           'Ceiling Fan',
@@ -118,7 +106,6 @@ export const ASSET_CATEGORIES = {
       },
       Lighting: {
         name: 'Lighting',
-        icon: '💡',
         description: 'Energy-efficient LED fixtures and fluorescent tube lights',
         items: [
           'LED Light',

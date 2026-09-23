@@ -77,7 +77,7 @@ export const Dashboard = () => {
     <div>
       <TopBar
         title={isSuperAdmin ? 'Super Admin Dashboard' : 'Department Dashboard'}
-        subtitle={isSuperAdmin ? 'National Engineering College 2026 — Overview' : `${currentUser.department} Department — Overview`}
+        subtitle={isSuperAdmin ? 'National Engineering College — Overview' : `${currentUser.department} Department — Overview`}
         user={currentUser}
       />
 

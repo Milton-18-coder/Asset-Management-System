@@ -51,7 +51,7 @@ export const NotificationsPage = () => {
   const handleCreateDemoNotification = () => {
     dispatch(
       addNotification({
-        title: '📢 Campus-wide Asset Audit',
+        title: 'Campus-wide Asset Audit',
         message: `Quarterly institutional physical asset audit initiated by ${currentUser?.name || 'Administrator'}. All department admins please verify lab furniture.`,
         type: 'alert',
         link: '/inspections',

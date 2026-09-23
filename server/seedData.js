@@ -20,7 +20,7 @@ export async function seedInitialDataIfEmpty(
   try {
     // 1. Assets
     if (initialAssets && initialAssets.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialAssets.length} assets into MySQL...`);
+      console.log(`[Seed] Syncing ${initialAssets.length} assets into MySQL...`);
       for (const a of initialAssets) {
         await pool.query(
           `INSERT INTO assets (id, name, mainCategory, category, itemType, building, department, room, assignedTo, assignedRole, assignedEmail, \`condition\`, status, purchaseDate, cost, supplier, warranty, quantity, description)
@@ -67,12 +67,12 @@ export async function seedInitialDataIfEmpty(
           ]
         );
       }
-      console.log('✅ Assets synced.');
+      console.log('[Seed] Assets synced.');
     }
 
     // 2. Users
     if (initialUsers && initialUsers.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialUsers.length} users into MySQL...`);
+      console.log(`[Seed] Syncing ${initialUsers.length} users into MySQL...`);
       for (const u of initialUsers) {
         await pool.query(
           `INSERT INTO users (id, username, password, name, role, department, email)
@@ -87,12 +87,12 @@ export async function seedInitialDataIfEmpty(
           [u.id, u.username, u.password, u.name, u.role, u.department || null, u.email || '']
         );
       }
-      console.log('✅ Users synced.');
+      console.log('[Seed] Users synced.');
     }
 
     // 3. Transfers
     if (initialTransfers && initialTransfers.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialTransfers.length} transfers into MySQL...`);
+      console.log(`[Seed] Syncing ${initialTransfers.length} transfers into MySQL...`);
       for (const t of initialTransfers) {
         await pool.query(
           `INSERT INTO transfers (id, assetId, furniture, source, destination, requestedBy, role, department, date, status, reason)
@@ -111,12 +111,12 @@ export async function seedInitialDataIfEmpty(
           [t.id, t.assetId, t.furniture, t.source, t.destination, t.requestedBy, t.role, t.department, t.date || null, t.status || 'Pending', t.reason || '']
         );
       }
-      console.log('✅ Transfers synced.');
+      console.log('[Seed] Transfers synced.');
     }
 
     // 4. Inspections
     if (initialInspections && initialInspections.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialInspections.length} inspections into MySQL...`);
+      console.log(`[Seed] Syncing ${initialInspections.length} inspections into MySQL...`);
       for (const i of initialInspections) {
         await pool.query(
           `INSERT INTO inspections (id, assetId, furniture, location, \`condition\`, inspector, date, notes)
@@ -132,12 +132,12 @@ export async function seedInitialDataIfEmpty(
           [i.id, i.assetId, i.furniture, i.location, i.condition, i.inspector, i.date || null, i.notes || '']
         );
       }
-      console.log('✅ Inspections synced.');
+      console.log('[Seed] Inspections synced.');
     }
 
     // 5. Notifications
     if (initialNotifications && initialNotifications.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialNotifications.length} notifications into MySQL...`);
+      console.log(`[Seed] Syncing ${initialNotifications.length} notifications into MySQL...`);
       for (const n of initialNotifications) {
         await pool.query(
           `INSERT INTO notifications (id, title, message, time, \`read\`, department, type, link)
@@ -153,12 +153,12 @@ export async function seedInitialDataIfEmpty(
           [n.id, n.title, n.message, n.time, n.read ? 1 : 0, n.department || null, n.type || 'info', n.link || '']
         );
       }
-      console.log('✅ Notifications synced.');
+      console.log('[Seed] Notifications synced.');
     }
 
     // 6. Departments
     if (initialDepartments && initialDepartments.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialDepartments.length} departments into MySQL...`);
+      console.log(`[Seed] Syncing ${initialDepartments.length} departments into MySQL...`);
       for (const d of initialDepartments) {
         await pool.query(
           `INSERT INTO departments (id, name, code, building, hod, admin)
@@ -172,12 +172,12 @@ export async function seedInitialDataIfEmpty(
           [d.id, d.name, d.code, d.building || '', d.hod || '', d.admin || '']
         );
       }
-      console.log('✅ Departments synced.');
+      console.log('[Seed] Departments synced.');
     }
 
     // 7. Buildings
     if (initialBuildings && initialBuildings.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialBuildings.length} buildings into MySQL...`);
+      console.log(`[Seed] Syncing ${initialBuildings.length} buildings into MySQL...`);
       for (const b of initialBuildings) {
         await pool.query(
           `INSERT INTO buildings (id, name, code, floors)
@@ -189,12 +189,12 @@ export async function seedInitialDataIfEmpty(
           [b.id, b.name, b.code, b.floors || 1]
         );
       }
-      console.log('✅ Buildings synced.');
+      console.log('[Seed] Buildings synced.');
     }
 
     // 8. Rooms
     if (initialRooms && initialRooms.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialRooms.length} rooms into MySQL...`);
+      console.log(`[Seed] Syncing ${initialRooms.length} rooms into MySQL...`);
       for (const r of initialRooms) {
         await pool.query(
           `INSERT INTO rooms (id, number, building, department, floor, type, capacity)
@@ -209,12 +209,12 @@ export async function seedInitialDataIfEmpty(
           [r.id, r.number, r.building || '', r.department || '', r.floor || 1, r.type || 'Classroom', r.capacity || 30]
         );
       }
-      console.log('✅ Rooms synced.');
+      console.log('[Seed] Rooms synced.');
     }
 
     // 9. Maintenance Logs
     if (initialMaintenanceLogs && initialMaintenanceLogs.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialMaintenanceLogs.length} maintenance logs into MySQL...`);
+      console.log(`[Seed] Syncing ${initialMaintenanceLogs.length} maintenance logs into MySQL...`);
       for (const m of initialMaintenanceLogs) {
         await pool.query(
           `INSERT INTO maintenance_logs (id, assetId, furniture, issueDescription, scheduledDate, completedDate, cost, status, vendor, technicianNotes)
@@ -232,12 +232,12 @@ export async function seedInitialDataIfEmpty(
           [m.id, m.assetId, m.furniture, m.issueDescription, m.scheduledDate || null, m.completedDate || null, m.cost || 0, m.status || 'Scheduled', m.vendor || '', m.technicianNotes || '']
         );
       }
-      console.log('✅ Maintenance logs synced.');
+      console.log('[Seed] Maintenance logs synced.');
     }
 
     // 10. Disposals
     if (initialDisposals && initialDisposals.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialDisposals.length} disposals into MySQL...`);
+      console.log(`[Seed] Syncing ${initialDisposals.length} disposals into MySQL...`);
       for (const dp of initialDisposals) {
         await pool.query(
           `INSERT INTO disposals (id, assetId, furniture, disposalDate, reason, resaleValue, approvedBy, notes)
@@ -253,12 +253,12 @@ export async function seedInitialDataIfEmpty(
           [dp.id, dp.assetId, dp.furniture, dp.disposalDate, dp.reason, dp.resaleValue || 0, dp.approvedBy || '', dp.notes || '']
         );
       }
-      console.log('✅ Disposals synced.');
+      console.log('[Seed] Disposals synced.');
     }
 
     // 11. Vendors
     if (initialVendors && initialVendors.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialVendors.length} vendors into MySQL...`);
+      console.log(`[Seed] Syncing ${initialVendors.length} vendors into MySQL...`);
       for (const v of initialVendors) {
         await pool.query(
           `INSERT INTO vendors (id, name, contactPerson, email, phone, address, gstin, rating, services)
@@ -275,12 +275,12 @@ export async function seedInitialDataIfEmpty(
           [v.id, v.name, v.contactPerson || '', v.email || '', v.phone || '', v.address || '', v.gstin || '', v.rating || 4.5, v.services || '']
         );
       }
-      console.log('✅ Vendors synced.');
+      console.log('[Seed] Vendors synced.');
     }
 
     // 12. Audit Logs
     if (initialAuditLogs && initialAuditLogs.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialAuditLogs.length} audit logs into MySQL...`);
+      console.log(`[Seed] Syncing ${initialAuditLogs.length} audit logs into MySQL...`);
       for (const au of initialAuditLogs) {
         await pool.query(
           `INSERT INTO audit_logs (id, userId, userName, userRole, action, entity, entityId, details, created_at)
@@ -296,12 +296,12 @@ export async function seedInitialDataIfEmpty(
           [au.id, au.userId || null, au.userName || '', au.userRole || '', au.action, au.entity, au.entityId || '', au.details || '', au.created_at || new Date().toISOString()]
         );
       }
-      console.log('✅ Audit logs synced.');
+      console.log('[Seed] Audit logs synced.');
     }
 
     // 13. Categories
     if (initialCategories && initialCategories.length > 0) {
-      console.log(`🌱 Seeding/Syncing ${initialCategories.length} categories into MySQL...`);
+      console.log(`[Seed] Syncing ${initialCategories.length} categories into MySQL...`);
       for (const c of initialCategories) {
         await pool.query(
           `INSERT INTO categories (id, name, mainCategory, code, icon, depreciationRate, usefulLifeYears, description)
@@ -317,9 +317,9 @@ export async function seedInitialDataIfEmpty(
           [c.id, c.name, c.mainCategory, c.code, c.icon || 'Box', c.depreciationRate || 10.0, c.usefulLifeYears || 5, c.description || '']
         );
       }
-      console.log('✅ Categories synced.');
+      console.log('[Seed] Categories synced.');
     }
   } catch (err) {
-    console.error('⚠️ Seeding error:', err.message);
+    console.error('Seeding error:', err.message);
   }
 }

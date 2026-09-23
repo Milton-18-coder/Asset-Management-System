@@ -232,10 +232,10 @@ export async function initDatabase() {
       );
     `);
 
-    console.log('✅ MySQL Database and 13 Tables initialized successfully');
+    console.log('MySQL Database and 13 Tables initialized successfully');
     return pool;
   } catch (error) {
-    console.error('❌ Failed to initialize MySQL Database:', error.message);
+    console.error('Failed to initialize MySQL Database:', error.message);
     throw error;
   }
 }

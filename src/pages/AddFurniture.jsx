@@ -9,7 +9,7 @@ import {
   MAIN_CATEGORIES,
   getItemTypes
 } from '../constants/assetCategories';
-import { User, MapPin } from 'lucide-react';
+import { User, MapPin, FolderTree } from 'lucide-react';
 
 const createInitialState = (editAsset, userDept) => {
   if (editAsset) {
@@ -229,7 +229,7 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
           {/* Category Classification */}
           <Card className="p-5 space-y-4">
             <p className="text-sm font-bold text-slate-800 dark:text-white font-display flex items-center gap-2">
-              <span className="text-base">🗂️</span> Category Classification & Specific Type
+              <FolderTree className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Category Classification & Specific Type
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

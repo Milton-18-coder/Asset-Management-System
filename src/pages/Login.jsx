@@ -265,7 +265,7 @@ export const Login = () => {
           </div>
         </div>
 
-        <p className="text-indigo-400 text-xs font-semibold">© 2026 National Engineering College. All rights reserved.</p>
+        <p className="text-indigo-400 text-xs font-semibold">© National Engineering College. All rights reserved.</p>
       </div>
 
       {/* Right Panel */}

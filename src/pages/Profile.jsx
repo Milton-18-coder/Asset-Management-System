@@ -65,7 +65,7 @@ export const Profile = () => {
             </div>
             <div className="flex justify-between border-b border-slate-50 dark:border-slate-800 pb-2">
               <span className="text-slate-400 dark:text-slate-500">Employee ID</span>
-              <span className="text-slate-700 dark:text-slate-300 font-mono">{currentUser.employeeId || 'EMP-2026-NEC'}</span>
+              <span className="text-slate-700 dark:text-slate-300 font-mono">{currentUser.employeeId || 'EMP-NEC'}</span>
             </div>
             <div className="flex justify-between border-b border-slate-50 dark:border-slate-800 pb-2">
               <span className="text-slate-400 dark:text-slate-500">Office Room</span>
