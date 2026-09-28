@@ -174,7 +174,12 @@ export const Rooms = () => {
       )}
 
       {selected && (
-        <Modal title={`Room Details & Asset Custody — ${selected.number}`} onClose={() => setSelected(null)}>
+        <Modal 
+          title={`Room Details & Asset Custody — ${selected.number}`} 
+          onClose={() => setSelected(null)}
+          resizable={true}
+          defaultSize="max-w-2xl"
+        >
           <div className="space-y-4 text-xs">
             <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <div>

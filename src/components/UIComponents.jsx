@@ -265,16 +265,52 @@ export function StatCard({ icon, label, value, sub, color, onClick }) {
   );
 }
 
-export function Modal({ title, onClose, children }) {
+export function Modal({ title, onClose, children, resizable = false, defaultSize = 'max-w-lg', className = '' }) {
+  const [isMaximized, setIsMaximized] = React.useState(false);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xs transition-opacity" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800/80 flex flex-col transform animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-          <h2 className="font-display font-bold text-lg text-slate-800 dark:text-white tracking-tight">{title}</h2>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-650 dark:text-slate-500 dark:hover:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"><Icon.X /></button>
+      <div 
+        className={`relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800/80 flex flex-col transform animate-in fade-in zoom-in-95 duration-200 transition-all ${
+          isMaximized 
+            ? 'w-[96vw] h-[94vh] max-w-none max-h-none' 
+            : `${defaultSize} w-full max-h-[90vh] ${resizable ? 'resize min-w-[340px] min-h-[300px] max-w-[96vw] max-h-[94vh] overflow-hidden' : 'overflow-y-auto'}`
+        } ${className}`}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0 select-none">
+          <h2 className="font-display font-bold text-lg text-slate-800 dark:text-white tracking-tight truncate mr-2">{title}</h2>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {resizable && (
+              <button 
+                type="button"
+                onClick={() => setIsMaximized(!isMaximized)} 
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                title={isMaximized ? "Restore size" : "Maximize window"}
+              >
+                {isMaximized ? (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 3h10a2 2 0 0 1 2 2v10"/></svg>
+                ) : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                )}
+              </button>
+            )}
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="p-1.5 text-slate-400 hover:text-slate-650 dark:text-slate-500 dark:hover:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              title="Close modal"
+            >
+              <Icon.X />
+            </button>
+          </div>
         </div>
-        <div className="p-6 overflow-y-auto">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 flex flex-col min-h-0">{children}</div>
+        {resizable && !isMaximized && (
+          <div className="absolute bottom-1.5 right-1.5 pointer-events-none text-slate-300 dark:text-slate-600">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 22L12 22M22 17L17 22M22 12L22 22"/></svg>
+          </div>
+        )}
       </div>
     </div>
   );
