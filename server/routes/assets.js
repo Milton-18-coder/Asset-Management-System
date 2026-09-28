@@ -28,11 +28,45 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+const ALLOWED_DEPARTMENTS = [
+  'Computer Science',
+  'Mechanical',
+  'Civil',
+  'IT',
+  'AIDS',
+  'ECE',
+  'EEE',
+  'Science & Humanities',
+  'Admin Block'
+];
+
+function normalizeDepartment(dept) {
+  if (!dept) return 'Admin Block';
+  const clean = dept.trim();
+  if (ALLOWED_DEPARTMENTS.includes(clean)) return clean;
+  const lower = clean.toLowerCase();
+  if (lower === 'cse' || lower.includes('computer')) return 'Computer Science';
+  if (lower === 'me' || lower.includes('mech')) return 'Mechanical';
+  if (lower === 'ce' || lower.includes('civil')) return 'Civil';
+  if (lower === 'it' || lower.includes('information')) return 'IT';
+  if (lower === 'aids' || lower.includes('ai') || lower.includes('data science')) return 'AIDS';
+  if (lower === 'ece' || lower.includes('electronics') || lower.includes('communication')) return 'ECE';
+  if (lower === 'eee' || lower.includes('electrical')) return 'EEE';
+  if (lower === 's&h' || lower.includes('science') || lower.includes('physics') || lower.includes('chem') || lower.includes('math')) return 'Science & Humanities';
+  if (lower.includes('admin') || lower.includes('office') || lower.includes('library')) return 'Admin Block';
+  return null;
+}
+
 // POST add new asset
 router.post('/', async (req, res) => {
   try {
     const pool = getPool();
     const a = req.body;
+    const validatedDept = normalizeDepartment(a.department);
+    if (!validatedDept) {
+      return res.status(400).json({ error: `Invalid department. Department must be one of: ${ALLOWED_DEPARTMENTS.join(', ')}` });
+    }
+    a.department = validatedDept;
     await pool.query(
       `INSERT INTO assets (id, name, mainCategory, category, itemType, building, department, room, assignedTo, assignedRole, assignedEmail, \`condition\`, status, purchaseDate, cost, supplier, warranty, quantity, description)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -44,7 +78,7 @@ router.post('/', async (req, res) => {
          warranty=VALUES(warranty), quantity=VALUES(quantity), description=VALUES(description)`,
       [
         a.id, a.name, a.mainCategory || 'Furniture', a.category || 'General', a.itemType || '',
-        a.building || '', a.department || '', a.room || '', a.assignedTo || '',
+        a.building || '', a.department, a.room || '', a.assignedTo || '',
         a.assignedRole || '', a.assignedEmail || '', a.condition || 'Good',
         a.status || 'Available', a.purchaseDate || null, a.cost || 0,
         a.supplier || '', a.warranty || '', a.quantity || 1, a.description || ''
@@ -63,6 +97,13 @@ router.put('/:id', async (req, res) => {
     const pool = getPool();
     const id = req.params.id;
     const a = req.body;
+    if (a.department) {
+      const validatedDept = normalizeDepartment(a.department);
+      if (!validatedDept) {
+        return res.status(400).json({ error: `Invalid department. Department must be one of: ${ALLOWED_DEPARTMENTS.join(', ')}` });
+      }
+      a.department = validatedDept;
+    }
     await pool.query(
       `UPDATE assets SET
          name=?, mainCategory=?, category=?, itemType=?, building=?, department=?, room=?,

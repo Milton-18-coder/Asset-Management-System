@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { TopBar } from '../components/TopBar';
-import { Card, Btn, Modal, Badge, Input, Icon } from '../components/UIComponents';
+import { Card, Btn, Modal, Badge, Input, Select, Icon } from '../components/UIComponents';
 import { User, ArrowUpRight } from 'lucide-react';
 import { api } from '../api';
+import { ALLOWED_DEPARTMENTS, mapLegacyDepartment } from '../constants/departments';
 
 export const Rooms = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export const Rooms = () => {
   const [formData, setFormData] = useState({
     number: '',
     building: 'Engineering Block',
-    department: 'Computer Science & Engineering',
+    department: 'Computer Science',
     floor: 1,
     type: 'Smart Classroom',
     capacity: 40,
@@ -48,7 +49,7 @@ export const Rooms = () => {
       setFormData({
         number: '',
         building: 'Engineering Block',
-        department: currentUser?.department || 'Computer Science & Engineering',
+        department: mapLegacyDepartment(currentUser?.department) || 'Computer Science',
         floor: 1,
         type: 'Smart Classroom',
         capacity: 40,
@@ -137,11 +138,11 @@ export const Rooms = () => {
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Input
+              <Select
                 label="Department"
-                placeholder="e.g. Computer Science"
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                options={ALLOWED_DEPARTMENTS}
               />
               <Input
                 label="Room Type"

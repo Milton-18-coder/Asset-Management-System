@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { addUser, editUser, deleteUser } from '../store/usersSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Input, Select, Icon } from '../components/UIComponents';
+import { ALLOWED_DEPARTMENTS, isValidDepartment, mapLegacyDepartment } from '../constants/departments';
 
 export const Users = () => {
   const dispatch = useDispatch();
@@ -146,7 +147,7 @@ export const Users = () => {
               <Input label="Email Address *" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@nec.edu.in" required />
               <div className="grid grid-cols-2 gap-4">
                 <Select label="System Role" value={role} onChange={e => setRole(e.target.value)} options={['Dept Admin', 'Super Admin']} />
-                <Select label="Department" value={dept} onChange={e => setDept(e.target.value)} options={['Computer Science', 'Electronics & Communication', 'Mechanical Engineering', 'Physics', 'Chemistry', 'Administration', 'Mathematics', 'Civil Engineering']} />
+                <Select label="Department" value={dept} onChange={e => setDept(e.target.value)} options={ALLOWED_DEPARTMENTS} />
               </div>
               <Select label="Account Status" value={status} onChange={e => setStatus(e.target.value)} options={['Active', 'Inactive']} />
               <div className="flex gap-3 justify-end pt-2">

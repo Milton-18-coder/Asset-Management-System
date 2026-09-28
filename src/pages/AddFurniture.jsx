@@ -9,9 +9,11 @@ import {
   MAIN_CATEGORIES,
   getItemTypes
 } from '../constants/assetCategories';
+import { ALLOWED_DEPARTMENTS, isValidDepartment, mapLegacyDepartment } from '../constants/departments';
 import { User, MapPin, FolderTree } from 'lucide-react';
 
 const createInitialState = (editAsset, userDept) => {
+  const safeDept = mapLegacyDepartment(editAsset?.department || userDept);
   if (editAsset) {
     return {
       id: editAsset.id,
@@ -19,18 +21,18 @@ const createInitialState = (editAsset, userDept) => {
       mainCategory: editAsset.mainCategory || 'Furniture',
       category: editAsset.category || 'Chair',
       itemType: editAsset.itemType || 'Student Chair',
-      description: editAsset.description || '',
+      description: editAsset.description || 'No description provided',
       building: editAsset.building || 'Engineering Block',
-      department: editAsset.department || userDept,
+      department: safeDept,
       room: editAsset.room || 'CS-101',
-      assignedTo: editAsset.assignedTo || '',
+      assignedTo: editAsset.assignedTo || 'Unassigned',
       assignedRole: editAsset.assignedRole || 'Faculty In-Charge',
-      assignedEmail: editAsset.assignedEmail || '',
+      assignedEmail: editAsset.assignedEmail || 'admin@nec.edu.in',
       quantity: editAsset.quantity || 1,
       purchaseDate: editAsset.purchaseDate || new Date().toISOString().split('T')[0],
       cost: editAsset.cost || 0,
-      supplier: editAsset.supplier || '',
-      warranty: editAsset.warranty || '',
+      supplier: editAsset.supplier || 'Campus Procurement',
+      warranty: editAsset.warranty || 'Standard Warranty',
       condition: editAsset.condition || 'Good',
       status: editAsset.status || 'In Use',
     };
@@ -44,7 +46,7 @@ const createInitialState = (editAsset, userDept) => {
     itemType: 'Student Chair',
     description: '',
     building: 'Engineering Block',
-    department: userDept,
+    department: safeDept,
     room: 'CS-101',
     assignedTo: '',
     assignedRole: 'Faculty In-Charge',
@@ -144,6 +146,11 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
     e.preventDefault();
     if (!formState.name.trim()) return;
 
+    if (!isValidDepartment(formState.department)) {
+      alert(`Invalid department "${formState.department}". Must be one of the 9 official departments/blocks.`);
+      return;
+    }
+
     if (selectedFurniture) {
       dispatch(editFurniture(formState));
       dispatch(
@@ -204,8 +211,8 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
   }
 
   const buildingsOptions = ['Engineering Block', 'Science Block', 'Admin Block', 'Library', 'IT Block', 'Management Block', 'Humanities Block', 'Sports & Arts Block'];
-  const deptsOptions = ['Computer Science', 'Electronics & Communication', 'Mechanical Engineering', 'Physics', 'Chemistry', 'Administration', 'Mathematics', 'Civil Engineering'];
-  const roomsOptions = ['CS-101', 'CS-102', 'CS-Lab1', 'PH-201', 'CH-301', 'ME-101', 'ECE-Lab2', 'LIB-01', 'ADM-Hall', 'ADM-101', 'ADM-102', 'PH-202'];
+  const deptsOptions = ALLOWED_DEPARTMENTS;
+  const roomsOptions = ['CS-101', 'CS-102', 'CS-Lab1', 'CS-Lab2', 'ME-101', 'ME-102', 'ME-Workshop', 'CV-101', 'CV-Lab1', 'CV-Survey', 'IT-101', 'IT-Lab1', 'IT-ServerRoom', 'AIDS-101', 'AIDS-Lab1', 'ECE-Lab1', 'ECE-Lab2', 'EEE-101', 'EEE-MachinesLab', 'EEE-PowerLab', 'SH-101', 'SH-PhysicsLab', 'SH-ChemistryLab', 'SH-SmartClass', 'SH-Library', 'SH-Auditorium', 'ADM-101', 'ADM-Hall', 'ADM-Records', 'ADM-ServerRoom'];
 
   return (
     <div className="space-y-6 pb-12">

@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { TopBar } from '../components/TopBar';
-import { Card, Btn, Modal, Input, Icon } from '../components/UIComponents';
+import { Card, Btn, Modal, Input, Select, Icon } from '../components/UIComponents';
 import { api } from '../api';
+import { ALLOWED_DEPARTMENTS, mapLegacyDepartment } from '../constants/departments';
+
+export const CANONICAL_DEPARTMENTS = [
+  { id: 'D01', name: 'Computer Science', code: 'CS', building: 'Engineering Block', hod: 'Prof. S. Krishnamurthy', admin: 'Prof. Anitha Sharma' },
+  { id: 'D02', name: 'Mechanical', code: 'MECH', building: 'Engineering Block', hod: 'Dr. P. Subramaniam', admin: 'Prof. Kavitha Raj' },
+  { id: 'D03', name: 'Civil', code: 'CIVIL', building: 'Engineering Block', hod: 'Dr. Senthil Kumar', admin: 'Prof. Aruna Devi' },
+  { id: 'D04', name: 'IT', code: 'IT', building: 'IT Block', hod: 'Dr. M. Venkatesh', admin: 'Prof. R. Revathi' },
+  { id: 'D05', name: 'AIDS', code: 'AIDS', building: 'IT Block', hod: 'Dr. Nalini Patel', admin: 'Prof. K. Swaminathan' },
+  { id: 'D06', name: 'ECE', code: 'ECE', building: 'Engineering Block', hod: 'Dr. S. Sundararajan', admin: 'Prof. Ramesh Nair' },
+  { id: 'D07', name: 'EEE', code: 'EEE', building: 'Engineering Block', hod: 'Dr. R. Vijay Anand', admin: 'Prof. G. Murugan' },
+  { id: 'D08', name: 'Science & Humanities', code: 'S&H', building: 'Science Block', hod: 'Dr. Lalitha Devi', admin: 'Prof. Dinesh Kumar' },
+  { id: 'D09', name: 'Admin Block', code: 'ADM', building: 'Admin Block', hod: 'Dr. Rajesh Kumar', admin: 'Ms. Priya Mehta' },
+];
 
 export const Departments = () => {
   const { currentUser } = useSelector((state) => state.auth);
@@ -11,9 +24,9 @@ export const Departments = () => {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    building: '',
+    name: 'Computer Science',
+    code: 'CS',
+    building: 'Engineering Block',
     hod: '',
     admin: '',
   });
@@ -22,9 +35,19 @@ export const Departments = () => {
     try {
       setLoading(true);
       const data = await api.getDepartments();
-      setDepartments(data);
+      const valid = (data || []).filter(d => ALLOWED_DEPARTMENTS.includes(d.name));
+      if (valid.length === ALLOWED_DEPARTMENTS.length) {
+        setDepartments(valid);
+      } else {
+        const merged = CANONICAL_DEPARTMENTS.map(cd => {
+          const found = (data || []).find(d => d.name === cd.name);
+          return found || cd;
+        });
+        setDepartments(merged);
+      }
     } catch (err) {
       console.error('Failed to load departments:', err);
+      setDepartments(CANONICAL_DEPARTMENTS);
     } finally {
       setLoading(false);
     }
@@ -40,7 +63,7 @@ export const Departments = () => {
     try {
       await api.addDepartment(formData);
       setShowAdd(false);
-      setFormData({ name: '', code: '', building: '', hod: '', admin: '' });
+      setFormData({ name: 'Computer Science', code: 'CS', building: 'Engineering Block', hod: '', admin: '' });
       await loadDepartments();
     } catch (err) {
       alert('Error adding department: ' + err.message);
@@ -76,7 +99,12 @@ export const Departments = () => {
                 </tr>
               ) : (
                 departments.map(d => {
-                  const deptAssets = furnitureList.filter(f => f.department === d.name || f.department === d.code);
+                  const deptAssets = furnitureList.filter(f => {
+                    if (!f.department) return false;
+                    const fDept = mapLegacyDepartment(f.department);
+                    const dName = mapLegacyDepartment(d.name) || d.name;
+                    return fDept === dName || f.department === d.name;
+                  });
                   const totalUnits = deptAssets.reduce((sum, f) => sum + (f.quantity || 1), 0);
 
                   return (
@@ -99,16 +127,16 @@ export const Departments = () => {
         <Modal title="Add College Department" onClose={() => setShowAdd(false)}>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Input
+              <Select
                 label="Department Name *"
-                placeholder="e.g. Mathematics"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                options={ALLOWED_DEPARTMENTS.map(dept => ({ value: dept, label: dept }))}
                 required
               />
               <Input
                 label="Code *"
-                placeholder="e.g. MATH"
+                placeholder="e.g. CS"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 required

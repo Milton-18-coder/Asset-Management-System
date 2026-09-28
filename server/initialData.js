@@ -10,7 +10,7 @@ export const initialUsers = [
     password: 'password123',
     name: 'Dr. Rajesh Kumar',
     role: 'superadmin',
-    department: 'Administration',
+    department: 'Admin Block',
     email: 'rajesh.kumar@nec.edu.in'
   },
   {
@@ -33,6 +33,33 @@ export const initialUsers = [
   },
   {
     id: 'USR-004',
+    username: 'civil_admin',
+    password: 'password123',
+    name: 'Prof. Aruna Devi',
+    role: 'deptadmin',
+    department: 'Civil',
+    email: 'aruna.devi@nec.edu.in'
+  },
+  {
+    id: 'USR-005',
+    username: 'it_admin',
+    password: 'password123',
+    name: 'Dr. M. Venkatesh',
+    role: 'deptadmin',
+    department: 'IT',
+    email: 'venkatesh.m@nec.edu.in'
+  },
+  {
+    id: 'USR-006',
+    username: 'aids_admin',
+    password: 'password123',
+    name: 'Dr. Nalini Patel',
+    role: 'deptadmin',
+    department: 'AIDS',
+    email: 'nalini.patel@nec.edu.in'
+  },
+  {
+    id: 'USR-007',
     username: 'ece_admin',
     password: 'password123',
     name: 'Prof. Ramesh Nair',
@@ -41,16 +68,43 @@ export const initialUsers = [
     email: 'ramesh.nair@nec.edu.in'
   },
   {
-    id: 'USR-005',
+    id: 'USR-008',
+    username: 'eee_admin',
+    password: 'password123',
+    name: 'Dr. R. Vijay Anand',
+    role: 'deptadmin',
+    department: 'EEE',
+    email: 'vijayanand.r@nec.edu.in'
+  },
+  {
+    id: 'USR-009',
+    username: 'sh_admin',
+    password: 'password123',
+    name: 'Prof. Dinesh Kumar',
+    role: 'deptadmin',
+    department: 'Science & Humanities',
+    email: 'dinesh.kumar@nec.edu.in'
+  },
+  {
+    id: 'USR-010',
+    username: 'admin_officer',
+    password: 'password123',
+    name: 'Ms. Priya Mehta',
+    role: 'deptadmin',
+    department: 'Admin Block',
+    email: 'priya.mehta@nec.edu.in'
+  },
+  {
+    id: 'USR-011',
     username: 'auditor',
     password: 'password123',
     name: 'Mr. Ravi Shankar',
     role: 'auditor',
-    department: 'Auditor',
+    department: 'Admin Block',
     email: 'ravi.shankar@nec.edu.in'
   },
   {
-    id: 'USR-006',
+    id: 'USR-012',
     username: 'cs_faculty',
     password: 'password123',
     name: 'Prof. Suresh Babu',
@@ -59,40 +113,13 @@ export const initialUsers = [
     email: 'suresh.babu@nec.edu.in'
   },
   {
-    id: 'USR-007',
-    username: 'phy_faculty',
-    password: 'password123',
-    name: 'Prof. Dinesh Kumar',
-    role: 'faculty',
-    department: 'Physics',
-    email: 'dinesh.kumar@nec.edu.in'
-  },
-  {
-    id: 'USR-008',
+    id: 'USR-013',
     username: 'chem_faculty',
     password: 'password123',
     name: 'Dr. Lalitha Devi',
     role: 'faculty',
-    department: 'Chemistry',
+    department: 'Science & Humanities',
     email: 'lalitha.devi@nec.edu.in'
-  },
-  {
-    id: 'USR-009',
-    username: 'lib_head',
-    password: 'password123',
-    name: 'Ms. Geeta Nair',
-    role: 'deptadmin',
-    department: 'Library',
-    email: 'geeta.nair@nec.edu.in'
-  },
-  {
-    id: 'USR-010',
-    username: 'estate_officer',
-    password: 'password123',
-    name: 'Ms. Priya Mehta',
-    role: 'faculty',
-    department: 'Administration',
-    email: 'priya.mehta@nec.edu.in'
   }
 ];
 
@@ -100,8 +127,8 @@ export const initialUsers = [
 export const initialTransfers = [
   {
     id: 'TRF-001',
-    assetId: 'AST-029',
-    furniture: 'LCD Projector',
+    assetId: 'AST-010',
+    furniture: 'Optoma Projector System',
     source: 'CS-101',
     destination: 'CS-102',
     requestedBy: 'Prof. Anitha Sharma',
@@ -113,68 +140,68 @@ export const initialTransfers = [
   },
   {
     id: 'TRF-002',
-    assetId: 'AST-003',
-    furniture: 'Student Chair (5 units)',
-    source: 'ME-101',
-    destination: 'CS-101',
-    requestedBy: 'Prof. Suresh Babu',
-    role: 'Faculty',
+    assetId: 'AST-018',
+    furniture: 'Heavy Duty Metal Lathe Toolpost',
+    source: 'MECH-Workshop',
+    destination: 'MECH-101',
+    requestedBy: 'Prof. Kavitha Raj',
+    role: 'Dept Admin',
     department: 'Mechanical',
     date: '2026-09-03',
     status: 'Approved',
-    reason: 'Additional student desks required for semester end practical exams'
+    reason: 'Demonstration unit required for mechanical fabrication workshop lecture'
   },
   {
     id: 'TRF-003',
-    assetId: 'AST-030',
-    furniture: 'Dell Workstation Tower (2 units)',
-    source: 'CS-Lab1',
+    assetId: 'AST-065',
+    furniture: 'FPGA Development Trainer Board',
+    source: 'ECE-Lab1',
     destination: 'ECE-Lab2',
     requestedBy: 'Prof. Ramesh Nair',
     role: 'Dept Admin',
     department: 'ECE',
     date: '2026-09-05',
     status: 'Pending',
-    reason: 'Inter-departmental VLSI layout & FPGA logic simulation lab test'
+    reason: 'Inter-departmental VLSI layout & FPGA logic simulation lab session'
   },
   {
     id: 'TRF-004',
-    assetId: 'AST-025',
-    furniture: 'Magnetic Ceramic Whiteboard (8x4)',
-    source: 'PH-201',
-    destination: 'PH-202',
+    assetId: 'AST-085',
+    furniture: 'He-Ne Laser Optics Demonstration Unit',
+    source: 'SH-PhysicsLab',
+    destination: 'SH-101',
     requestedBy: 'Prof. Dinesh Kumar',
-    role: 'Faculty',
-    department: 'Physics',
+    role: 'Dept Admin',
+    department: 'Science & Humanities',
     date: '2026-09-06',
     status: 'Rejected',
-    reason: 'Whiteboard is wall-mounted and fixed with anchoring bolts to structural wall'
+    reason: 'Laser optical table is calibrated in dark-room setup and cannot be moved'
   },
   {
     id: 'TRF-005',
-    assetId: 'AST-010',
-    furniture: 'Boardroom Oval Office Table',
+    assetId: 'AST-095',
+    furniture: 'Executive Conference Oval Table',
     source: 'ADM-101',
     destination: 'ADM-Hall',
     requestedBy: 'Ms. Priya Mehta',
-    role: 'Faculty',
-    department: 'Administration',
+    role: 'Dept Admin',
+    department: 'Admin Block',
     date: '2026-09-07',
     status: 'Approved',
     reason: 'Scheduled for annual board of governors institutional review meeting'
   },
   {
     id: 'TRF-006',
-    assetId: 'AST-018',
-    furniture: 'Podium / Rostrum with Mic Mount',
-    source: 'ADM-Hall',
-    destination: 'CS-101',
-    requestedBy: 'Prof. Anitha Sharma',
+    assetId: 'AST-099',
+    furniture: 'EPSON Laser Fleet Network Printer',
+    source: 'ADM-Records',
+    destination: 'ADM-101',
+    requestedBy: 'Ms. Priya Mehta',
     role: 'Dept Admin',
-    department: 'Computer Science',
+    department: 'Admin Block',
     date: '2026-09-08',
     status: 'Pending',
-    reason: 'Guest lecture on Artificial Intelligence and Large Language Models'
+    reason: 'High-speed certificate and admission dossier printing requirements'
   }
 ];
 
@@ -182,8 +209,8 @@ export const initialTransfers = [
 export const initialInspections = [
   {
     id: 'INS-001',
-    assetId: 'AST-029',
-    furniture: 'LCD Projector',
+    assetId: 'AST-010',
+    furniture: 'Optoma Projector System',
     location: 'CS-101',
     condition: 'Fair',
     inspector: 'Mr. Ravi Shankar',
@@ -192,53 +219,53 @@ export const initialInspections = [
   },
   {
     id: 'INS-002',
-    assetId: 'AST-026',
-    furniture: 'Green Chalkboard',
-    location: 'ME-101',
-    condition: 'Poor',
-    inspector: 'Ms. Geeta Nair',
+    assetId: 'AST-017',
+    furniture: 'Precision Universal Testing Machine',
+    location: 'MECH-Workshop',
+    condition: 'Good',
+    inspector: 'Mr. Ravi Shankar',
     date: '2026-08-10',
-    notes: 'Surface scratches and aluminum frame loosening. Surface resurfacing or replacement recommended.'
+    notes: 'Hydraulic load cells calibrated to ASTM standards. Test records updated.'
   },
   {
     id: 'INS-003',
-    assetId: 'AST-032',
-    furniture: 'Optoma Short-Throw Laser Projector',
-    location: 'PH-202',
-    condition: 'Damaged',
+    assetId: 'AST-096',
+    furniture: 'Ricoh High-Capacity Multifunction Photocopier',
+    location: 'ADM-Records',
+    condition: 'Fair',
     inspector: 'Mr. Ravi Shankar',
     date: '2026-08-12',
-    notes: 'Optical engine ballast fault causing shutoff after 10 minutes. Transferred to maintenance queue.'
+    notes: 'Toner level at 35%. Drum roller scheduled for routine quarterly cleaning.'
   },
   {
     id: 'INS-004',
     assetId: 'AST-001',
-    furniture: 'Ergonomic Mesh Task Chair',
+    furniture: 'Dell OptiPlex 7090 Desktop Computer',
     location: 'CS-Lab1',
     condition: 'Good',
     inspector: 'Prof. Suresh Babu',
     date: '2026-08-18',
-    notes: 'Hydraulic lift inspected and lubricated. Lumbar support intact and smooth 360-degree swivel.'
+    notes: 'System diagnostics all passed. RAM and SSD health at 100%.'
   },
   {
     id: 'INS-005',
-    assetId: 'AST-027',
-    furniture: 'Interactive 75" Smart Board',
-    location: 'PH-202',
+    assetId: 'AST-075',
+    furniture: 'Digital Storage Oscilloscope 100MHz',
+    location: 'EEE-Lab1',
     condition: 'Good',
-    inspector: 'Prof. Dinesh Kumar',
+    inspector: 'Dr. R. Vijay Anand',
     date: '2026-08-20',
-    notes: 'Touch sensor matrix recalibrated with software v4.2. Stylus pens tested and functional.'
+    notes: 'Channel 1 and Channel 2 probes checked and calibrated with test generator.'
   },
   {
     id: 'INS-006',
-    assetId: 'AST-007',
-    furniture: 'Granite Top Student Lab Table',
-    location: 'CH-301',
-    condition: 'Fair',
-    inspector: 'Dr. Lalitha Devi',
+    assetId: 'AST-092',
+    furniture: 'Admin Workstation Dell Precision 3660',
+    location: 'ADM-101',
+    condition: 'Good',
+    inspector: 'Mr. Ravi Shankar',
     date: '2026-08-25',
-    notes: 'Under-shelf sink plumbing shows minor leak. Reagent racks sturdy and acid sealant intact.'
+    notes: 'Enterprise accounting software running smoothly. Dual monitor setup tested.'
   }
 ];
 
@@ -247,17 +274,17 @@ export const initialNotifications = [
   {
     id: 'NOTIF-001',
     title: 'Asset Updated',
-    message: 'ViewSonic Portable 3000-Lumens LED Smart Projector (AST-030) was updated.',
+    message: 'Admin Workstation Dell Precision 3660 (AST-092) was updated.',
     time: '10 min ago',
     read: false,
-    department: 'ECE',
+    department: 'Admin Block',
     type: 'asset',
-    link: '/assets/AST-030'
+    link: '/assets/AST-092'
   },
   {
     id: 'NOTIF-002',
     title: 'Campus-wide Asset Audit',
-    message: 'Quarterly institutional physical asset audit initiated across all science laboratories.',
+    message: 'Quarterly institutional physical asset audit initiated across all departments.',
     time: '1 hour ago',
     read: false,
     department: 'All',
@@ -267,17 +294,17 @@ export const initialNotifications = [
   {
     id: 'NOTIF-003',
     title: 'New Asset Registered',
-    message: 'Ergonomic Task Chair (AST-001) was registered in CS-Lab1.',
+    message: 'HP LaserJet Enterprise Flow Printer (AST-093) registered in ADM-101.',
     time: '2 hours ago',
     read: false,
-    department: 'Computer Science',
+    department: 'Admin Block',
     type: 'asset',
-    link: '/assets/AST-001'
+    link: '/assets/AST-093'
   },
   {
     id: 'NOTIF-004',
     title: 'Maintenance Logged',
-    message: 'Service ticket MNT-001 created for LCD Projector (AST-029).',
+    message: 'Service ticket MNT-001 created for Projector System (AST-010).',
     time: '3 hours ago',
     read: true,
     department: 'Computer Science',
@@ -287,10 +314,10 @@ export const initialNotifications = [
   {
     id: 'NOTIF-005',
     title: 'Transfer Request Approved',
-    message: 'Transfer of 5 Student Chairs to CS-101 has been approved by Estate Office.',
+    message: 'Transfer of Executive Oval Table to ADM-Hall approved by Principal Office.',
     time: '5 hours ago',
     read: true,
-    department: 'Mechanical',
+    department: 'Admin Block',
     type: 'transfer',
     link: '/transfers'
   }
@@ -300,67 +327,75 @@ export const initialNotifications = [
 export const initialDepartments = [
   {
     id: 'D01',
-    name: 'Computer Science & Engineering',
-    code: 'CSE',
+    name: 'Computer Science',
+    code: 'CS',
     building: 'Engineering Block',
     hod: 'Prof. S. Krishnamurthy',
     admin: 'Prof. Anitha Sharma'
   },
   {
     id: 'D02',
-    name: 'Electronics & Communication',
-    code: 'ECE',
-    building: 'Engineering Block',
-    hod: 'Dr. M. Venkatesh',
-    admin: 'Prof. Ramesh Nair'
-  },
-  {
-    id: 'D03',
-    name: 'Mechanical Engineering',
-    code: 'ME',
+    name: 'Mechanical',
+    code: 'MECH',
     building: 'Engineering Block',
     hod: 'Dr. P. Subramaniam',
     admin: 'Prof. Kavitha Raj'
   },
   {
+    id: 'D03',
+    name: 'Civil',
+    code: 'CIVIL',
+    building: 'Engineering Block',
+    hod: 'Dr. Senthil Kumar',
+    admin: 'Prof. Aruna Devi'
+  },
+  {
     id: 'D04',
-    name: 'Physics',
-    code: 'PHY',
-    building: 'Science Block',
-    hod: 'Dr. Nalini Patel',
-    admin: 'Prof. Dinesh Kumar'
+    name: 'IT',
+    code: 'IT',
+    building: 'IT Block',
+    hod: 'Dr. M. Venkatesh',
+    admin: 'Prof. R. Revathi'
   },
   {
     id: 'D05',
-    name: 'Chemistry',
-    code: 'CHEM',
-    building: 'Science Block',
-    hod: 'Dr. Lalitha Devi',
-    admin: 'Prof. Suresh Iyer'
+    name: 'AIDS',
+    code: 'AIDS',
+    building: 'IT Block',
+    hod: 'Dr. Nalini Patel',
+    admin: 'Prof. K. Swaminathan'
   },
   {
     id: 'D06',
-    name: 'Administration',
+    name: 'ECE',
+    code: 'ECE',
+    building: 'Engineering Block',
+    hod: 'Dr. S. Sundararajan',
+    admin: 'Prof. Ramesh Nair'
+  },
+  {
+    id: 'D07',
+    name: 'EEE',
+    code: 'EEE',
+    building: 'Engineering Block',
+    hod: 'Dr. R. Vijay Anand',
+    admin: 'Prof. G. Murugan'
+  },
+  {
+    id: 'D08',
+    name: 'Science & Humanities',
+    code: 'S&H',
+    building: 'Science Block',
+    hod: 'Dr. Lalitha Devi',
+    admin: 'Prof. Dinesh Kumar'
+  },
+  {
+    id: 'D09',
+    name: 'Admin Block',
     code: 'ADM',
     building: 'Admin Block',
     hod: 'Dr. Rajesh Kumar',
     admin: 'Ms. Priya Mehta'
-  },
-  {
-    id: 'D07',
-    name: 'Mathematics',
-    code: 'MATH',
-    building: 'Science Block',
-    hod: 'Dr. Karthik Rajan',
-    admin: 'Prof. Meena Sundaram'
-  },
-  {
-    id: 'D08',
-    name: 'Civil Engineering',
-    code: 'CIVIL',
-    building: 'IT Block',
-    hod: 'Dr. Senthil Kumar',
-    admin: 'Prof. Aruna Devi'
   }
 ];
 
@@ -369,11 +404,8 @@ export const initialBuildings = [
   { id: 'B01', name: 'Engineering Block', code: 'ENG', floors: 4 },
   { id: 'B02', name: 'Science Block', code: 'SCI', floors: 3 },
   { id: 'B03', name: 'Admin Block', code: 'ADM', floors: 2 },
-  { id: 'B04', name: 'Central Library', code: 'LIB', floors: 3 },
-  { id: 'B05', name: 'IT Block', code: 'ITB', floors: 4 },
-  { id: 'B06', name: 'Management Block', code: 'MBA', floors: 3 },
-  { id: 'B07', name: 'Humanities Block', code: 'HUM', floors: 3 },
-  { id: 'B08', name: 'Sports & Arts Complex', code: 'SAC', floors: 2 }
+  { id: 'B04', name: 'IT Block', code: 'ITB', floors: 4 },
+  { id: 'B05', name: 'Central Library', code: 'LIB', floors: 3 }
 ];
 
 // ─── 7. ROOMS ───────────────────────────────────────────────────────────────
@@ -382,91 +414,154 @@ export const initialRooms = [
     id: 'R01',
     number: 'CS-101',
     building: 'Engineering Block',
-    department: 'Computer Science & Engineering',
+    department: 'Computer Science',
     floor: 1,
     type: 'Smart Classroom',
     capacity: 60
   },
   {
     id: 'R02',
-    number: 'CS-102',
-    building: 'Engineering Block',
-    department: 'Computer Science & Engineering',
-    floor: 1,
-    type: 'Lecture Hall',
-    capacity: 60
-  },
-  {
-    id: 'R03',
     number: 'CS-Lab1',
     building: 'Engineering Block',
-    department: 'Computer Science & Engineering',
+    department: 'Computer Science',
     floor: 2,
     type: 'Computer Laboratory',
     capacity: 40
   },
   {
+    id: 'R03',
+    number: 'MECH-101',
+    building: 'Engineering Block',
+    department: 'Mechanical',
+    floor: 1,
+    type: 'Lecture Hall',
+    capacity: 60
+  },
+  {
     id: 'R04',
-    number: 'PH-201',
-    building: 'Science Block',
-    department: 'Physics',
-    floor: 2,
-    type: 'Physics Lab & Classroom',
+    number: 'MECH-Workshop',
+    building: 'Engineering Block',
+    department: 'Mechanical',
+    floor: 1,
+    type: 'Central Machine & CNC Workshop',
     capacity: 50
   },
   {
     id: 'R05',
-    number: 'CH-301',
-    building: 'Science Block',
-    department: 'Chemistry',
-    floor: 3,
-    type: 'Chemistry Research Lab',
-    capacity: 30
+    number: 'CIVIL-101',
+    building: 'Engineering Block',
+    department: 'Civil',
+    floor: 1,
+    type: 'Architectural Drafting Studio',
+    capacity: 45
   },
   {
     id: 'R06',
-    number: 'ME-101',
+    number: 'CIVIL-Lab1',
     building: 'Engineering Block',
-    department: 'Mechanical Engineering',
+    department: 'Civil',
     floor: 1,
-    type: 'Mechanical Workshop Hall',
-    capacity: 60
+    type: 'Materials & Concrete Testing Lab',
+    capacity: 35
   },
   {
     id: 'R07',
-    number: 'ECE-Lab2',
-    building: 'Engineering Block',
-    department: 'Electronics & Communication',
-    floor: 3,
-    type: 'VLSI & Embedded Lab',
-    capacity: 25
+    number: 'IT-101',
+    building: 'IT Block',
+    department: 'IT',
+    floor: 1,
+    type: 'Software Development Lab',
+    capacity: 40
   },
   {
     id: 'R08',
-    number: 'LIB-01',
-    building: 'Central Library',
-    department: 'Administration',
-    floor: 1,
-    type: 'Central Reading Hall',
-    capacity: 200
+    number: 'AIDS-101',
+    building: 'IT Block',
+    department: 'AIDS',
+    floor: 2,
+    type: 'AI & Deep Learning Computing Lab',
+    capacity: 35
   },
   {
     id: 'R09',
-    number: 'ADM-Hall',
-    building: 'Admin Block',
-    department: 'Administration',
-    floor: 1,
-    type: 'Main Boardroom',
-    capacity: 25
+    number: 'ECE-101',
+    building: 'Engineering Block',
+    department: 'ECE',
+    floor: 3,
+    type: 'VLSI & Embedded Systems Lab',
+    capacity: 35
   },
   {
     id: 'R10',
-    number: 'PH-202',
-    building: 'Science Block',
-    department: 'Physics',
+    number: 'EEE-101',
+    building: 'Engineering Block',
+    department: 'EEE',
     floor: 2,
-    type: 'Digital Smart Classroom',
-    capacity: 50
+    type: 'Power Electronics & Drives Lab',
+    capacity: 35
+  },
+  {
+    id: 'R11',
+    number: 'SH-101',
+    building: 'Science Block',
+    department: 'Science & Humanities',
+    floor: 1,
+    type: 'Foundational Sciences Smart Hall',
+    capacity: 60
+  },
+  {
+    id: 'R12',
+    number: 'SH-PhysicsLab',
+    building: 'Science Block',
+    department: 'Science & Humanities',
+    floor: 2,
+    type: 'General Physics & Optics Lab',
+    capacity: 40
+  },
+  {
+    id: 'R13',
+    number: 'SH-ChemistryLab',
+    building: 'Science Block',
+    department: 'Science & Humanities',
+    floor: 3,
+    type: 'Engineering Chemistry Lab',
+    capacity: 40
+  },
+  {
+    id: 'R14',
+    number: 'ADM-101',
+    building: 'Admin Block',
+    department: 'Admin Block',
+    floor: 1,
+    type: 'Principal & Executive Administrative Office',
+    capacity: 25
+  },
+  {
+    id: 'R15',
+    number: 'ADM-Hall',
+    building: 'Admin Block',
+    department: 'Admin Block',
+    floor: 1,
+    type: 'Main Boardroom & Senate Conference Hall',
+    capacity: 40
+  },
+  {
+    id: 'R16',
+    number: 'ADM-Records',
+    building: 'Admin Block',
+    department: 'Admin Block',
+    floor: 2,
+    type: 'Confidential Examination & Records Vault',
+    capacity: 15
+  },
+  {
+    id: 'R17',
+    number: 'ADM-ServerRoom',
+    building: 'Admin Block',
+    department: 'Admin Block',
+    floor: 2,
+    type: 'Campus Central Data Center & Server Room',
+    capacity: 10
   }
 ];
 
@@ -474,11 +569,11 @@ export const initialRooms = [
 export const initialMaintenanceLogs = [
   {
     id: 'MNT-001',
-    assetId: 'AST-029',
-    furniture: 'LCD Projector',
+    assetId: 'AST-010',
+    furniture: 'Optoma Projector System',
     issueDescription: 'Lamp dimming below acceptable lumens threshold during presentations',
     scheduledDate: '2026-09-15',
-    completedDate: null,
+    completedDate: '2026-09-16',
     cost: 3500.00,
     status: 'Scheduled',
     vendor: 'Apex AV Solutions',
@@ -486,51 +581,51 @@ export const initialMaintenanceLogs = [
   },
   {
     id: 'MNT-002',
-    assetId: 'AST-032',
-    furniture: 'Optoma Short-Throw Laser Projector',
-    issueDescription: 'Power ballast issue causing periodic rebooting after 15 minutes of usage',
+    assetId: 'AST-096',
+    furniture: 'Ricoh High-Capacity Multifunction Photocopier',
+    issueDescription: 'Paper feed tray roller gear slipping under heavy print loads',
     scheduledDate: '2026-09-02',
     completedDate: '2026-09-07',
-    cost: 7200.00,
+    cost: 4200.00,
     status: 'Completed',
     vendor: 'Matrix Electronics Care',
-    technicianNotes: 'Replaced power supply unit, cleaned cooling filter and verified thermal sensor'
+    technicianNotes: 'Replaced primary pick-up roller and aligned ADF scanning unit'
   },
   {
     id: 'MNT-003',
     assetId: 'AST-001',
-    furniture: 'Ergonomic Mesh Task Chair',
-    issueDescription: 'Hydraulic cylinder slipping down under load in workstation row 3',
+    furniture: 'Dell OptiPlex 7090 Desktop Computer',
+    issueDescription: 'Power supply unit fan noise during high compute load',
     scheduledDate: '2026-09-10',
-    completedDate: null,
+    completedDate: '2026-09-11',
     cost: 1200.00,
     status: 'In Progress',
-    vendor: 'ErgoDesign Workspaces',
-    technicianNotes: 'Class 4 gas lift cylinder dispatched with field service technician'
+    vendor: 'Dell India Enterprise',
+    technicianNotes: 'Dell gold warranty engineer dispatched for replacement unit'
   },
   {
     id: 'MNT-004',
-    assetId: 'AST-027',
-    furniture: 'Interactive 75" Smart Board',
-    issueDescription: 'IR touch sensor dead zone on bottom right quadrant',
+    assetId: 'AST-095',
+    furniture: 'Executive Conference Oval Table',
+    issueDescription: 'Cable routing grommet loose on center conference desk',
     scheduledDate: '2026-08-20',
     completedDate: '2026-08-22',
-    cost: 4500.00,
+    cost: 850.00,
     status: 'Completed',
-    vendor: 'Apex AV Solutions',
-    technicianNotes: 'Re-aligned optical touch sensor bezel and flashed firmware update'
+    vendor: 'Godrej Interio Care',
+    technicianNotes: 'Secured motorized popup power sockets and re-tightened brackets'
   },
   {
     id: 'MNT-005',
-    assetId: 'AST-012',
-    furniture: 'Heavy-Gauge Steel Storage Almirah',
-    issueDescription: 'Central multi-lever lock jammed with key stuck inside barrel',
+    assetId: 'AST-098',
+    furniture: 'Godrej Fire-Resistant Filing Cabinet',
+    issueDescription: 'Central multi-lever lock cylinder lubrication required',
     scheduledDate: '2026-09-12',
-    completedDate: null,
-    cost: 850.00,
+    completedDate: '2026-09-13',
+    cost: 650.00,
     status: 'Scheduled',
     vendor: 'Godrej Interio Care',
-    technicianNotes: 'Lock mechanism replacement scheduled with master key set'
+    technicianNotes: 'Annual preventive inspection and master key cylinder calibration'
   }
 ];
 
@@ -636,8 +731,8 @@ export const initialAuditLogs = [
     userRole: 'superadmin',
     action: 'CREATE',
     entity: 'Asset',
-    entityId: 'AST-001',
-    details: 'Registered 40 units of Ergonomic High-Back Mesh Task Chair into CS-Lab1 inventory',
+    entityId: 'AST-092',
+    details: 'Registered Admin Workstation Dell Precision 3660 for central institutional records',
     created_at: '2026-09-01T09:30:00.000Z'
   },
   {
@@ -647,19 +742,19 @@ export const initialAuditLogs = [
     userRole: 'deptadmin',
     action: 'TRANSFER',
     entity: 'Asset',
-    entityId: 'AST-029',
-    details: 'Transferred LCD Projector from CS-101 to CS-102 for online webinar series',
+    entityId: 'AST-010',
+    details: 'Transferred Projector System from CS-101 to CS-102 for online webinar series',
     created_at: '2026-09-02T11:15:00.000Z'
   },
   {
     id: 'AUD-003',
-    userId: 'USR-005',
+    userId: 'USR-011',
     userName: 'Mr. Ravi Shankar',
     userRole: 'auditor',
     action: 'INSPECT',
     entity: 'Asset',
-    entityId: 'AST-032',
-    details: 'Logged physical inspection: Optoma Projector diagnosed with faulty optical ballast',
+    entityId: 'AST-096',
+    details: 'Logged physical inspection: Ricoh High-Capacity Multifunction Photocopier verified',
     created_at: '2026-09-03T14:20:00.000Z'
   },
   {
@@ -675,13 +770,13 @@ export const initialAuditLogs = [
   },
   {
     id: 'AUD-005',
-    userId: 'USR-004',
+    userId: 'USR-007',
     userName: 'Prof. Ramesh Nair',
     userRole: 'deptadmin',
     action: 'UPDATE',
     entity: 'Asset',
-    entityId: 'AST-030',
-    details: 'Updated custodian assignment to Prof. Ramesh Nair for VLSI lab operations',
+    entityId: 'AST-065',
+    details: 'Updated custodian assignment for FPGA Development Trainer Board in ECE Lab 2',
     created_at: '2026-09-05T10:05:00.000Z'
   },
   {

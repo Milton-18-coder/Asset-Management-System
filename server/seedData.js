@@ -18,6 +18,28 @@ export async function seedInitialDataIfEmpty(
   const pool = getPool();
 
   try {
+    // 0. Normalize legacy department names in existing database tables to the 9 strict departments
+    const legacyMappings = [
+      { target: 'Computer Science', olds: ['CSE', 'Computer Science & Engineering', 'CS', 'Computer Science Department'] },
+      { target: 'Mechanical', olds: ['ME', 'Mechanical Engineering', 'Mech', 'Mechanical Department'] },
+      { target: 'Civil', olds: ['Civil Engineering', 'CE', 'Civil Department'] },
+      { target: 'IT', olds: ['Information Technology', 'IT Department'] },
+      { target: 'AIDS', olds: ['AI & DS', 'AI-DS', 'Artificial Intelligence & Data Science', 'AI/DS', 'AIDS Department'] },
+      { target: 'ECE', olds: ['Electronics & Communication', 'Electronics & Communication Engineering', 'ECE Department'] },
+      { target: 'EEE', olds: ['Electrical & Electronics Engineering', 'Electrical & Electronics', 'EEE Department'] },
+      { target: 'Science & Humanities', olds: ['Physics', 'Chemistry', 'Mathematics', 'Humanities', 'Science', 'S&H', 'Science and Humanities'] },
+      { target: 'Admin Block', olds: ['Administration', 'Admin', 'Admin Department', 'Library', 'Principal Office', 'Estate Office'] },
+    ];
+
+    for (const m of legacyMappings) {
+      const placeholders = m.olds.map(() => '?').join(', ');
+      await pool.query(`UPDATE assets SET department = ? WHERE department IN (${placeholders})`, [m.target, ...m.olds]);
+      await pool.query(`UPDATE users SET department = ? WHERE department IN (${placeholders})`, [m.target, ...m.olds]);
+      await pool.query(`UPDATE transfers SET department = ? WHERE department IN (${placeholders})`, [m.target, ...m.olds]);
+      await pool.query(`UPDATE rooms SET department = ? WHERE department IN (${placeholders})`, [m.target, ...m.olds]);
+      await pool.query(`UPDATE notifications SET department = ? WHERE department IN (${placeholders})`, [m.target, ...m.olds]);
+    }
+
     // 1. Assets
     if (initialAssets && initialAssets.length > 0) {
       console.log(`[Seed] Syncing ${initialAssets.length} assets into MySQL...`);
@@ -51,19 +73,19 @@ export async function seedInitialDataIfEmpty(
             a.category || 'General',
             a.itemType || 'General',
             a.building || 'Engineering Block',
-            a.department || 'Administration',
+            a.department || 'Admin Block',
             a.room || 'ADM-101',
             a.assignedTo || 'Unassigned',
             a.assignedRole || 'Staff',
             a.assignedEmail || 'admin@nec.edu.in',
             a.condition || 'Good',
             a.status || 'Available',
-            a.purchaseDate || null,
+            a.purchaseDate || '2026-01-01',
             a.cost || 0,
             a.supplier || 'Campus Procurement',
             a.warranty || '1 Year Standard',
             a.quantity || 1,
-            a.description || '',
+            a.description || 'General Institutional Asset',
           ]
         );
       }
@@ -159,6 +181,9 @@ export async function seedInitialDataIfEmpty(
     // 6. Departments
     if (initialDepartments && initialDepartments.length > 0) {
       console.log(`[Seed] Syncing ${initialDepartments.length} departments into MySQL...`);
+      const allowedNames = initialDepartments.map(d => d.name);
+      const placeholders = allowedNames.map(() => '?').join(', ');
+      await pool.query(`DELETE FROM departments WHERE name NOT IN (${placeholders})`, allowedNames);
       for (const d of initialDepartments) {
         await pool.query(
           `INSERT INTO departments (id, name, code, building, hod, admin)
@@ -293,7 +318,17 @@ export async function seedInitialDataIfEmpty(
              entity=VALUES(entity),
              entityId=VALUES(entityId),
              details=VALUES(details)`,
-          [au.id, au.userId || null, au.userName || '', au.userRole || '', au.action, au.entity, au.entityId || '', au.details || '', au.created_at || new Date().toISOString()]
+          [
+            au.id,
+            au.userId || null,
+            au.userName || '',
+            au.userRole || '',
+            au.action,
+            au.entity,
+            au.entityId || '',
+            au.details || '',
+            au.created_at ? new Date(au.created_at) : new Date()
+          ]
         );
       }
       console.log('[Seed] Audit logs synced.');
