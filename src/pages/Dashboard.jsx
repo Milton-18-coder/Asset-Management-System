@@ -5,7 +5,7 @@ import { markAsRead } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { StatCard, Card, Badge, Btn, Icon } from '../components/UIComponents';
 import { DonutChart, BarChart } from '../components/Charts';
-import { Bell, ArrowRight } from 'lucide-react';
+import { Bell, ArrowRight, ShoppingCart, IndianRupee, Store, TrendingUp } from 'lucide-react';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ export const Dashboard = () => {
   const furnitureList = useSelector((state) => state.furniture.list);
   const transfersList = useSelector((state) => state.transfers.list);
   const notificationsList = useSelector((state) => state.notifications?.list || []);
+  const purchaseHistoryList = useSelector((state) => state.purchaseHistory?.list || []);
 
   if (!currentUser) return null;
 
@@ -39,8 +40,20 @@ export const Dashboard = () => {
     const available = deptFurniture.filter(f => f.status === 'Available').reduce((s, f) => s + f.quantity, 0);
     const inUse = deptFurniture.filter(f => f.status === 'In Use').reduce((s, f) => s + f.quantity, 0);
     const needsInspection = deptFurniture.filter(f => f.status === 'Needs Inspection').reduce((s, f) => s + f.quantity, 0);
-    return { total, available, inUse, needsInspection };
-  }, [deptFurniture]);
+    
+    // Procurement stats
+    const totalSpend = purchaseHistoryList.reduce((sum, p) => sum + (Number(p.totalAmount) || 0), 0);
+    const uniqueVendors = new Set(purchaseHistoryList.map(p => p.vendorName).filter(Boolean)).size;
+
+    return { total, available, inUse, needsInspection, totalSpend, uniqueVendors };
+  }, [deptFurniture, purchaseHistoryList]);
+
+  // Recent purchases for dashboard preview
+  const recentPurchases = useMemo(() => {
+    return [...purchaseHistoryList]
+      .sort((a, b) => new Date(b.purchaseDate || 0) - new Date(a.purchaseDate || 0))
+      .slice(0, 4);
+  }, [purchaseHistoryList]);
 
   // Compute category chart data
   const categoryData = useMemo(() => {
@@ -192,6 +205,90 @@ export const Dashboard = () => {
                 ))
               )}
             </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Procurement & Purchase History Highlights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <Card className="p-4 flex flex-col justify-between lg:col-span-1 bg-gradient-to-br from-indigo-50/50 via-white to-violet-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20 border-indigo-100 dark:border-indigo-900/40">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-indigo-600/10 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <TrendingUp size={15} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 font-display">Procurement & Spend</p>
+                  <p className="text-[10px] text-slate-400">Vendor & Asset Price Tracking</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate('/purchases')}
+                className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                View Hub <ArrowRight size={11} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 my-3">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 shadow-xs">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Value</p>
+                <p className="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5 font-display">
+                  ₹{stats.totalSpend.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 shadow-xs">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suppliers</p>
+                <p className="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5 font-display">
+                  {stats.uniqueVendors} Vendors
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate('/purchases')}
+            className="w-full mt-2 py-2 px-3 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl transition text-center cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <ShoppingCart size={13} />
+            Explore Purchase History & Price Trends
+          </button>
+        </Card>
+
+        <Card className="p-4 lg:col-span-2">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 font-display uppercase tracking-wide">
+              Recent Procurement Batches
+            </p>
+            <button onClick={() => navigate('/purchases')} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">
+              All Purchases ({purchaseHistoryList.length})
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {recentPurchases.length === 0 ? (
+              <p className="text-xs text-slate-400 py-6 text-center">No purchases recorded yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {recentPurchases.map(p => (
+                  <div 
+                    key={p.id}
+                    onClick={() => navigate('/purchases')}
+                    className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 hover:border-indigo-200 dark:hover:border-indigo-800/60 transition cursor-pointer flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{p.assetName}</p>
+                      <p className="text-[10px] text-slate-400 truncate">{p.vendorName} • {p.purchaseDate ? new Date(p.purchaseDate).toLocaleDateString('en-IN') : 'N/A'}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">₹{Number(p.purchasePrice || 0).toLocaleString('en-IN')}</p>
+                      <p className="text-[9px] text-slate-400 font-semibold">Qty: {p.quantity || 1}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
       </div>

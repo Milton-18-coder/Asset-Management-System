@@ -198,9 +198,15 @@ export const FurnitureList = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold whitespace-nowrap">
-                {['Asset ID', 'Name & Type', 'Category', 'Location', 'Custodian', 'Qty', 'Condition', 'Status', 'Actions'].map(h => (
-                  <th key={h} className="px-5 py-4">{h}</th>
-                ))}
+                <th className="px-5 py-4 w-28">Asset ID</th>
+                <th className="pl-5 pr-3 py-4 max-w-[320px]">Name & Type</th>
+                <th className="pl-2 pr-5 py-4 w-40">Category</th>
+                <th className="px-5 py-4">Location</th>
+                <th className="px-5 py-4">Custodian</th>
+                <th className="px-5 py-4 text-center">Qty</th>
+                <th className="px-5 py-4">Condition</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
@@ -214,15 +220,15 @@ export const FurnitureList = () => {
                 filteredList.map(f => (
                   <tr key={f.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition duration-150">
                     <td className="px-5 py-4 font-mono text-indigo-600 dark:text-indigo-400 font-bold whitespace-nowrap">{f.id}</td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <div className="flex flex-col min-w-0">
+                    <td className="pl-5 pr-3 py-4 max-w-[320px]">
+                      <div className="flex flex-col min-w-0 pr-2">
                         <span className="font-bold text-slate-800 dark:text-slate-200">{f.name}</span>
                         {f.itemType && (
                           <span className="text-[11px] text-slate-400 dark:text-slate-500">{f.itemType}</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-600 dark:text-slate-400 font-semibold whitespace-nowrap">
+                    <td className="pl-2 pr-5 py-4 text-slate-600 dark:text-slate-400 font-semibold whitespace-nowrap">
                       <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px]">
                         {f.category}
                       </span>

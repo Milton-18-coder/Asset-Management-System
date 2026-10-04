@@ -117,55 +117,79 @@ export const ASSET_CATEGORIES = {
 };
 
 // Helper: Get list of all main category names
+export const getMainCategories = (categories = ASSET_CATEGORIES) => {
+  return Object.keys(categories || ASSET_CATEGORIES);
+};
+
 export const MAIN_CATEGORIES = Object.keys(ASSET_CATEGORIES);
 
 // Helper: Flatten list of all subcategories
-export const getAllSubCategories = (mainCategory = null) => {
-  if (mainCategory && ASSET_CATEGORIES[mainCategory]) {
-    return Object.values(ASSET_CATEGORIES[mainCategory].subCategories);
+export const getAllSubCategories = (mainCategory = null, categories = ASSET_CATEGORIES) => {
+  const catSource = categories || ASSET_CATEGORIES;
+  if (mainCategory && catSource[mainCategory]?.subCategories) {
+    return Object.values(catSource[mainCategory].subCategories);
   }
   const result = [];
-  Object.values(ASSET_CATEGORIES).forEach((main) => {
-    Object.values(main.subCategories).forEach((sub) => {
-      result.push({ ...sub, mainCategory: main.name });
-    });
+  Object.values(catSource).forEach((main) => {
+    if (main?.subCategories) {
+      Object.values(main.subCategories).forEach((sub) => {
+        result.push({ ...sub, mainCategory: main.name });
+      });
+    }
   });
   return result;
 };
 
+// Helper: Get subcategories for a given main category
+export const getSubCategories = (mainCategory, categories = ASSET_CATEGORIES) => {
+  const catSource = categories || ASSET_CATEGORIES;
+  if (mainCategory && catSource[mainCategory]?.subCategories) {
+    return Object.keys(catSource[mainCategory].subCategories);
+  }
+  return [];
+};
+
 // Helper: Get all specific item types for a subcategory or main category
-export const getItemTypes = (mainCategory, subCategory) => {
-  if (mainCategory && subCategory && ASSET_CATEGORIES[mainCategory]?.subCategories[subCategory]) {
-    return ASSET_CATEGORIES[mainCategory].subCategories[subCategory].items;
+export const getItemTypes = (mainCategory, subCategory, categories = ASSET_CATEGORIES) => {
+  const catSource = categories || ASSET_CATEGORIES;
+  if (mainCategory && subCategory && catSource[mainCategory]?.subCategories?.[subCategory]?.items) {
+    return catSource[mainCategory].subCategories[subCategory].items;
   }
   return [];
 };
 
 // Helper: Get all unique item types across system
-export const getAllItemTypes = () => {
+export const getAllItemTypes = (categories = ASSET_CATEGORIES) => {
+  const catSource = categories || ASSET_CATEGORIES;
   const items = [];
-  Object.entries(ASSET_CATEGORIES).forEach(([mainKey, main]) => {
-    Object.entries(main.subCategories).forEach(([subKey, sub]) => {
-      sub.items.forEach((item) => {
-        items.push({
-          item,
-          subCategory: subKey,
-          mainCategory: mainKey,
+  Object.entries(catSource).forEach(([mainKey, main]) => {
+    if (main?.subCategories) {
+      Object.entries(main.subCategories).forEach(([subKey, sub]) => {
+        (sub.items || []).forEach((item) => {
+          items.push({
+            item,
+            subCategory: subKey,
+            mainCategory: mainKey,
+          });
         });
       });
-    });
+    }
   });
   return items;
 };
 
 // Helper: Find category info for a given item type name
-export const findCategoryByItem = (itemName) => {
-  for (const [mainKey, main] of Object.entries(ASSET_CATEGORIES)) {
-    for (const [subKey, sub] of Object.entries(main.subCategories)) {
-      if (sub.items.includes(itemName) || itemName?.toLowerCase().includes(subKey.toLowerCase())) {
-        return { mainCategory: mainKey, subCategory: subKey, itemName };
+export const findCategoryByItem = (itemName, categories = ASSET_CATEGORIES) => {
+  const catSource = categories || ASSET_CATEGORIES;
+  for (const [mainKey, main] of Object.entries(catSource)) {
+    if (main?.subCategories) {
+      for (const [subKey, sub] of Object.entries(main.subCategories)) {
+        if (sub.items?.includes(itemName) || itemName?.toLowerCase().includes(subKey.toLowerCase())) {
+          return { mainCategory: mainKey, subCategory: subKey, itemName };
+        }
       }
     }
   }
   return { mainCategory: 'Furniture', subCategory: 'Chair', itemName };
 };
+

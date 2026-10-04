@@ -20,11 +20,12 @@ router.post('/', async (req, res) => {
     const pool = getPool();
     const { id, name, mainCategory, code, icon, depreciationRate, usefulLifeYears, description } = req.body;
     const catId = id || `CAT-${Date.now()}`;
+    const catCode = code || ((name ? name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() : 'CAT') + '-' + Math.floor(100 + Math.random() * 900));
     await pool.query(
       `INSERT INTO categories (id, name, mainCategory, code, icon, depreciationRate, usefulLifeYears, description)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE name=VALUES(name), mainCategory=VALUES(mainCategory), code=VALUES(code), icon=VALUES(icon), depreciationRate=VALUES(depreciationRate), usefulLifeYears=VALUES(usefulLifeYears), description=VALUES(description)`,
-      [catId, name, mainCategory || 'Furniture', code, icon || 'Box', depreciationRate || 10.0, usefulLifeYears || 5, description || '']
+      [catId, name, mainCategory || 'Furniture', catCode, icon || 'Box', depreciationRate || 10.0, usefulLifeYears || 5, description || '']
     );
     const [rows] = await pool.query('SELECT * FROM categories WHERE id = ?', [catId]);
     res.status(201).json(rows[0]);

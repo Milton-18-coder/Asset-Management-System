@@ -13,7 +13,8 @@ export async function seedInitialDataIfEmpty(
   initialDisposals,
   initialVendors,
   initialAuditLogs,
-  initialCategories
+  initialCategories,
+  initialPurchaseHistory
 ) {
   const pool = getPool();
 
@@ -353,6 +354,60 @@ export async function seedInitialDataIfEmpty(
         );
       }
       console.log('[Seed] Categories synced.');
+    }
+
+    // 14. Purchase History
+    if (initialPurchaseHistory && initialPurchaseHistory.length > 0) {
+      console.log(`[Seed] Syncing ${initialPurchaseHistory.length} purchase history records into MySQL...`);
+      for (const ph of initialPurchaseHistory) {
+        await pool.query(
+          `INSERT INTO purchase_history (
+            id, assetId, assetName, vendorId, vendorName, categoryId, categoryName,
+            subcategoryId, subcategoryName, itemType, purchaseDate, purchasePrice,
+            quantity, totalAmount, invoiceNumber, invoiceDate, warrantyExpiry, notes
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            assetId=VALUES(assetId),
+            assetName=VALUES(assetName),
+            vendorId=VALUES(vendorId),
+            vendorName=VALUES(vendorName),
+            categoryId=VALUES(categoryId),
+            categoryName=VALUES(categoryName),
+            subcategoryId=VALUES(subcategoryId),
+            subcategoryName=VALUES(subcategoryName),
+            itemType=VALUES(itemType),
+            purchaseDate=VALUES(purchaseDate),
+            purchasePrice=VALUES(purchasePrice),
+            quantity=VALUES(quantity),
+            totalAmount=VALUES(totalAmount),
+            invoiceNumber=VALUES(invoiceNumber),
+            invoiceDate=VALUES(invoiceDate),
+            warrantyExpiry=VALUES(warrantyExpiry),
+            notes=VALUES(notes)`,
+          [
+            ph.id,
+            ph.assetId,
+            ph.assetName,
+            ph.vendorId || null,
+            ph.vendorName,
+            ph.categoryId || null,
+            ph.categoryName,
+            ph.subcategoryId || null,
+            ph.subcategoryName,
+            ph.itemType || ph.subcategoryName,
+            ph.purchaseDate,
+            ph.purchasePrice,
+            ph.quantity || 1,
+            ph.totalAmount || (ph.purchasePrice * (ph.quantity || 1)),
+            ph.invoiceNumber || '',
+            ph.invoiceDate || ph.purchaseDate,
+            ph.warrantyExpiry || '',
+            ph.notes || ''
+          ]
+        );
+      }
+      console.log('[Seed] Purchase history records synced.');
     }
   } catch (err) {
     console.error('Seeding error:', err.message);

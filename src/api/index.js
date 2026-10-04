@@ -389,4 +389,87 @@ export const api = {
     if (!res.ok) throw new Error('Failed to delete category');
     return res.json();
   },
+
+  // Purchase History & Price Tracking
+  async getPurchaseHistory(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/purchase-history${query ? `?${query}` : ''}`);
+    if (!res.ok) throw new Error('Failed to fetch purchase history');
+    return res.json();
+  },
+  async getPurchaseHistoryStats() {
+    const res = await fetch(`${API_BASE}/purchase-history/stats`);
+    if (!res.ok) throw new Error('Failed to fetch procurement statistics');
+    return res.json();
+  },
+  async getPurchaseHistoryById(id) {
+    const res = await fetch(`${API_BASE}/purchase-history/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch purchase transaction');
+    return res.json();
+  },
+  async getPurchaseHistoryByDateRange(from, to, extraParams = {}) {
+    const query = new URLSearchParams({
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+      ...extraParams
+    }).toString();
+    const res = await fetch(`${API_BASE}/purchase-history/date-range?${query}`);
+    if (!res.ok) throw new Error('Failed to fetch purchase history by date range');
+    return res.json();
+  },
+  async getPurchaseHistoryByVendor(vendorId) {
+    const res = await fetch(`${API_BASE}/purchase-history/vendor/${encodeURIComponent(vendorId)}`);
+    if (!res.ok) throw new Error('Failed to fetch vendor purchase history');
+    return res.json();
+  },
+  async getPurchaseHistoryVendorDateRange(vendorId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/purchase-history/vendor/${encodeURIComponent(vendorId)}/date-range${query ? `?${query}` : ''}`);
+    if (!res.ok) throw new Error('Failed to fetch vendor date range purchases');
+    return res.json();
+  },
+  async getPurchaseHistoryByAsset(assetId) {
+    const res = await fetch(`${API_BASE}/purchase-history/asset/${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error('Failed to fetch asset purchase history');
+    return res.json();
+  },
+  async getPurchaseHistoryByCategory(categoryId) {
+    const res = await fetch(`${API_BASE}/purchase-history/category/${encodeURIComponent(categoryId)}`);
+    if (!res.ok) throw new Error('Failed to fetch category purchase history');
+    return res.json();
+  },
+  async getPurchaseHistoryBySubcategory(subcategoryId) {
+    const res = await fetch(`${API_BASE}/purchase-history/subcategory/${encodeURIComponent(subcategoryId)}`);
+    if (!res.ok) throw new Error('Failed to fetch subcategory purchase history');
+    return res.json();
+  },
+  async addPurchaseHistory(data) {
+    const res = await fetch(`${API_BASE}/purchase-history`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to add purchase transaction');
+    }
+    return res.json();
+  },
+  async updatePurchaseHistory(id, data) {
+    const res = await fetch(`${API_BASE}/purchase-history/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to update purchase transaction');
+    }
+    return res.json();
+  },
+  async deletePurchaseHistory(id) {
+    const res = await fetch(`${API_BASE}/purchase-history/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete purchase transaction');
+    return res.json();
+  },
 };

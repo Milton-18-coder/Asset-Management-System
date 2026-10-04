@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Card, Btn, Badge, Modal, Input } from '../components/UIComponents';
+import { Card, Btn, Badge, Modal, Input, Icon } from '../components/UIComponents';
 import { 
   ASSET_CATEGORIES, 
   MAIN_CATEGORIES
@@ -9,7 +9,8 @@ import {
 import { 
   updateFurnitureCustodian, 
   updateFurnitureLocation,
-  bulkAssignCustodians
+  bulkAssignCustodians,
+  deleteFurniture
 } from '../store/furnitureSlice';
 import { addNotification } from '../store/notificationsSlice';
 import { 
@@ -17,7 +18,6 @@ import {
   MapPin, 
   User, 
   Layers, 
-  Grid, 
   List, 
   ArrowUpRight, 
   CheckCircle2, 
@@ -60,6 +60,7 @@ export const CategoryPage = () => {
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
   const usersList = useSelector((state) => state.users.list);
+  const taxonomy = useSelector((state) => state.categories?.taxonomy || ASSET_CATEGORIES);
 
   // Tab mode: 'taxonomy' | 'custodians' | 'locations'
   const [activeTab, setActiveTab] = useState('taxonomy');
@@ -75,7 +76,6 @@ export const CategoryPage = () => {
   const [selectedCondition, setSelectedCondition] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
 
   // Multi-select for bulk custodian assignment
@@ -93,6 +93,7 @@ export const CategoryPage = () => {
   const [editRole, setEditRole] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [successToast, setSuccessToast] = useState('');
+  const [deleteId, setDeleteId] = useState(null);
 
   if (!currentUser) return null;
 
@@ -178,34 +179,38 @@ export const CategoryPage = () => {
 
   // Subcategories list based on selected Main Category
   const availableSubCategories = useMemo(() => {
+    const catSource = taxonomy || ASSET_CATEGORIES;
     if (selectedMainCat === 'All') {
       const list = [];
-      Object.entries(ASSET_CATEGORIES).forEach(([mainKey, main]) => {
-        Object.entries(main.subCategories).forEach(([subKey, sub]) => {
-          list.push({ mainKey, subKey, ...sub });
-        });
+      Object.entries(catSource).forEach(([mainKey, main]) => {
+        if (main?.subCategories) {
+          Object.entries(main.subCategories).forEach(([subKey, sub]) => {
+            list.push({ mainKey, subKey, ...sub });
+          });
+        }
       });
       return list;
     }
-    const main = ASSET_CATEGORIES[selectedMainCat];
-    if (!main) return [];
+    const main = catSource[selectedMainCat];
+    if (!main || !main.subCategories) return [];
     return Object.entries(main.subCategories).map(([subKey, sub]) => ({
       mainKey: selectedMainCat,
       subKey,
       ...sub,
     }));
-  }, [selectedMainCat]);
+  }, [taxonomy, selectedMainCat]);
 
   // Available specific items for the selected subcategory
   const availableSpecificItems = useMemo(() => {
     if (selectedSubCat === 'All') return [];
-    for (const main of Object.values(ASSET_CATEGORIES)) {
-      if (main.subCategories[selectedSubCat]) {
-        return main.subCategories[selectedSubCat].items;
+    const catSource = taxonomy || ASSET_CATEGORIES;
+    for (const main of Object.values(catSource)) {
+      if (main?.subCategories?.[selectedSubCat]) {
+        return main.subCategories[selectedSubCat].items || [];
       }
     }
     return [];
-  }, [selectedSubCat]);
+  }, [taxonomy, selectedSubCat]);
 
   // Aggregated Custodians List
   const custodiansDirectory = useMemo(() => {
@@ -541,35 +546,9 @@ export const CategoryPage = () => {
 
         {activeTab === 'taxonomy' && (
           <div className="flex items-center gap-3">
-            <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
+            <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50">
               Showing {filteredAssets.length} of {sourceAssets.length} assets ({filteredAssets.reduce((s, a) => s + (a.quantity || 1), 0)} units)
             </span>
-            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex items-center border border-slate-200/60 dark:border-slate-700/50">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                  viewMode === 'grid'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Grid Cards"
-              >
-                <Grid className="w-4 h-4" />
-                <span className="hidden md:inline font-bold">Cards</span>
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`p-2 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                  viewMode === 'table'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-                title="Data Table"
-              >
-                <List className="w-4 h-4" />
-                <span className="hidden md:inline font-bold">Table</span>
-              </button>
-            </div>
           </div>
         )}
       </div>
@@ -601,7 +580,7 @@ export const CategoryPage = () => {
                   </span>
                 </button>
 
-                {MAIN_CATEGORIES.map((mainKey) => {
+                {Object.keys(taxonomy || ASSET_CATEGORIES).map((mainKey) => {
                   const isSelected = selectedMainCat === mainKey;
                   const mainAssets = sourceAssets.filter(
                     (a) => a.mainCategory === mainKey || (!a.mainCategory && mainKey === 'Furniture')
@@ -872,7 +851,7 @@ export const CategoryPage = () => {
             </div>
           )}
 
-          {/* Asset Records (Cards View vs. Table View) */}
+          {/* Asset Records (Table View Exclusively) */}
           {filteredAssets.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-14 text-center">
               <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -889,120 +868,6 @@ export const CategoryPage = () => {
                 Reset All Filters
               </button>
             </div>
-          ) : viewMode === 'grid' ? (
-            /* Generously Spaced, Readable Grid Cards */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredAssets.map((asset) => {
-                const isSelected = selectedAssetIds.includes(asset.id);
-
-                return (
-                  <div
-                    key={asset.id}
-                    className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border transition-all duration-200 flex flex-col justify-between group ${
-                      isSelected
-                        ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-sm'
-                        : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs'
-                    }`}
-                  >
-                    <div>
-                      {/* Card Header: ID, Checkbox & Badges */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => toggleSelectAsset(asset.id)}
-                            className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
-                          >
-                            {isSelected ? (
-                              <CheckSquare className="w-4.5 h-4.5 text-indigo-600" />
-                            ) : (
-                              <Square className="w-4.5 h-4.5 text-slate-300 dark:text-slate-600" />
-                            )}
-                          </button>
-                          <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                            {asset.id}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                            {asset.quantity || 1} units
-                          </span>
-                          <Badge label={asset.condition} type="condition" />
-                        </div>
-                      </div>
-
-                      {/* Asset Title */}
-                      <h4 className="font-bold text-slate-900 dark:text-white text-base font-display leading-snug line-clamp-1 mb-1" title={asset.name}>
-                        {asset.name}
-                      </h4>
-
-                      {/* Breadcrumb path */}
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3.5 flex items-center gap-1.5 truncate">
-                        <span>{asset.mainCategory || 'Furniture'}</span>
-                        <ChevronRight className="w-3 h-3 text-slate-300" />
-                        <span className="text-slate-700 dark:text-slate-300 font-semibold">{asset.category}</span>
-                        {asset.itemType && (
-                          <>
-                            <ChevronRight className="w-3 h-3 text-slate-300" />
-                            <span className="text-slate-500">{asset.itemType}</span>
-                          </>
-                        )}
-                      </p>
-
-                      {/* Location & Custodian Metadata Box */}
-                      <div className="space-y-2 py-3 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-xs sm:text-sm mb-3.5 border border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 min-w-0">
-                            <MapPin className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                              Room {asset.room || 'Unassigned'}
-                            </span>
-                          </div>
-                          <span className="text-xs text-slate-400 truncate flex-shrink-0">
-                            {asset.building || 'Main Block'}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 min-w-0">
-                            <User className="w-4 h-4 text-violet-600 flex-shrink-0" />
-                            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={asset.assignedTo}>
-                              {asset.assignedTo || 'Unassigned'}
-                            </span>
-                          </div>
-                          <span className="text-xs text-violet-600 dark:text-violet-400 truncate flex-shrink-0 font-medium">
-                            {asset.assignedRole || 'Custodian'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Actions Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs sm:text-sm">
-                      <span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">
-                        ₹{(asset.cost || 0).toLocaleString()}
-                      </span>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleOpenEdit(asset)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition cursor-pointer"
-                        >
-                          Reassign
-                        </button>
-                        <button
-                          onClick={() => navigate(`/assets/${asset.id}`)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
-                          title="View Asset Profile"
-                        >
-                          <ArrowUpRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           ) : (
             /* Clean Crisp Table View */
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
@@ -1010,8 +875,8 @@ export const CategoryPage = () => {
                 <table className="w-full text-left text-xs sm:text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-semibold whitespace-nowrap bg-slate-50/50 dark:bg-slate-800/30">
-                      <th className="px-4 py-3.5 w-8">
-                        <button onClick={handleSelectAllFiltered} className="cursor-pointer">
+                      <th className="w-10 px-3 py-3.5 text-center">
+                        <button onClick={handleSelectAllFiltered} className="cursor-pointer inline-flex items-center">
                           {selectedAssetIds.length === filteredAssets.length && filteredAssets.length > 0 ? (
                             <CheckSquare className="w-4 h-4 text-indigo-600" />
                           ) : (
@@ -1019,13 +884,13 @@ export const CategoryPage = () => {
                           )}
                         </button>
                       </th>
-                      <th className="px-4 py-3.5">Asset Code & Item</th>
-                      <th className="px-4 py-3.5">Category</th>
-                      <th className="px-4 py-3.5">Location</th>
-                      <th className="px-4 py-3.5">Custodian</th>
-                      <th className="px-4 py-3.5 text-center">Units</th>
-                      <th className="px-4 py-3.5">Condition</th>
-                      <th className="px-4 py-3.5 text-right">Actions</th>
+                      <th className="pl-3 pr-2 py-3.5 whitespace-nowrap min-w-[180px]">Asset Code & Item</th>
+                      <th className="pl-2 pr-3 py-3.5 whitespace-nowrap min-w-[110px]">Category</th>
+                      <th className="px-3 py-3.5 whitespace-nowrap min-w-[140px]">Location</th>
+                      <th className="px-3 py-3.5 whitespace-nowrap min-w-[140px]">Custodian</th>
+                      <th className="px-3 py-3.5 text-center whitespace-nowrap w-20">Units</th>
+                      <th className="px-4 py-3.5 text-center whitespace-nowrap min-w-[110px]">Condition</th>
+                      <th className="px-4 py-3.5 text-right whitespace-nowrap min-w-[120px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -1039,8 +904,8 @@ export const CategoryPage = () => {
                             isSelected ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
                           }`}
                         >
-                          <td className="px-4 py-3">
-                            <button onClick={() => toggleSelectAsset(asset.id)} className="cursor-pointer text-slate-400">
+                          <td className="w-10 px-3 py-3 text-center">
+                            <button onClick={() => toggleSelectAsset(asset.id)} className="cursor-pointer text-slate-400 inline-flex items-center">
                               {isSelected ? (
                                 <CheckSquare className="w-4 h-4 text-indigo-600" />
                               ) : (
@@ -1049,62 +914,70 @@ export const CategoryPage = () => {
                             </button>
                           </td>
 
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-bold text-slate-900 dark:text-white text-sm">{asset.name}</span>
+                          <td className="pl-3 pr-2 py-3 min-w-[180px]">
+                            <div className="flex flex-col min-w-0 pr-1">
+                              <span className="font-bold text-slate-900 dark:text-white text-sm" title={asset.name}>{asset.name}</span>
                               <span className="font-mono text-xs text-slate-400">{asset.id}</span>
                             </div>
                           </td>
 
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="pl-2 pr-3 py-3 whitespace-nowrap min-w-[110px]">
                             <span className="text-slate-800 dark:text-slate-200 font-semibold">{asset.category}</span>
                             {asset.itemType && (
-                              <span className="text-slate-400 text-xs block">{asset.itemType}</span>
+                              <span className="text-slate-400 text-xs block truncate" title={asset.itemType}>{asset.itemType}</span>
                             )}
                           </td>
 
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
+                          <td className="px-3 py-3 whitespace-nowrap min-w-[140px]">
+                            <div className="flex items-center gap-2 min-w-0">
                               <MapPin className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                              <div>
-                                <p className="font-semibold text-slate-800 dark:text-slate-200">Room {asset.room}</p>
-                                <p className="text-xs text-slate-400">{asset.building}</p>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">Room {asset.room}</p>
+                                <p className="text-xs text-slate-400 truncate">{asset.building}</p>
                               </div>
                             </div>
                           </td>
 
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
+                          <td className="px-3 py-3 whitespace-nowrap min-w-[140px]">
+                            <div className="flex items-center gap-2 min-w-0">
                               <User className="w-4 h-4 text-violet-600 flex-shrink-0" />
-                              <div>
-                                <p className="font-semibold text-slate-800 dark:text-slate-200">{asset.assignedTo || 'Unassigned'}</p>
-                                <p className="text-xs text-slate-400">{asset.assignedRole || 'Custodian'}</p>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={asset.assignedTo}>{asset.assignedTo || 'Unassigned'}</p>
+                                <p className="text-xs text-slate-400 truncate">{asset.assignedRole || 'Custodian'}</p>
                               </div>
                             </div>
                           </td>
 
-                          <td className="px-4 py-3 text-center font-mono font-bold text-slate-700 dark:text-slate-300">
+                          <td className="px-3 py-3 text-center font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap w-20">
                             {asset.quantity || 1}
                           </td>
 
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-4 py-3 text-center whitespace-nowrap min-w-[110px]">
                             <Badge label={asset.condition} type="condition" />
                           </td>
 
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleOpenEdit(asset)}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition cursor-pointer"
-                              >
-                                Reassign
-                              </button>
-                              <button
-                                onClick={() => navigate(`/assets/${asset.id}`)}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+                          <td className="px-4 py-3 text-right whitespace-nowrap min-w-[120px]">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button 
+                                onClick={() => navigate(`/assets/${asset.id}`)} 
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
                                 title="View Details"
                               >
-                                <ArrowUpRight className="w-4 h-4" />
+                                <Icon.Eye />
+                              </button>
+                              <button 
+                                onClick={() => navigate(`/assets/edit/${asset.id}`)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
+                                title="Edit Asset"
+                              >
+                                <Icon.Edit />
+                              </button>
+                              <button 
+                                onClick={() => setDeleteId(asset.id)} 
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
+                                title="Delete Asset"
+                              >
+                                <Icon.Trash />
                               </button>
                             </div>
                           </td>
@@ -1430,6 +1303,36 @@ export const CategoryPage = () => {
               </Btn>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <Modal title="Confirm Asset Deletion" onClose={() => setDeleteId(null)}>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 rounded-2xl border border-rose-100 dark:border-rose-900/50">
+              <Icon.Alert />
+              <p className="text-xs font-semibold">
+                Are you sure you want to permanently delete asset <span className="font-mono font-bold">{deleteId}</span>?
+              </p>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              This action cannot be undone. The asset and its assignment history will be removed.
+            </p>
+            <div className="flex gap-2 justify-end pt-2">
+              <Btn variant="secondary" onClick={() => setDeleteId(null)}>Cancel</Btn>
+              <Btn variant="danger" onClick={() => {
+                dispatch(deleteFurniture(deleteId));
+                dispatch(addNotification({
+                  title: 'Asset Deleted',
+                  message: `Asset ${deleteId} has been removed from the registry.`,
+                  type: 'asset',
+                  department: 'Admin Block',
+                }));
+                setDeleteId(null);
+              }}>Delete Asset</Btn>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

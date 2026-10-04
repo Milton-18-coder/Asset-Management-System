@@ -2,15 +2,18 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Modal, Input, Icon } from '../components/UIComponents';
-import { Store, Star, Mail, Phone, MapPin, FileText, Plus, Search, Trash2 } from 'lucide-react';
+import { VendorPurchaseHistoryModal } from '../components/VendorPurchaseHistoryModal';
+import { Store, Star, Mail, Phone, MapPin, FileText, Plus, Search, Trash2, History, DollarSign, Package } from 'lucide-react';
 import { api } from '../api';
 
 export const Vendors = () => {
   const { currentUser } = useSelector((state) => state.auth);
+  const purchaseList = useSelector((state) => state.purchaseHistory?.list || []);
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [selectedVendorForHistory, setSelectedVendorForHistory] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -72,7 +75,19 @@ export const Vendors = () => {
   };
 
   const filteredVendors = useMemo(() => {
-    return vendors.filter(v => {
+    return vendors.map(v => {
+      const vPurchases = purchaseList.filter(
+        p => (v.id && p.vendorId === v.id) || p.vendorName === v.name
+      );
+      const totalSpend = vPurchases.reduce((s, p) => s + Number(p.totalAmount || p.purchasePrice * (p.quantity || 1)), 0);
+      const totalUnits = vPurchases.reduce((s, p) => s + Number(p.quantity || 1), 0);
+      return {
+        ...v,
+        totalSpend,
+        totalUnits,
+        transactionCount: vPurchases.length
+      };
+    }).filter(v => {
       const q = searchQuery.toLowerCase();
       return (
         v.name.toLowerCase().includes(q) ||
@@ -81,13 +96,13 @@ export const Vendors = () => {
         (v.email && v.email.toLowerCase().includes(q))
       );
     });
-  }, [vendors, searchQuery]);
+  }, [vendors, purchaseList, searchQuery]);
 
   if (!currentUser) return null;
 
   return (
     <div className="space-y-6 pb-12">
-      <TopBar title="Vendors & Suppliers Directory" subtitle="Manage registered hardware suppliers, AMC partners, and OEMs" user={currentUser} />
+      <TopBar title="Vendors & Suppliers Directory" subtitle="Manage registered hardware suppliers, AMC partners, and procurement history" user={currentUser} />
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative flex-1 sm:w-72">
@@ -116,7 +131,7 @@ export const Vendors = () => {
             <Card key={v.id} className="p-5 hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
                     <Store size={20} />
                   </div>
                   <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 px-2 py-0.5 rounded-lg text-xs font-bold">
@@ -127,6 +142,20 @@ export const Vendors = () => {
 
                 <h3 className="font-extrabold text-slate-800 dark:text-white text-base mb-1 font-display">{v.name}</h3>
                 <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mb-3">{v.services || 'General Supplier'}</p>
+
+                {/* Procurement Snapshot */}
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 mb-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Spend</span>
+                    <strong className="text-indigo-600 dark:text-indigo-400 font-mono text-sm">
+                      ₹{v.totalSpend.toLocaleString()}
+                    </strong>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Orders</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold">{v.transactionCount} batches</span>
+                  </div>
+                </div>
 
                 <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
                   {v.contactPerson && (
@@ -159,17 +188,36 @@ export const Vendors = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 mt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
+                <Btn
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedVendorForHistory(v)}
+                  className="!py-1.5 !px-3 text-xs font-bold text-indigo-600 dark:text-indigo-400 flex-1 justify-center"
+                >
+                  <History size={13} className="mr-1" /> View Purchase History
+                </Btn>
                 <button
                   onClick={() => handleDelete(v.id)}
-                  className="text-xs text-slate-400 hover:text-rose-600 flex items-center gap-1 transition"
+                  className="text-xs text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition"
+                  title="Delete Vendor"
                 >
-                  <Trash2 size={13} /> Delete
+                  <Trash2 size={14} />
                 </button>
               </div>
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Modal: Vendor Purchase History */}
+      {selectedVendorForHistory && (
+        <VendorPurchaseHistoryModal
+          vendor={selectedVendorForHistory}
+          vendorId={selectedVendorForHistory.id}
+          vendorName={selectedVendorForHistory.name}
+          onClose={() => setSelectedVendorForHistory(null)}
+        />
       )}
 
       {showAdd && (

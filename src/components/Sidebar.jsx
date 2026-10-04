@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Icon } from './UIComponents';
-import { Bell, Wrench, Store, ShieldCheck } from 'lucide-react';
+import { Bell, Wrench, Store, ShieldCheck, ReceiptText } from 'lucide-react';
 
 export const Sidebar = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -97,6 +97,7 @@ export const Sidebar = ({ user, onLogout }) => {
           <div className="space-y-1 mt-1">
             {navItem('/assets', 'All Assets', <Icon.Furniture />)}
             {navItem('/assets/new', 'Add Asset', <Icon.Plus />)}
+            {navItem('/purchases', 'Purchase History', <ReceiptText size={18} />)}
             {navItem('/category', 'Category Locator', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>)}
           </div>
         )}

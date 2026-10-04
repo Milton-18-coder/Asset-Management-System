@@ -232,7 +232,40 @@ export async function initDatabase() {
       );
     `);
 
-    console.log('MySQL Database and 13 Tables initialized successfully');
+    // Vendor–Asset Purchase History and Price Tracking
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS purchase_history (
+        id VARCHAR(50) PRIMARY KEY,
+        assetId VARCHAR(50) NOT NULL,
+        assetName VARCHAR(255) NOT NULL,
+        vendorId VARCHAR(50),
+        vendorName VARCHAR(200) NOT NULL,
+        categoryId VARCHAR(100),
+        categoryName VARCHAR(100) NOT NULL,
+        subcategoryId VARCHAR(100),
+        subcategoryName VARCHAR(100) NOT NULL,
+        itemType VARCHAR(100),
+        purchaseDate DATE NOT NULL,
+        purchasePrice DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+        quantity INT NOT NULL DEFAULT 1,
+        totalAmount DECIMAL(14, 2) NOT NULL DEFAULT 0.00,
+        invoiceNumber VARCHAR(100),
+        invoiceDate DATE,
+        warrantyExpiry VARCHAR(100),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_ph_vendor (vendorId),
+        INDEX idx_ph_asset (assetId),
+        INDEX idx_ph_date (purchaseDate),
+        INDEX idx_ph_category (categoryName),
+        INDEX idx_ph_subcategory (subcategoryName),
+        INDEX idx_ph_vendor_date (vendorId, purchaseDate),
+        INDEX idx_ph_cat_sub_date (categoryName, subcategoryName, purchaseDate)
+      );
+    `);
+
+    console.log('MySQL Database and 14 Tables initialized successfully');
     return pool;
   } catch (error) {
     console.error('Failed to initialize MySQL Database:', error.message);

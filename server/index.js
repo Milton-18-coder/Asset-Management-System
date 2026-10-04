@@ -16,7 +16,8 @@ import {
   initialDisposals,
   initialVendors,
   initialAuditLogs,
-  initialCategories
+  initialCategories,
+  initialPurchaseHistory
 } from './initialData.js';
 
 import assetsRouter from './routes/assets.js';
@@ -32,6 +33,7 @@ import disposalsRouter from './routes/disposals.js';
 import vendorsRouter from './routes/vendors.js';
 import auditLogsRouter from './routes/auditLogs.js';
 import categoriesRouter from './routes/categories.js';
+import purchaseHistoryRouter from './routes/purchaseHistory.js';
 
 dotenv.config();
 
@@ -55,6 +57,7 @@ app.use('/api/disposals', disposalsRouter);
 app.use('/api/vendors', vendorsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/purchase-history', purchaseHistoryRouter);
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -78,7 +81,8 @@ async function startServer() {
       initialDisposals,
       initialVendors,
       initialAuditLogs,
-      initialCategories
+      initialCategories,
+      initialPurchaseHistory
     );
     
     app.listen(PORT, () => {

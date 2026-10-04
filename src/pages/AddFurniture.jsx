@@ -3,14 +3,31 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { addFurniture, editFurniture } from '../store/furnitureSlice';
 import { addNotification } from '../store/notificationsSlice';
-import { Card, Btn, Input, Select, Badge, Icon } from '../components/UIComponents';
+import { 
+  addPrimaryCategory, 
+  addSubCategory, 
+  addItemType 
+} from '../store/categoriesSlice';
+import { addPurchaseHistoryRecord } from '../store/purchaseHistorySlice';
+import { api } from '../api';
+import { Card, Btn, Input, Select, Badge, Icon, Modal } from '../components/UIComponents';
 import { 
   ASSET_CATEGORIES, 
-  MAIN_CATEGORIES,
+  getMainCategories,
+  getSubCategories,
   getItemTypes
 } from '../constants/assetCategories';
 import { ALLOWED_DEPARTMENTS, isValidDepartment, mapLegacyDepartment } from '../constants/departments';
-import { User, MapPin, FolderTree } from 'lucide-react';
+import { User, MapPin, FolderTree, Plus, Sparkles, FolderPlus, Layers, Tag, ShieldCheck, Store, ShoppingBag } from 'lucide-react';
+
+const COLOR_PALETTES = [
+  { label: 'Indigo / Tech', value: 'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/50', bg: 'bg-indigo-500' },
+  { label: 'Emerald / Green', value: 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50', bg: 'bg-emerald-500' },
+  { label: 'Amber / Orange', value: 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50', bg: 'bg-amber-500' },
+  { label: 'Violet / Purple', value: 'bg-violet-50 border-violet-100 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-900/50', bg: 'bg-violet-500' },
+  { label: 'Rose / Pink', value: 'bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/50', bg: 'bg-rose-500' },
+  { label: 'Cyan / Teal', value: 'bg-cyan-50 border-cyan-100 text-cyan-700 dark:bg-cyan-950/20 dark:text-cyan-400 dark:border-cyan-900/50', bg: 'bg-cyan-500' },
+];
 
 const createInitialState = (editAsset, userDept) => {
   const safeDept = mapLegacyDepartment(editAsset?.department || userDept);
@@ -33,6 +50,9 @@ const createInitialState = (editAsset, userDept) => {
       cost: editAsset.cost || 0,
       supplier: editAsset.supplier || 'Campus Procurement',
       warranty: editAsset.warranty || 'Standard Warranty',
+      invoiceNumber: editAsset.invoiceNumber || '',
+      invoiceDate: editAsset.invoiceDate || (editAsset.purchaseDate || new Date().toISOString().split('T')[0]),
+      notes: editAsset.notes || '',
       condition: editAsset.condition || 'Good',
       status: editAsset.status || 'In Use',
     };
@@ -56,6 +76,9 @@ const createInitialState = (editAsset, userDept) => {
     cost: 0,
     supplier: '',
     warranty: '',
+    invoiceNumber: '',
+    invoiceDate: new Date().toISOString().split('T')[0],
+    notes: '',
     condition: 'Good',
     status: 'In Use',
   };
@@ -81,11 +104,44 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
   const usersList = useSelector((state) => state.users.list);
+  const taxonomy = useSelector((state) => state.categories?.taxonomy || ASSET_CATEGORIES);
 
   const selectedFurniture = propSelected || (id ? furnitureList.find((f) => f.id === id) : null);
 
   const [success, setSuccess] = useState(false);
   const userDept = currentUser?.department || 'Computer Science';
+  const vendorsList = useSelector((state) => state.furniture?.vendors || []);
+
+  // Role permissions check: Super Admin and Dept Admin can add categories
+  const userRole = (currentUser?.role || '').toLowerCase();
+  const canManageCategories = 
+    userRole === 'superadmin' || 
+    userRole === 'deptadmin' || 
+    userRole === 'super admin' || 
+    userRole === 'dept admin';
+
+  // Modal States for Quick-Adding Categories
+  const [isAddPrimaryModalOpen, setIsAddPrimaryModalOpen] = useState(false);
+  const [primaryFormData, setPrimaryFormData] = useState({
+    name: '',
+    description: '',
+    color: COLOR_PALETTES[0].value,
+    initialSubCategory: '',
+    initialItemType: '',
+  });
+
+  const [isAddSubModalOpen, setIsAddSubModalOpen] = useState(false);
+  const [subFormData, setSubFormData] = useState({
+    mainCategory: '',
+    name: '',
+    description: '',
+    initialItemType: '',
+  });
+
+  const [isAddItemTypeModalOpen, setIsAddItemTypeModalOpen] = useState(false);
+  const [itemTypeFormData, setItemTypeFormData] = useState({
+    name: '',
+  });
 
   const [formState, formDispatch] = useReducer(
     formReducer,
@@ -103,31 +159,36 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
     formDispatch({ type: 'SET_FIELD', field, value });
   };
 
-  // Subcategories based on chosen Main Category
-  const subCategoryOptions = useMemo(() => {
-    const main = ASSET_CATEGORIES[formState.mainCategory];
-    if (!main) return ['Chair'];
-    return Object.keys(main.subCategories);
-  }, [formState.mainCategory]);
+  // Dynamic Primary Category options
+  const mainCategoryOptions = useMemo(() => {
+    return getMainCategories(taxonomy);
+  }, [taxonomy]);
 
-  // Item types based on Subcategory
+  // Subcategories based on chosen Main Category & dynamic taxonomy
+  const subCategoryOptions = useMemo(() => {
+    const subs = getSubCategories(formState.mainCategory, taxonomy);
+    if (subs.length > 0) return subs;
+    return ['General'];
+  }, [taxonomy, formState.mainCategory]);
+
+  // Item types based on Subcategory & dynamic taxonomy
   const itemTypeOptions = useMemo(() => {
-    return getItemTypes(formState.mainCategory, formState.category);
-  }, [formState.mainCategory, formState.category]);
+    return getItemTypes(formState.mainCategory, formState.category, taxonomy);
+  }, [taxonomy, formState.mainCategory, formState.category]);
 
   const handleMainCategoryChange = (mainCat) => {
     handleInputChange('mainCategory', mainCat);
-    const main = ASSET_CATEGORIES[mainCat];
-    const firstSub = main ? Object.keys(main.subCategories)[0] : 'Chair';
+    const subs = getSubCategories(mainCat, taxonomy);
+    const firstSub = subs.length > 0 ? subs[0] : 'General';
     handleInputChange('category', firstSub);
-    const firstItems = getItemTypes(mainCat, firstSub);
-    handleInputChange('itemType', firstItems[0] || '');
+    const firstItems = getItemTypes(mainCat, firstSub, taxonomy);
+    handleInputChange('itemType', firstItems[0] || firstSub);
   };
 
   const handleSubCategoryChange = (subCat) => {
     handleInputChange('category', subCat);
-    const items = getItemTypes(formState.mainCategory, subCat);
-    handleInputChange('itemType', items[0] || '');
+    const items = getItemTypes(formState.mainCategory, subCat, taxonomy);
+    handleInputChange('itemType', items[0] || subCat);
   };
 
   const handleUserSelectAutoFill = (userName) => {
@@ -140,6 +201,125 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
         handleInputChange('room', foundUser.office);
       }
     }
+  };
+
+  // Handler: Add New Primary Category
+  const handleAddPrimaryCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!primaryFormData.name.trim()) return;
+
+    const catName = primaryFormData.name.trim();
+    const subCatName = primaryFormData.initialSubCategory.trim() || 'General';
+    const itemTypeName = primaryFormData.initialItemType.trim() || subCatName;
+
+    dispatch(addPrimaryCategory({
+      name: catName,
+      description: primaryFormData.description.trim(),
+      color: primaryFormData.color,
+      initialSubCategory: subCatName,
+      initialItemType: itemTypeName,
+    }));
+
+    try {
+      api.addCategory({
+        name: subCatName,
+        mainCategory: catName,
+        description: primaryFormData.description.trim() || `${catName} asset category`,
+      }).catch(() => {});
+    } catch {
+      // Backend optional
+    }
+
+    dispatch(
+      addNotification({
+        title: 'Primary Category Added',
+        message: `Primary category "${catName}" with initial subcategory "${subCatName}" has been created.`,
+        type: 'category',
+        link: '/category',
+        department: formState.department,
+      })
+    );
+
+    // Immediately select the new primary category and subcategory
+    handleInputChange('mainCategory', catName);
+    handleInputChange('category', subCatName);
+    handleInputChange('itemType', itemTypeName);
+
+    setIsAddPrimaryModalOpen(false);
+    setPrimaryFormData({
+      name: '',
+      description: '',
+      color: COLOR_PALETTES[0].value,
+      initialSubCategory: '',
+      initialItemType: '',
+    });
+  };
+
+  // Handler: Add New Subcategory
+  const handleAddSubCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!subFormData.name.trim()) return;
+
+    const mainCat = subFormData.mainCategory || formState.mainCategory;
+    const subCatName = subFormData.name.trim();
+    const itemTypeName = subFormData.initialItemType.trim() || subCatName;
+
+    dispatch(addSubCategory({
+      mainCategory: mainCat,
+      name: subCatName,
+      description: subFormData.description.trim(),
+      initialItemType: itemTypeName,
+    }));
+
+    try {
+      api.addCategory({
+        name: subCatName,
+        mainCategory: mainCat,
+        description: subFormData.description.trim() || `${subCatName} under ${mainCat}`,
+      }).catch(() => {});
+    } catch {
+      // Backend optional
+    }
+
+    dispatch(
+      addNotification({
+        title: 'Subcategory Added',
+        message: `Subcategory "${subCatName}" added under ${mainCat}.`,
+        type: 'category',
+        link: '/category',
+        department: formState.department,
+      })
+    );
+
+    // Switch form to select the subcategory immediately
+    handleInputChange('mainCategory', mainCat);
+    handleInputChange('category', subCatName);
+    handleInputChange('itemType', itemTypeName);
+
+    setIsAddSubModalOpen(false);
+    setSubFormData({
+      mainCategory: '',
+      name: '',
+      description: '',
+      initialItemType: '',
+    });
+  };
+
+  // Handler: Add Specific Item Type
+  const handleAddItemTypeSubmit = (e) => {
+    e.preventDefault();
+    if (!itemTypeFormData.name.trim()) return;
+
+    const itemName = itemTypeFormData.name.trim();
+    dispatch(addItemType({
+      mainCategory: formState.mainCategory,
+      subCategory: formState.category,
+      name: itemName,
+    }));
+
+    handleInputChange('itemType', itemName);
+    setIsAddItemTypeModalOpen(false);
+    setItemTypeFormData({ name: '' });
   };
 
   const handleSubmit = (e) => {
@@ -164,6 +344,38 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
       );
     } else {
       dispatch(addFurniture(formState));
+      
+      // Also record initial purchase transaction in purchase history
+      const priceNum = parseFloat(formState.cost) || 0;
+      const qtyNum = parseInt(formState.quantity, 10) || 1;
+      const purchaseTransaction = {
+        id: `PUR-${Date.now()}`,
+        assetId: formState.id,
+        assetName: formState.name.trim(),
+        vendorId: null,
+        vendorName: formState.supplier || 'Campus Procurement',
+        categoryId: 'CAT-001',
+        categoryName: formState.mainCategory || 'Furniture',
+        subcategoryId: 'SUB-001',
+        subcategoryName: formState.category || 'General',
+        itemType: formState.itemType || formState.category || 'General',
+        purchaseDate: formState.purchaseDate,
+        purchasePrice: priceNum,
+        quantity: qtyNum,
+        totalAmount: parseFloat((priceNum * qtyNum).toFixed(2)),
+        invoiceNumber: formState.invoiceNumber || '',
+        invoiceDate: formState.invoiceDate || formState.purchaseDate,
+        warrantyExpiry: formState.warranty || '',
+        notes: formState.notes || formState.description || 'Initial asset purchase entry.',
+      };
+
+      dispatch(addPurchaseHistoryRecord(purchaseTransaction));
+      try {
+        api.addPurchaseHistory(purchaseTransaction).catch(() => {});
+      } catch {
+        // Backend optional
+      }
+
       dispatch(
         addNotification({
           title: 'New Asset Registered',
@@ -235,31 +447,94 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
         <div className="lg:col-span-2 space-y-6">
           {/* Category Classification */}
           <Card className="p-5 space-y-4">
-            <p className="text-sm font-bold text-slate-800 dark:text-white font-display flex items-center gap-2">
-              <FolderTree className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Category Classification & Specific Type
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-slate-800 dark:text-white font-display flex items-center gap-2">
+                <FolderTree className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Category Classification & Specific Type
+              </p>
+              {canManageCategories && (
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/40">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Category Admin Enabled
+                </span>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Select
-                label="Primary Category"
-                value={formState.mainCategory}
-                onChange={e => handleMainCategoryChange(e.target.value)}
-                options={MAIN_CATEGORIES}
-              />
+              {/* PRIMARY CATEGORY DROPDOWN + ADD BUTTON */}
+              <div className="flex flex-col justify-between">
+                <Select
+                  label="Primary Category"
+                  value={formState.mainCategory}
+                  onChange={e => handleMainCategoryChange(e.target.value)}
+                  options={mainCategoryOptions}
+                />
+                {canManageCategories && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrimaryFormData({
+                        name: '',
+                        description: '',
+                        color: COLOR_PALETTES[0].value,
+                        initialSubCategory: '',
+                        initialItemType: '',
+                      });
+                      setIsAddPrimaryModalOpen(true);
+                    }}
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline cursor-pointer transition w-fit"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add New Primary Category
+                  </button>
+                )}
+              </div>
 
-              <Select
-                label="Subcategory"
-                value={formState.category}
-                onChange={e => handleSubCategoryChange(e.target.value)}
-                options={subCategoryOptions}
-              />
+              {/* SUBCATEGORY DROPDOWN + ADD BUTTON */}
+              <div className="flex flex-col justify-between">
+                <Select
+                  label="Subcategory"
+                  value={formState.category}
+                  onChange={e => handleSubCategoryChange(e.target.value)}
+                  options={subCategoryOptions.length > 0 ? subCategoryOptions : ['General']}
+                />
+                {canManageCategories && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubFormData({
+                        mainCategory: formState.mainCategory,
+                        name: '',
+                        description: '',
+                        initialItemType: '',
+                      });
+                      setIsAddSubModalOpen(true);
+                    }}
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline cursor-pointer transition w-fit"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add New Subcategory
+                  </button>
+                )}
+              </div>
 
-              <Select
-                label="Specific Item Type"
-                value={formState.itemType}
-                onChange={e => handleInputChange('itemType', e.target.value)}
-                options={itemTypeOptions.length > 0 ? itemTypeOptions : [formState.category]}
-              />
+              {/* SPECIFIC ITEM TYPE DROPDOWN + ADD BUTTON */}
+              <div className="flex flex-col justify-between">
+                <Select
+                  label="Specific Item Type"
+                  value={formState.itemType}
+                  onChange={e => handleInputChange('itemType', e.target.value)}
+                  options={itemTypeOptions.length > 0 ? itemTypeOptions : [formState.category || 'Standard Item']}
+                />
+                {canManageCategories && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setItemTypeFormData({ name: '' });
+                      setIsAddItemTypeModalOpen(true);
+                    }}
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline cursor-pointer transition w-fit"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Item Type
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
@@ -381,36 +656,110 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
             </div>
           </Card>
 
-          {/* Procurement & Warranty */}
+          {/* Procurement & Purchase Information */}
           <Card className="p-5">
-            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 font-display tracking-tight">
-              Procurement & Warranty Details
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <Input
-                label="Unit Cost (₹)"
-                type="number"
-                value={formState.cost}
-                onChange={e => handleInputChange('cost', parseFloat(e.target.value) || 0)}
-              />
-              <Input
-                label="Purchase Date"
-                type="date"
-                value={formState.purchaseDate}
-                onChange={e => handleInputChange('purchaseDate', e.target.value)}
-              />
-              <Input
-                label="Supplier / Vendor"
-                value={formState.supplier}
-                onChange={e => handleInputChange('supplier', e.target.value)}
-                placeholder="e.g. Godrej Interio"
-              />
-              <Input
-                label="Warranty Period"
-                value={formState.warranty}
-                onChange={e => handleInputChange('warranty', e.target.value)}
-                placeholder="e.g. 3 Years (Till 2027)"
-              />
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-200 font-display tracking-tight flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>Purchase & Vendor Information</span>
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Commercial procurement data mapped to registered vendors with historical price tracking
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Supplier / Vendor *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dell India / Godrej Interio"
+                    list="vendorsDatalist"
+                    value={formState.supplier}
+                    onChange={e => handleInputChange('supplier', e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  <datalist id="vendorsDatalist">
+                    {vendorsList.map((v) => (
+                      <option key={v.id || v.name} value={v.name} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <Input
+                  label="Purchase Date *"
+                  type="date"
+                  value={formState.purchaseDate}
+                  onChange={e => handleInputChange('purchaseDate', e.target.value)}
+                  required
+                />
+
+                <Input
+                  label="Unit Purchase Cost (₹) *"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formState.cost}
+                  onChange={e => handleInputChange('cost', parseFloat(e.target.value) || 0)}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <Input
+                  label="Quantity *"
+                  type="number"
+                  min="1"
+                  value={formState.quantity}
+                  onChange={e => handleInputChange('quantity', parseInt(e.target.value, 10) || 1)}
+                  required
+                />
+
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Calculated Total Spend
+                  </label>
+                  <div className="px-3.5 py-2 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-emerald-600 dark:text-emerald-400">
+                    ₹{((parseFloat(formState.cost) || 0) * (parseInt(formState.quantity, 10) || 1)).toLocaleString()}
+                  </div>
+                </div>
+
+                <Input
+                  label="Invoice / Bill Number"
+                  placeholder="e.g. INV-2026-9041"
+                  value={formState.invoiceNumber}
+                  onChange={e => handleInputChange('invoiceNumber', e.target.value)}
+                />
+
+                <Input
+                  label="Warranty Period"
+                  placeholder="e.g. 3 Years (Till 2029)"
+                  value={formState.warranty}
+                  onChange={e => handleInputChange('warranty', e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <Input
+                  label="Invoice Date"
+                  type="date"
+                  value={formState.invoiceDate}
+                  onChange={e => handleInputChange('invoiceDate', e.target.value)}
+                />
+
+                <Input
+                  label="Procurement Remarks / Notes"
+                  placeholder="e.g. Bulk institutional academic purchase..."
+                  value={formState.notes}
+                  onChange={e => handleInputChange('notes', e.target.value)}
+                />
+              </div>
             </div>
           </Card>
         </div>
@@ -508,6 +857,230 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
           </Card>
         </div>
       </form>
+
+      {/* =========================================================================
+          MODAL 1: ADD NEW PRIMARY CATEGORY
+         ========================================================================= */}
+      {isAddPrimaryModalOpen && (
+        <Modal 
+          title="Add New Primary Category" 
+          onClose={() => setIsAddPrimaryModalOpen(false)}
+          defaultSize="max-w-md"
+        >
+          <form onSubmit={handleAddPrimaryCategorySubmit} className="space-y-4">
+            <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0">
+                <FolderPlus className="w-5 h-5" />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold text-indigo-900 dark:text-indigo-200">New Category Taxonomy</p>
+                <p className="text-indigo-700/80 dark:text-indigo-400">Available to Superadmin & Dept Admin across all departments</p>
+              </div>
+            </div>
+
+            <Input
+              label="Primary Category Name *"
+              value={primaryFormData.name}
+              onChange={(e) => setPrimaryFormData({ ...primaryFormData, name: e.target.value })}
+              placeholder="e.g. Laboratory Equipment, IT Hardware, Sports & Fitness"
+              required
+              autoFocus
+            />
+
+            <div>
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1 uppercase tracking-wide">
+                Description
+              </label>
+              <textarea
+                value={primaryFormData.description}
+                onChange={(e) => setPrimaryFormData({ ...primaryFormData, description: e.target.value })}
+                placeholder="Brief summary of asset types classified under this primary category..."
+                rows={2}
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Initial Subcategory"
+                value={primaryFormData.initialSubCategory}
+                onChange={(e) => setPrimaryFormData({ ...primaryFormData, initialSubCategory: e.target.value })}
+                placeholder="e.g. Microscopes (optional)"
+              />
+              <Input
+                label="Initial Item Type"
+                value={primaryFormData.initialItemType}
+                onChange={(e) => setPrimaryFormData({ ...primaryFormData, initialItemType: e.target.value })}
+                placeholder="e.g. Digital Microscope"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2 uppercase tracking-wide">
+                Badge Theme Accent
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {COLOR_PALETTES.map((pal) => (
+                  <button
+                    key={pal.label}
+                    type="button"
+                    onClick={() => setPrimaryFormData({ ...primaryFormData, color: pal.value })}
+                    className={`flex items-center gap-2 p-2 rounded-xl border text-left text-xs font-medium transition cursor-pointer ${
+                      primaryFormData.color === pal.value
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${pal.bg}`} />
+                    <span className="truncate">{pal.label.split('/')[0]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 justify-end">
+              <Btn 
+                type="button" 
+                variant="secondary" 
+                onClick={() => setIsAddPrimaryModalOpen(false)}
+              >
+                Cancel
+              </Btn>
+              <Btn 
+                type="submit" 
+                disabled={!primaryFormData.name.trim()}
+              >
+                Create Category
+              </Btn>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* =========================================================================
+          MODAL 2: ADD NEW SUBCATEGORY
+         ========================================================================= */}
+      {isAddSubModalOpen && (
+        <Modal 
+          title="Add New Subcategory" 
+          onClose={() => setIsAddSubModalOpen(false)}
+          defaultSize="max-w-md"
+        >
+          <form onSubmit={handleAddSubCategorySubmit} className="space-y-4">
+            <div className="p-3 bg-violet-50/70 dark:bg-violet-950/30 rounded-2xl border border-violet-100 dark:border-violet-900/50 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center flex-shrink-0">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold text-violet-900 dark:text-violet-200">Subcategory Tier</p>
+                <p className="text-violet-700/80 dark:text-violet-400">Classifies assets under a parent primary category</p>
+              </div>
+            </div>
+
+            <Select
+              label="Parent Primary Category *"
+              value={subFormData.mainCategory || formState.mainCategory}
+              onChange={(e) => setSubFormData({ ...subFormData, mainCategory: e.target.value })}
+              options={mainCategoryOptions}
+            />
+
+            <Input
+              label="Subcategory Name *"
+              value={subFormData.name}
+              onChange={(e) => setSubFormData({ ...subFormData, name: e.target.value })}
+              placeholder="e.g. Ergonomic Chairs, Laser Printers, Power Tools"
+              required
+              autoFocus
+            />
+
+            <Input
+              label="Initial Item Type (optional)"
+              value={subFormData.initialItemType}
+              onChange={(e) => setSubFormData({ ...subFormData, initialItemType: e.target.value })}
+              placeholder="e.g. Heavy Duty Executive Chair"
+            />
+
+            <div>
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1 uppercase tracking-wide">
+                Description (optional)
+              </label>
+              <textarea
+                value={subFormData.description}
+                onChange={(e) => setSubFormData({ ...subFormData, description: e.target.value })}
+                placeholder="Specific characteristics or use-cases of this subcategory..."
+                rows={2}
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 justify-end">
+              <Btn 
+                type="button" 
+                variant="secondary" 
+                onClick={() => setIsAddSubModalOpen(false)}
+              >
+                Cancel
+              </Btn>
+              <Btn 
+                type="submit" 
+                disabled={!subFormData.name.trim()}
+              >
+                Add Subcategory
+              </Btn>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* =========================================================================
+          MODAL 3: ADD NEW SPECIFIC ITEM TYPE
+         ========================================================================= */}
+      {isAddItemTypeModalOpen && (
+        <Modal 
+          title="Add Specific Item Type" 
+          onClose={() => setIsAddItemTypeModalOpen(false)}
+          defaultSize="max-w-md"
+        >
+          <form onSubmit={handleAddItemTypeSubmit} className="space-y-4">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-slate-800 dark:bg-slate-700 text-white flex items-center justify-center flex-shrink-0">
+                <Tag className="w-5 h-5" />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold text-slate-800 dark:text-slate-200">Taxonomy Path</p>
+                <p className="text-slate-500 dark:text-slate-400">
+                  {formState.mainCategory} › {formState.category}
+                </p>
+              </div>
+            </div>
+
+            <Input
+              label="Item Type Name *"
+              value={itemTypeFormData.name}
+              onChange={(e) => setItemTypeFormData({ name: e.target.value })}
+              placeholder="e.g. Pneumatic Lab Stool, 4K Interactive Touch Panel"
+              required
+              autoFocus
+            />
+
+            <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 justify-end">
+              <Btn 
+                type="button" 
+                variant="secondary" 
+                onClick={() => setIsAddItemTypeModalOpen(false)}
+              >
+                Cancel
+              </Btn>
+              <Btn 
+                type="submit" 
+                disabled={!itemTypeFormData.name.trim()}
+              >
+                Add Item Type
+              </Btn>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };

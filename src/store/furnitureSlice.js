@@ -1932,6 +1932,17 @@ const furnitureSlice = createSlice({
         localStorage.setItem('furniture_list', JSON.stringify(state.list));
       }
     },
+    updateFurniture: (state, action) => {
+      const idx = state.list.findIndex(f => f.id === action.payload.id);
+      if (idx !== -1) {
+        state.list[idx] = { 
+          ...state.list[idx], 
+          ...action.payload,
+          department: action.payload?.department ? mapLegacyDepartment(action.payload.department) : state.list[idx].department,
+        };
+        localStorage.setItem('furniture_list', JSON.stringify(state.list));
+      }
+    },
     deleteFurniture: (state, action) => {
       state.list = state.list.filter(f => f.id !== action.payload);
       localStorage.setItem('furniture_list', JSON.stringify(state.list));
@@ -1983,6 +1994,7 @@ export const {
   setFurnitureList,
   addFurniture,
   editFurniture,
+  updateFurniture,
   deleteFurniture,
   updateFurnitureLocation,
   updateFurnitureCustodian,

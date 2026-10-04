@@ -7,6 +7,7 @@ import { setTransfersList } from './store/transfersSlice';
 import { setInspectionsList } from './store/inspectionsSlice';
 import { setUsersList } from './store/usersSlice';
 import { setNotificationsList } from './store/notificationsSlice';
+import { setPurchaseHistoryList } from './store/purchaseHistorySlice';
 import { api } from './api';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/Login';
@@ -26,6 +27,7 @@ import { Profile } from './pages/Profile';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { Maintenance } from './pages/Maintenance';
 import { Vendors } from './pages/Vendors';
+import { Purchases } from './pages/Purchases';
 import { AuditLogs } from './pages/AuditLogs';
 
 export default function App() {
@@ -37,12 +39,13 @@ export default function App() {
   useEffect(() => {
     async function syncDatabase() {
       try {
-        const [assets, transfers, inspections, users, notifications] = await Promise.allSettled([
+        const [assets, transfers, inspections, users, notifications, purchases] = await Promise.allSettled([
           api.getAssets(),
           api.getTransfers(),
           api.getInspections(),
           api.getUsers(),
           api.getNotifications(),
+          api.getPurchaseHistory(),
         ]);
 
         if (assets.status === 'fulfilled' && Array.isArray(assets.value) && assets.value.length > 0) {
@@ -59,6 +62,9 @@ export default function App() {
         }
         if (notifications.status === 'fulfilled' && Array.isArray(notifications.value) && notifications.value.length > 0) {
           dispatch(setNotificationsList(notifications.value));
+        }
+        if (purchases.status === 'fulfilled' && Array.isArray(purchases.value) && purchases.value.length > 0) {
+          dispatch(setPurchaseHistoryList(purchases.value));
         }
       } catch (err) {
         console.warn('Backend sync warning (fallback to local state):', err.message);
@@ -109,6 +115,7 @@ export default function App() {
             <Route path="/inspections" element={<Inspections />} />
             <Route path="/maintenance" element={isSuperAdmin ? <Maintenance /> : <Navigate to="/dashboard" replace />} />
             <Route path="/vendors" element={isSuperAdmin ? <Vendors /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/purchases" element={<Purchases />} />
             <Route path="/audit-logs" element={isSuperAdmin ? <AuditLogs /> : <Navigate to="/dashboard" replace />} />
             <Route path="/users" element={isSuperAdmin ? <Users /> : <Navigate to="/dashboard" replace />} />
             <Route path="/settings" element={isSuperAdmin ? <Settings /> : <Navigate to="/dashboard" replace />} />
