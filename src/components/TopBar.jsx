@@ -5,7 +5,8 @@ import { markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } 
 import { Icon } from './UIComponents';
 import { useTheme } from '../context/ThemeContext';
 import { useClickOutside } from '../hooks/useClickOutside';
-import { Sun, Moon, CheckCheck, Trash2, ArrowRight } from 'lucide-react';
+import { useRecentAccess, formatRelativeTime } from '../utils/recentAccess';
+import { Sun, Moon, CheckCheck, Trash2, ArrowRight, History, Clock, X, Layers, ExternalLink } from 'lucide-react';
 
 export const TopBar = ({ title, subtitle, user: propUser }) => {
   const { theme, toggleTheme } = useTheme();
@@ -14,6 +15,12 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
 
   const authUser = useSelector((state) => state.auth.currentUser);
   const user = propUser || authUser;
+
+  const { recentItems, removeAccess, clearAll } = useRecentAccess();
+  const [openRecent, setOpenRecent] = useState(false);
+  const recentDropdownRef = useClickOutside(() => {
+    if (openRecent) setOpenRecent(false);
+  });
 
   const notificationsList = useSelector((state) => state.notifications?.list || []);
   const [openNotif, setOpenNotif] = useState(false);
@@ -66,6 +73,14 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
     }
   };
 
+  const handleRecentClick = (item) => {
+    setOpenRecent(false);
+    if (item.link) {
+      navigate(item.link);
+    } else {
+      navigate(`/assets/${item.id}`);
+    }
+  };
   const getTypeIcon = (type) => {
     switch (type) {
       case 'transfer':
@@ -102,7 +117,7 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
         {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">{subtitle}</p>}
       </div>
 
-      <div className="flex items-center gap-3 self-end sm:self-auto">
+      <div className="flex items-center gap-2.5 self-end sm:self-auto">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -111,6 +126,114 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
+
+        {/* Recently Accessed Popover */}
+        <div className="relative" ref={recentDropdownRef}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenRecent((prev) => !prev);
+              setOpenNotif(false);
+            }}
+            className={`relative w-10 h-10 rounded-xl border flex items-center justify-center transition duration-200 cursor-pointer shadow-sm ${
+              openRecent
+                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-500'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+            title="Recently Accessed Items"
+          >
+            <History size={17} />
+            {recentItems.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-bold text-white shadow-sm">
+                {recentItems.length > 9 ? '9+' : recentItems.length}
+              </span>
+            )}
+          </button>
+
+          {openRecent && (
+            <div 
+              className="absolute right-0 top-full pt-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
+              style={{ minWidth: '340px', maxWidth: '400px' }}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/15 dark:shadow-black/70 overflow-hidden"
+              >
+                {/* Header */}
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/90">
+                  <div className="flex items-center gap-2">
+                    <History size={14} className="text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs font-display uppercase tracking-wide">
+                      Recently Accessed
+                    </h3>
+                  </div>
+                  {recentItems.length > 0 && (
+                    <button
+                      onClick={clearAll}
+                      className="text-[11px] text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 font-bold transition cursor-pointer"
+                      title="Clear Recent History"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+
+                {/* Items List */}
+                <div className="max-h-[320px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                  {recentItems.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Clock size={18} />
+                      </div>
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No recently accessed assets</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Assets you open will appear here for fast jumping.</p>
+                    </div>
+                  ) : (
+                    recentItems.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleRecentClick(item)}
+                        className="p-3 transition flex items-start gap-2.5 cursor-pointer hover:bg-indigo-50/40 dark:hover:bg-slate-800/60 group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold flex-shrink-0 text-xs mt-0.5">
+                          <Icon.Furniture />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                              {item.name}
+                            </p>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap font-medium">
+                              {formatRelativeTime(item.accessedAt)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{item.id}</span>
+                            {item.room && <span>• {item.room}</span>}
+                            {item.department && <span>• {item.department}</span>}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeAccess(item.id);
+                          }}
+                          className="text-slate-300 hover:text-rose-500 dark:text-slate-600 dark:hover:text-rose-400 p-1 rounded transition flex-shrink-0"
+                          title="Remove from history"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Notifications Button & Dropdown Popover (Opens on hover and click) */}
         <div 
@@ -124,6 +247,7 @@ export const TopBar = ({ title, subtitle, user: propUser }) => {
             onClick={(e) => {
               e.stopPropagation();
               setOpenNotif((prev) => !prev);
+              setOpenRecent(false);
             }}
             className={`relative w-10 h-10 rounded-xl border flex items-center justify-center transition duration-200 cursor-pointer shadow-sm ${
               openNotif

@@ -5,7 +5,8 @@ import { deleteFurniture } from '../store/furnitureSlice';
 import { addNotification } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Icon } from '../components/UIComponents';
-import { MapPin, User, Search, Layers } from 'lucide-react';
+import { useRecentAccess, recordRecentAccess } from '../utils/recentAccess';
+import { MapPin, User, Search, Layers, History, Sparkles } from 'lucide-react';
 
 export const FurnitureList = () => {
   const navigate = useNavigate();
@@ -14,11 +15,13 @@ export const FurnitureList = () => {
 
   const { currentUser } = useSelector((state) => state.auth);
   const furnitureList = useSelector((state) => state.furniture.list);
+  const { recentItems } = useRecentAccess();
 
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState(searchParams.get('category') || 'All');
   const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || 'All');
   const [filterCond, setFilterCond] = useState(searchParams.get('condition') || 'All');
+  const [onlyRecent, setOnlyRecent] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
@@ -45,7 +48,9 @@ export const FurnitureList = () => {
 
   // Search & Filter algorithm
   const filteredList = useMemo(() => {
+    const recentIds = new Set(recentItems.map(r => r.id));
     return sourceList.filter(f => {
+      if (onlyRecent && !recentIds.has(f.id)) return false;
       const q = search.toLowerCase();
       const matchSearch = 
         !q || 
@@ -63,7 +68,7 @@ export const FurnitureList = () => {
       const matchCond = filterCond === 'All' || f.condition === filterCond;
       return matchSearch && matchCat && matchStatus && matchCond;
     });
-  }, [search, filterCat, filterStatus, filterCond, sourceList]);
+  }, [search, filterCat, filterStatus, filterCond, onlyRecent, recentItems, sourceList]);
 
   const handleDelete = (id) => {
     const asset = furnitureList.find(f => f.id === id);
@@ -182,6 +187,21 @@ export const FurnitureList = () => {
             ))}
           </select>
 
+          {/* Recently Viewed Filter Toggle */}
+          <button
+            type="button"
+            onClick={() => setOnlyRecent(!onlyRecent)}
+            className={`px-3 py-2 text-xs rounded-xl border font-bold flex items-center gap-1.5 transition cursor-pointer ${
+              onlyRecent
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+            }`}
+            title="Filter by recently accessed assets"
+          >
+            <History size={13} className={onlyRecent ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'} />
+            <span>Recent ({recentItems.length})</span>
+          </button>
+
           {/* Actions */}
           <Btn onClick={() => navigate('/assets/new')}>
             <Icon.Plus /> Add Asset
@@ -218,7 +238,14 @@ export const FurnitureList = () => {
                 </tr>
               ) : (
                 filteredList.map(f => (
-                  <tr key={f.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition duration-150">
+                  <tr 
+                    key={f.id} 
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition duration-150 cursor-pointer"
+                    onClick={() => {
+                      recordRecentAccess(f);
+                      navigate(`/assets/${f.id}`);
+                    }}
+                  >
                     <td className="px-5 py-4 font-mono text-indigo-600 dark:text-indigo-400 font-bold whitespace-nowrap">{f.id}</td>
                     <td className="pl-5 pr-3 py-4 max-w-[320px]">
                       <div className="flex flex-col min-w-0 pr-2">
@@ -259,21 +286,31 @@ export const FurnitureList = () => {
                     <td className="px-5 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <button 
-                          onClick={() => navigate(`/assets/${f.id}`)} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            recordRecentAccess(f);
+                            navigate(`/assets/${f.id}`);
+                          }} 
                           className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
                           title="View Details"
                         >
                           <Icon.Eye />
                         </button>
                         <button 
-                          onClick={() => navigate(`/assets/edit/${f.id}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/assets/edit/${f.id}`);
+                          }}
                           className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
                           title="Edit"
                         >
                           <Icon.Edit />
                         </button>
                         <button 
-                          onClick={() => setDeleteId(f.id)} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteId(f.id);
+                          }} 
                           className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
                           title="Delete"
                         >

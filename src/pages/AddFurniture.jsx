@@ -20,15 +20,6 @@ import {
 import { ALLOWED_DEPARTMENTS, isValidDepartment, mapLegacyDepartment } from '../constants/departments';
 import { User, MapPin, FolderTree, Plus, Sparkles, FolderPlus, Layers, Tag, ShieldCheck, Store, ShoppingBag } from 'lucide-react';
 
-const COLOR_PALETTES = [
-  { label: 'Indigo / Tech', value: 'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/50', bg: 'bg-indigo-500' },
-  { label: 'Emerald / Green', value: 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50', bg: 'bg-emerald-500' },
-  { label: 'Amber / Orange', value: 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50', bg: 'bg-amber-500' },
-  { label: 'Violet / Purple', value: 'bg-violet-50 border-violet-100 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-900/50', bg: 'bg-violet-500' },
-  { label: 'Rose / Pink', value: 'bg-rose-50 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/50', bg: 'bg-rose-500' },
-  { label: 'Cyan / Teal', value: 'bg-cyan-50 border-cyan-100 text-cyan-700 dark:bg-cyan-950/20 dark:text-cyan-400 dark:border-cyan-900/50', bg: 'bg-cyan-500' },
-];
-
 const createInitialState = (editAsset, userDept) => {
   const safeDept = mapLegacyDepartment(editAsset?.department || userDept);
   if (editAsset) {
@@ -125,7 +116,6 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
   const [primaryFormData, setPrimaryFormData] = useState({
     name: '',
     description: '',
-    color: COLOR_PALETTES[0].value,
     initialSubCategory: '',
     initialItemType: '',
   });
@@ -249,7 +239,6 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
     setPrimaryFormData({
       name: '',
       description: '',
-      color: COLOR_PALETTES[0].value,
       initialSubCategory: '',
       initialItemType: '',
     });
@@ -474,7 +463,6 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
                       setPrimaryFormData({
                         name: '',
                         description: '',
-                        color: COLOR_PALETTES[0].value,
                         initialSubCategory: '',
                         initialItemType: '',
                       });
@@ -913,29 +901,6 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
                 onChange={(e) => setPrimaryFormData({ ...primaryFormData, initialItemType: e.target.value })}
                 placeholder="e.g. Digital Microscope"
               />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2 uppercase tracking-wide">
-                Badge Theme Accent
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {COLOR_PALETTES.map((pal) => (
-                  <button
-                    key={pal.label}
-                    type="button"
-                    onClick={() => setPrimaryFormData({ ...primaryFormData, color: pal.value })}
-                    className={`flex items-center gap-2 p-2 rounded-xl border text-left text-xs font-medium transition cursor-pointer ${
-                      primaryFormData.color === pal.value
-                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 font-bold'
-                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${pal.bg}`} />
-                    <span className="truncate">{pal.label.split('/')[0]}</span>
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 justify-end">

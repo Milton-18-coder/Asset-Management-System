@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Btn, Badge, Modal, Input, Icon } from '../components/UIComponents';
@@ -6,6 +6,7 @@ import { updateFurnitureCustodian, updateFurnitureLocation, updateFurniture } fr
 import { addNotification } from '../store/notificationsSlice';
 import { addPurchaseHistoryRecord } from '../store/purchaseHistorySlice';
 import { PriceHistoryChart } from '../components/PriceHistoryChart';
+import { recordRecentAccess } from '../utils/recentAccess';
 import { api } from '../api';
 import { MapPin, User, Mail, Shield, ArrowLeft, Edit3, Building2, Layers, ShoppingBag, Store, Calendar, DollarSign, Plus, FileText, CheckCircle2, TrendingUp, History } from 'lucide-react';
 
@@ -22,6 +23,22 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
   const allPurchases = useSelector((state) => state.purchaseHistory?.list || []);
 
   const furniture = propFurniture || furnitureList.find((f) => f.id === id);
+
+  useEffect(() => {
+    if (furniture) {
+      recordRecentAccess({
+        id: furniture.id,
+        name: furniture.name,
+        category: furniture.category || furniture.mainCategory,
+        department: furniture.department,
+        room: furniture.room,
+        cost: furniture.cost,
+        condition: furniture.condition,
+        status: furniture.status,
+        type: 'asset'
+      });
+    }
+  }, [furniture]);
 
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showAddPurchaseModal, setShowAddPurchaseModal] = useState(false);

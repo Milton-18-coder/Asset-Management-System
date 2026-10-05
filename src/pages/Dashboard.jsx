@@ -5,7 +5,8 @@ import { markAsRead } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { StatCard, Card, Badge, Btn, Icon } from '../components/UIComponents';
 import { DonutChart, BarChart } from '../components/Charts';
-import { Bell, ArrowRight, ShoppingCart, IndianRupee, Store, TrendingUp } from 'lucide-react';
+import { useRecentAccess, formatRelativeTime } from '../utils/recentAccess';
+import { Bell, ArrowRight, ShoppingCart, IndianRupee, Store, TrendingUp, History, Clock } from 'lucide-react';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export const Dashboard = () => {
   const transfersList = useSelector((state) => state.transfers.list);
   const notificationsList = useSelector((state) => state.notifications?.list || []);
   const purchaseHistoryList = useSelector((state) => state.purchaseHistory?.list || []);
+  const { recentItems } = useRecentAccess();
 
   if (!currentUser) return null;
 
@@ -129,6 +131,47 @@ export const Dashboard = () => {
           color="bg-amber-50 border-amber-150 text-amber-600 dark:bg-amber-950/20 dark:border-amber-900/50 dark:text-amber-400" 
         />
       </div>
+
+      {/* Recently Accessed Quick Strip */}
+      {recentItems.length > 0 && (
+        <Card className="p-4 mb-6 bg-gradient-to-r from-slate-50 via-indigo-50/20 to-white dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 border-indigo-100/60 dark:border-indigo-900/30">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <History size={13} />
+              </div>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 font-display uppercase tracking-wider">
+                Recently Accessed Assets
+              </p>
+            </div>
+            <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+              Fast jump to recently opened items
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+            {recentItems.slice(0, 4).map((item) => (
+              <div
+                key={item.id}
+                onClick={() => navigate(item.link || `/assets/${item.id}`)}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-150 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-xs transition cursor-pointer flex items-center gap-2.5 group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                  <Icon.Furniture />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                    {item.name}
+                  </p>
+                  <p className="text-[10px] text-slate-400 truncate">
+                    <span className="font-mono font-bold text-indigo-500">{item.id}</span> {item.room ? `• ${item.room}` : ''} • {formatRelativeTime(item.accessedAt)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Upper Row: Pie Chart on top alongside Transfers & Alerts */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
