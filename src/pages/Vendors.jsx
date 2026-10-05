@@ -5,12 +5,30 @@ import { Card, Btn, Modal, Input, Icon } from '../components/UIComponents';
 import { VendorPurchaseHistoryModal } from '../components/VendorPurchaseHistoryModal';
 import { Store, Star, Mail, Phone, MapPin, FileText, Plus, Search, Trash2, History, DollarSign, Package } from 'lucide-react';
 import { api } from '../api';
+import { initialVendors } from '../constants/initialVendors';
+
+const STORAGE_KEY = 'asset_vendors_list';
+
+const getInitialVendorsList = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error reading vendors cache:', e);
+  }
+  return initialVendors;
+};
 
 export const Vendors = () => {
   const { currentUser } = useSelector((state) => state.auth);
   const purchaseList = useSelector((state) => state.purchaseHistory?.list || []);
-  const [vendors, setVendors] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [vendors, setVendors] = useState(getInitialVendorsList);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [selectedVendorForHistory, setSelectedVendorForHistory] = useState(null);
@@ -28,11 +46,18 @@ export const Vendors = () => {
 
   const loadVendors = async () => {
     try {
-      setLoading(true);
       const data = await api.getVendors();
-      setVendors(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setVendors(data);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } else {
+        const fallback = getInitialVendorsList();
+        setVendors(fallback);
+      }
     } catch (err) {
-      console.error('Failed to load vendors:', err);
+      console.warn('API unavailable, using cached vendors:', err.message);
+      const fallback = getInitialVendorsList();
+      setVendors(fallback);
     } finally {
       setLoading(false);
     }
@@ -45,32 +70,44 @@ export const Vendors = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name) return;
+    const newVendor = {
+      ...formData,
+      id: `VND-${Date.now()}`
+    };
+
+    // Optimistically save to local state and localStorage
+    const updated = [newVendor, ...vendors];
+    setVendors(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setShowAdd(false);
+    setFormData({
+      name: '',
+      contactPerson: '',
+      email: '',
+      phone: '',
+      address: '',
+      gstin: '',
+      rating: 4.5,
+      services: '',
+    });
+
     try {
       await api.addVendor(formData);
-      setShowAdd(false);
-      setFormData({
-        name: '',
-        contactPerson: '',
-        email: '',
-        phone: '',
-        address: '',
-        gstin: '',
-        rating: 4.5,
-        services: '',
-      });
-      await loadVendors();
     } catch (err) {
-      alert('Error adding vendor: ' + err.message);
+      console.warn('Backend addVendor sync failed:', err.message);
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this vendor?')) return;
+    const updated = vendors.filter(v => v.id !== id);
+    setVendors(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
     try {
       await api.deleteVendor(id);
-      await loadVendors();
     } catch (err) {
-      alert('Error deleting vendor: ' + err.message);
+      console.warn('Backend deleteVendor sync failed:', err.message);
     }
   };
 
