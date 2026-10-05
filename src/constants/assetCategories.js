@@ -113,6 +113,125 @@ export const ASSET_CATEGORIES = {
         ]
       }
     }
+  },
+  Laboratory: {
+    name: 'Laboratory',
+    description: 'Scientific precision instruments, analytical testing, optical, and research apparatus',
+    color: 'bg-purple-50 border-purple-100 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/50',
+    subCategories: {
+      'Analytical Instruments': {
+        name: 'Analytical Instruments',
+        description: 'Digital analytical balances, UV-Vis spectrophotometers, pH meters, and centrifuges',
+        items: [
+          'Digital Precision Analytical Balance',
+          'UV-Visible Spectrophotometer',
+          'Microprocessor pH Meter',
+          'High Speed Refrigerated Centrifuge'
+        ]
+      },
+      'Optical & Microscopy': {
+        name: 'Optical & Microscopy',
+        description: 'Binocular biological microscopes, stereo zoom optics, and refractometers',
+        items: [
+          'Binocular Research Compound Microscope',
+          'Digital Trinocular Zoom Stereo Microscope',
+          'Abbe Benchtop Refractometer'
+        ]
+      },
+      'Glassware & Biosafety': {
+        name: 'Glassware & Biosafety',
+        description: 'Laminar air flow chambers, vertical autoclaves, and water distillation plants',
+        items: [
+          'Horizontal Laminar Air Flow Chamber',
+          'Vertical High-Pressure Autoclave',
+          'Automatic Water Distillation Apparatus'
+        ]
+      },
+      'Engineering & Testing': {
+        name: 'Engineering & Testing',
+        description: 'Fluid mechanics test rigs, universal testing units, and electronic test benches',
+        items: [
+          'Pelton Wheel Turbine Fluid Mechanics Rig',
+          'Digital Universal Testing Machine 50kN',
+          'Digital Storage Oscilloscope 100MHz'
+        ]
+      }
+    }
+  },
+  'IT Hardware': {
+    name: 'IT Hardware',
+    description: 'Computing workstations, enterprise servers, managed networking, and digital peripherals',
+    color: 'bg-sky-50 border-sky-100 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400 dark:border-sky-900/50',
+    subCategories: {
+      'Computing & Workstations': {
+        name: 'Computing & Workstations',
+        description: 'Desktop computers, AI workstations, high-density blade servers, and laptops',
+        items: [
+          'All-in-One Desktop Core i7 Workstation',
+          'High-Performance AI & Data Science Workstation',
+          '2U Dual Xeon Enterprise Rackmount Server',
+          'Faculty Ultra-Light Commercial Laptop'
+        ]
+      },
+      'Networking & Infrastructure': {
+        name: 'Networking & Infrastructure',
+        description: 'Managed switches, Wi-Fi 6 enterprise access points, and firewall gateways',
+        items: [
+          '24-Port Gigabit Managed PoE+ Network Switch',
+          'Enterprise Dual-Band Wi-Fi 6 Access Point',
+          'Next-Gen Security Network Firewall Gateway'
+        ]
+      },
+      'Displays & Peripherals': {
+        name: 'Displays & Peripherals',
+        description: 'Ultra-HD monitors, network laser printers, document scanners, and accessories',
+        items: [
+          '27-inch 4K UHD IPS Professional Monitor',
+          'Enterprise Network Monochrome Laser Multi-Function Printer',
+          'High-Speed Automatic Document Scanner'
+        ]
+      },
+      'Power & UPS': {
+        name: 'Power & UPS',
+        description: 'Online server UPS systems, rackmount power distribution units, and battery banks',
+        items: [
+          'Online Modular Rackmount UPS 5KVA',
+          'Online High-Capacity Dual-Conversion UPS 10KVA',
+          'Rackmount Intelligent Power Distribution Unit PDU'
+        ]
+      }
+    }
+  },
+  Electronics: {
+    name: 'Electronics',
+    description: 'Interactive smart screens, digital podiums, and campus audio systems',
+    color: 'bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/50',
+    subCategories: {
+      'Interactive Displays': {
+        name: 'Interactive Displays',
+        description: 'Touch interactive flat panels and smart digital whiteboards',
+        items: [
+          '75-inch 4K Interactive Touch Flat Panel Display',
+          'Digital Smart Podium with Touch Controller'
+        ]
+      },
+      'Audio & Public Address': {
+        name: 'Audio & Public Address',
+        description: 'PA amplifier mixers, column speakers, and wireless microphone stations',
+        items: [
+          'Multi-Zone Public Address Amplifier System',
+          'UHF Dual Wireless Lapel Microphone System'
+        ]
+      },
+      'Power & Backup': {
+        name: 'Power & Backup',
+        description: 'Smart power backup units and voltage regulators',
+        items: [
+          'Matrix Smart UPS & Power Backup 5KVA',
+          'Servo Controlled Automatic Voltage Stabilizer'
+        ]
+      }
+    }
   }
 };
 

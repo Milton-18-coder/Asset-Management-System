@@ -29,6 +29,7 @@ import { Maintenance } from './pages/Maintenance';
 import { Vendors } from './pages/Vendors';
 import { Purchases } from './pages/Purchases';
 import { AuditLogs } from './pages/AuditLogs';
+import { Analytics } from './pages/Analytics';
 
 export default function App() {
   const dispatch = useDispatch();
@@ -102,6 +103,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/assets" element={<FurnitureList />} />
             <Route path="/assets/new" element={<AddFurniture />} />

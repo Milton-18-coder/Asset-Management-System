@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Icon } from './UIComponents';
-import { Bell, Wrench, Store, ShieldCheck, ReceiptText } from 'lucide-react';
+import { Bell, Wrench, Store, ShieldCheck, ReceiptText, BarChart3 } from 'lucide-react';
 
 export const Sidebar = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -83,6 +83,7 @@ export const Sidebar = ({ user, onLogout }) => {
       {/* Nav */}
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
         {navItem('/dashboard', 'Dashboard', <Icon.Dashboard />)}
+        {navItem('/analytics', 'Analytics & Insights', <BarChart3 size={18} />)}
         {navItem('/notifications', 'Notifications', <Bell size={18} />, false, unreadCount)}
 
         {/* Assets */}

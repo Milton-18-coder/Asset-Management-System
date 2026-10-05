@@ -860,7 +860,16 @@ export const Purchases = () => {
 
           {/* Subcategories Breakdown Accordions */}
           <div className="space-y-3">
-            {categoryAnalysisData.map((sub) => {
+            {categoryAnalysisData.length === 0 ? (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs">
+                <Package className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                <h3 className="font-bold text-slate-800 dark:text-white text-base">No Procurement Records in {analysisCategory}</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                  No purchases recorded yet for {analysisCategory}. Click "Record Purchase" above to log a new invoice transaction.
+                </p>
+              </div>
+            ) : (
+              categoryAnalysisData.map((sub) => {
               const isExpanded = expandedSubcategory === sub.name;
 
               return (
@@ -969,7 +978,7 @@ export const Purchases = () => {
                   )}
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       )}

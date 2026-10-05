@@ -53,5 +53,27 @@ export const initialVendors = [
     gstin: '29AAACD0125F1Z8',
     rating: 4.7,
     services: 'Workstations, High-Performance Rack Servers, LED Monitors, Networking'
+  },
+  {
+    id: 'VND-006',
+    name: 'ThermoFisher Scientific Lab Solutions',
+    contactPerson: 'Dr. S. Ramesh',
+    email: 'instruments.in@thermofisher.com',
+    phone: '+91 22 6716 2200',
+    address: 'Powai Business Park, Andheri East, Mumbai, Maharashtra',
+    gstin: '27AAACT1948B1Z0',
+    rating: 4.9,
+    services: 'Digital Precision Balances, Spectrophotometers, Microscopes, Lab Autoclaves'
+  },
+  {
+    id: 'VND-007',
+    name: 'Cisco Networks & IT Infrastructure',
+    contactPerson: 'Aditi Sengupta',
+    email: 'apac_sales@cisco-partner.in',
+    phone: '+91 80 4426 1000',
+    address: 'Prestige Tech Park, Marathahalli-Sarjapur Ring Rd, Bangalore, Karnataka',
+    gstin: '29AAACC3388L1ZQ',
+    rating: 4.8,
+    services: 'Managed Gigabit PoE Switches, Wi-Fi 6 Access Points, Enterprise Firewalls'
   }
 ];
