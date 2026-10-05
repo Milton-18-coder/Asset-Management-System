@@ -24,11 +24,11 @@
 /* Custom variant for class-based dark mode in Tailwind v4 */
 @variant dark (&:where(.dark, .dark *));
 
-html, body {
+html,
+body {
   font-family: var(--font-sans);
   margin: 0;
   padding: 0;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
-
