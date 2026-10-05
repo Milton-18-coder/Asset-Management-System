@@ -130,14 +130,10 @@ export const Dashboard = () => {
         />
       </div>
 
-      {/* Analytics & Activity Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Upper Row: Pie Chart on top alongside Transfers & Alerts */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="p-4 flex flex-col justify-between">
           <DonutChart data={conditionDonut} title="Asset Condition Summary" />
-        </Card>
-        
-        <Card className="p-4 flex flex-col justify-between font-medium">
-          <BarChart data={categoryData} title="Category Distribution" />
         </Card>
         
         {/* Recent Transfers Widget */}
@@ -208,6 +204,23 @@ export const Dashboard = () => {
           </div>
         </Card>
       </div>
+
+      {/* Category-Wise Distribution Breakdown (Down Below) */}
+      <Card className="p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm font-bold text-slate-800 dark:text-white font-display">Category-Wise Distribution</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Asset stock volume and breakdown across all registered categories</p>
+          </div>
+          <button
+            onClick={() => navigate('/categories')}
+            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer flex items-center gap-1"
+          >
+            Explore Categories <ArrowRight size={13} />
+          </button>
+        </div>
+        <BarChart data={categoryData} columns={2} />
+      </Card>
 
       {/* Procurement & Purchase History Highlights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">

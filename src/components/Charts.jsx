@@ -69,15 +69,15 @@ export function DonutChart({ data, title }) {
   );
 }
 
-export function BarChart({ data, title }) {
+export function BarChart({ data, title, columns = 1 }) {
   const max = Math.max(...data.map(d => d.value), 1);
   return (
     <div className="flex flex-col h-full justify-between">
-      <p className="text-sm font-bold text-slate-700 dark:text-slate-300 font-display tracking-tight mb-4">{title}</p>
-      <div className="space-y-3.5">
+      {title && <p className="text-sm font-bold text-slate-700 dark:text-slate-300 font-display tracking-tight mb-4">{title}</p>}
+      <div className={columns === 2 ? "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3.5" : "space-y-3.5"}>
         {data.map(d => (
           <div key={d.label} className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-24 flex-shrink-0 truncate">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-32 flex-shrink-0 truncate" title={d.label}>
               {d.label}
             </span>
             <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
@@ -86,7 +86,7 @@ export function BarChart({ data, title }) {
                 style={{ width: `${(d.value / max) * 100}%` }}
               />
             </div>
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 w-8 text-right font-display">
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 w-10 text-right font-display font-mono">
               {d.value}
             </span>
           </div>
