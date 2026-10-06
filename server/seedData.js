@@ -42,372 +42,431 @@ export async function seedInitialDataIfEmpty(
     }
 
     // 1. Assets
-    if (initialAssets && initialAssets.length > 0) {
-      console.log(`[Seed] Syncing ${initialAssets.length} assets into MySQL...`);
-      for (const a of initialAssets) {
-        await pool.query(
-          `INSERT INTO assets (id, name, mainCategory, category, itemType, building, department, room, assignedTo, assignedRole, assignedEmail, \`condition\`, status, purchaseDate, cost, supplier, warranty, quantity, description)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             name=VALUES(name),
-             mainCategory=VALUES(mainCategory),
-             category=VALUES(category),
-             itemType=VALUES(itemType),
-             building=VALUES(building),
-             department=VALUES(department),
-             room=VALUES(room),
-             assignedTo=VALUES(assignedTo),
-             assignedRole=VALUES(assignedRole),
-             assignedEmail=VALUES(assignedEmail),
-             \`condition\`=VALUES(\`condition\`),
-             status=VALUES(status),
-             purchaseDate=VALUES(purchaseDate),
-             cost=VALUES(cost),
-             supplier=VALUES(supplier),
-             warranty=VALUES(warranty),
-             quantity=VALUES(quantity),
-             description=VALUES(description)`,
-          [
-            a.id,
-            a.name,
-            a.mainCategory || 'Furniture',
-            a.category || 'General',
-            a.itemType || 'General',
-            a.building || 'Engineering Block',
-            a.department || 'Admin Block',
-            a.room || 'ADM-101',
-            a.assignedTo || 'Unassigned',
-            a.assignedRole || 'Staff',
-            a.assignedEmail || 'admin@nec.edu.in',
-            a.condition || 'Good',
-            a.status || 'Available',
-            a.purchaseDate || '2026-01-01',
-            a.cost || 0,
-            a.supplier || 'Campus Procurement',
-            a.warranty || '1 Year Standard',
-            a.quantity || 1,
-            a.description || 'General Institutional Asset',
-          ]
-        );
+    try {
+      if (initialAssets && initialAssets.length > 0) {
+        console.log(`[Seed] Syncing ${initialAssets.length} assets into MySQL...`);
+        for (const a of initialAssets) {
+          await pool.query(
+            `INSERT INTO assets (id, name, mainCategory, category, itemType, building, department, room, assignedTo, assignedRole, assignedEmail, \`condition\`, status, purchaseDate, cost, supplier, warranty, quantity, description)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               name=VALUES(name),
+               mainCategory=VALUES(mainCategory),
+               category=VALUES(category),
+               itemType=VALUES(itemType),
+               building=VALUES(building),
+               department=VALUES(department),
+               room=VALUES(room),
+               assignedTo=VALUES(assignedTo),
+               assignedRole=VALUES(assignedRole),
+               assignedEmail=VALUES(assignedEmail),
+               \`condition\`=VALUES(\`condition\`),
+               status=VALUES(status),
+               purchaseDate=VALUES(purchaseDate),
+               cost=VALUES(cost),
+               supplier=VALUES(supplier),
+               warranty=VALUES(warranty),
+               quantity=VALUES(quantity),
+               description=VALUES(description)`,
+            [
+              a.id,
+              a.name,
+              a.mainCategory || 'Furniture',
+              a.category || 'General',
+              a.itemType || 'General',
+              a.building || 'Engineering Block',
+              a.department || 'Admin Block',
+              a.room || 'ADM-101',
+              a.assignedTo || 'Unassigned',
+              a.assignedRole || 'Staff',
+              a.assignedEmail || 'admin@nec.edu.in',
+              a.condition || 'Good',
+              a.status || 'Available',
+              a.purchaseDate || '2026-01-01',
+              a.cost || 0,
+              a.supplier || 'Campus Procurement',
+              a.warranty || '1 Year Standard',
+              a.quantity || 1,
+              a.description || 'General Institutional Asset',
+            ]
+          );
+        }
+        console.log('[Seed] Assets synced.');
       }
-      console.log('[Seed] Assets synced.');
+    } catch (e) {
+      console.warn('[Seed] Assets sync error:', e.message);
     }
 
     // 2. Users
-    if (initialUsers && initialUsers.length > 0) {
-      console.log(`[Seed] Syncing ${initialUsers.length} users into MySQL...`);
-      for (const u of initialUsers) {
-        await pool.query(
-          `INSERT INTO users (id, username, password, name, role, department, email)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             username=VALUES(username),
-             password=VALUES(password),
-             name=VALUES(name),
-             role=VALUES(role),
-             department=VALUES(department),
-             email=VALUES(email)`,
-          [u.id, u.username, u.password, u.name, u.role, u.department || null, u.email || '']
-        );
+    try {
+      if (initialUsers && initialUsers.length > 0) {
+        console.log(`[Seed] Syncing ${initialUsers.length} users into MySQL...`);
+        for (const u of initialUsers) {
+          await pool.query(
+            `INSERT INTO users (id, username, password, name, role, department, email)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               username=VALUES(username),
+               password=VALUES(password),
+               name=VALUES(name),
+               role=VALUES(role),
+               department=VALUES(department),
+               email=VALUES(email)`,
+            [u.id, u.username, u.password, u.name, u.role, u.department || null, u.email || '']
+          );
+        }
+        console.log('[Seed] Users synced.');
       }
-      console.log('[Seed] Users synced.');
+    } catch (e) {
+      console.warn('[Seed] Users sync error:', e.message);
     }
 
     // 3. Transfers
-    if (initialTransfers && initialTransfers.length > 0) {
-      console.log(`[Seed] Syncing ${initialTransfers.length} transfers into MySQL...`);
-      for (const t of initialTransfers) {
-        await pool.query(
-          `INSERT INTO transfers (id, assetId, furniture, source, destination, requestedBy, role, department, date, status, reason)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             assetId=VALUES(assetId),
-             furniture=VALUES(furniture),
-             source=VALUES(source),
-             destination=VALUES(destination),
-             requestedBy=VALUES(requestedBy),
-             role=VALUES(role),
-             department=VALUES(department),
-             date=VALUES(date),
-             status=VALUES(status),
-             reason=VALUES(reason)`,
-          [t.id, t.assetId, t.furniture, t.source, t.destination, t.requestedBy, t.role, t.department, t.date || null, t.status || 'Pending', t.reason || '']
-        );
+    try {
+      if (initialTransfers && initialTransfers.length > 0) {
+        console.log(`[Seed] Syncing ${initialTransfers.length} transfers into MySQL...`);
+        for (const t of initialTransfers) {
+          await pool.query(
+            `INSERT INTO transfers (id, assetId, furniture, source, destination, requestedBy, role, department, date, status, reason)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               assetId=VALUES(assetId),
+               furniture=VALUES(furniture),
+               source=VALUES(source),
+               destination=VALUES(destination),
+               requestedBy=VALUES(requestedBy),
+               role=VALUES(role),
+               department=VALUES(department),
+               date=VALUES(date),
+               status=VALUES(status),
+               reason=VALUES(reason)`,
+            [t.id, t.assetId, t.furniture, t.source, t.destination, t.requestedBy, t.role, t.department, t.date || null, t.status || 'Pending', t.reason || '']
+          );
+        }
+        console.log('[Seed] Transfers synced.');
       }
-      console.log('[Seed] Transfers synced.');
+    } catch (e) {
+      console.warn('[Seed] Transfers sync error:', e.message);
     }
 
     // 4. Inspections
-    if (initialInspections && initialInspections.length > 0) {
-      console.log(`[Seed] Syncing ${initialInspections.length} inspections into MySQL...`);
-      for (const i of initialInspections) {
-        await pool.query(
-          `INSERT INTO inspections (id, assetId, furniture, location, \`condition\`, inspector, date, notes)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             assetId=VALUES(assetId),
-             furniture=VALUES(furniture),
-             location=VALUES(location),
-             \`condition\`=VALUES(\`condition\`),
-             inspector=VALUES(inspector),
-             date=VALUES(date),
-             notes=VALUES(notes)`,
-          [i.id, i.assetId, i.furniture, i.location, i.condition, i.inspector, i.date || null, i.notes || '']
-        );
+    try {
+      if (initialInspections && initialInspections.length > 0) {
+        console.log(`[Seed] Syncing ${initialInspections.length} inspections into MySQL...`);
+        for (const i of initialInspections) {
+          await pool.query(
+            `INSERT INTO inspections (id, assetId, furniture, location, \`condition\`, inspector, date, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               assetId=VALUES(assetId),
+               furniture=VALUES(furniture),
+               location=VALUES(location),
+               \`condition\`=VALUES(\`condition\`),
+               inspector=VALUES(inspector),
+               date=VALUES(date),
+               notes=VALUES(notes)`,
+            [i.id, i.assetId, i.furniture, i.location, i.condition, i.inspector, i.date || null, i.notes || '']
+          );
+        }
+        console.log('[Seed] Inspections synced.');
       }
-      console.log('[Seed] Inspections synced.');
+    } catch (e) {
+      console.warn('[Seed] Inspections sync error:', e.message);
     }
 
     // 5. Notifications
-    if (initialNotifications && initialNotifications.length > 0) {
-      console.log(`[Seed] Syncing ${initialNotifications.length} notifications into MySQL...`);
-      for (const n of initialNotifications) {
-        await pool.query(
-          `INSERT INTO notifications (id, title, message, time, \`read\`, department, type, link)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             title=VALUES(title),
-             message=VALUES(message),
-             time=VALUES(time),
-             \`read\`=VALUES(\`read\`),
-             department=VALUES(department),
-             type=VALUES(type),
-             link=VALUES(link)`,
-          [n.id, n.title, n.message, n.time, n.read ? 1 : 0, n.department || null, n.type || 'info', n.link || '']
-        );
+    try {
+      if (initialNotifications && initialNotifications.length > 0) {
+        console.log(`[Seed] Syncing ${initialNotifications.length} notifications into MySQL...`);
+        for (const n of initialNotifications) {
+          await pool.query(
+            `INSERT INTO notifications (id, title, message, time, \`read\`, department, type, link)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               title=VALUES(title),
+               message=VALUES(message),
+               time=VALUES(time),
+               \`read\`=VALUES(\`read\`),
+               department=VALUES(department),
+               type=VALUES(type),
+               link=VALUES(link)`,
+            [n.id, n.title, n.message, n.time, n.read ? 1 : 0, n.department || null, n.type || 'info', n.link || '']
+          );
+        }
+        console.log('[Seed] Notifications synced.');
       }
-      console.log('[Seed] Notifications synced.');
+    } catch (e) {
+      console.warn('[Seed] Notifications sync error:', e.message);
     }
 
     // 6. Departments
-    if (initialDepartments && initialDepartments.length > 0) {
-      console.log(`[Seed] Syncing ${initialDepartments.length} departments into MySQL...`);
-      const allowedNames = initialDepartments.map(d => d.name);
-      const placeholders = allowedNames.map(() => '?').join(', ');
-      await pool.query(`DELETE FROM departments WHERE name NOT IN (${placeholders})`, allowedNames);
-      for (const d of initialDepartments) {
-        await pool.query(
-          `INSERT INTO departments (id, name, code, building, hod, admin)
-           VALUES (?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             name=VALUES(name),
-             code=VALUES(code),
-             building=VALUES(building),
-             hod=VALUES(hod),
-             admin=VALUES(admin)`,
-          [d.id, d.name, d.code, d.building || '', d.hod || '', d.admin || '']
-        );
+    try {
+      if (initialDepartments && initialDepartments.length > 0) {
+        console.log(`[Seed] Syncing ${initialDepartments.length} departments into MySQL...`);
+        const allowedNames = initialDepartments.map(d => d.name);
+        const placeholders = allowedNames.map(() => '?').join(', ');
+        await pool.query(`DELETE FROM departments WHERE name NOT IN (${placeholders})`, allowedNames);
+        for (const d of initialDepartments) {
+          await pool.query(
+            `INSERT INTO departments (id, name, code, building, hod, admin)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               name=VALUES(name),
+               code=VALUES(code),
+               building=VALUES(building),
+               hod=VALUES(hod),
+               admin=VALUES(admin)`,
+            [d.id, d.name, d.code, d.building || '', d.hod || '', d.admin || '']
+          );
+        }
+        console.log('[Seed] Departments synced.');
       }
-      console.log('[Seed] Departments synced.');
+    } catch (e) {
+      console.warn('[Seed] Departments sync error:', e.message);
     }
 
     // 7. Buildings
-    if (initialBuildings && initialBuildings.length > 0) {
-      console.log(`[Seed] Syncing ${initialBuildings.length} buildings into MySQL...`);
-      for (const b of initialBuildings) {
-        await pool.query(
-          `INSERT INTO buildings (id, name, code, floors)
-           VALUES (?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             name=VALUES(name),
-             code=VALUES(code),
-             floors=VALUES(floors)`,
-          [b.id, b.name, b.code, b.floors || 1]
-        );
+    try {
+      if (initialBuildings && initialBuildings.length > 0) {
+        console.log(`[Seed] Syncing ${initialBuildings.length} buildings into MySQL...`);
+        for (const b of initialBuildings) {
+          // Delete any existing building with this code to prevent unique constraint conflict
+          await pool.query('DELETE FROM buildings WHERE code = ? AND id != ?', [b.code, b.id]);
+          await pool.query(
+            `INSERT INTO buildings (id, name, code, floors)
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               name=VALUES(name),
+               code=VALUES(code),
+               floors=VALUES(floors)`,
+            [b.id, b.name, b.code, b.floors || 1]
+          );
+        }
+        console.log('[Seed] Buildings synced.');
       }
-      console.log('[Seed] Buildings synced.');
+    } catch (e) {
+      console.warn('[Seed] Buildings sync error:', e.message);
     }
 
     // 8. Rooms
-    if (initialRooms && initialRooms.length > 0) {
-      console.log(`[Seed] Syncing ${initialRooms.length} rooms into MySQL...`);
-      for (const r of initialRooms) {
-        await pool.query(
-          `INSERT INTO rooms (id, number, building, department, floor, type, capacity)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             number=VALUES(number),
-             building=VALUES(building),
-             department=VALUES(department),
-             floor=VALUES(floor),
-             type=VALUES(type),
-             capacity=VALUES(capacity)`,
-          [r.id, r.number, r.building || '', r.department || '', r.floor || 1, r.type || 'Classroom', r.capacity || 30]
-        );
+    try {
+      if (initialRooms && initialRooms.length > 0) {
+        console.log(`[Seed] Syncing ${initialRooms.length} rooms into MySQL...`);
+        for (const r of initialRooms) {
+          await pool.query(
+            `INSERT INTO rooms (id, number, building, department, floor, type, capacity)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               number=VALUES(number),
+               building=VALUES(building),
+               department=VALUES(department),
+               floor=VALUES(floor),
+               type=VALUES(type),
+               capacity=VALUES(capacity)`,
+            [r.id, r.number, r.building || '', r.department || '', r.floor || 1, r.type || 'Classroom', r.capacity || 30]
+          );
+        }
+        console.log('[Seed] Rooms synced.');
       }
-      console.log('[Seed] Rooms synced.');
+    } catch (e) {
+      console.warn('[Seed] Rooms sync error:', e.message);
     }
 
     // 9. Maintenance Logs
-    if (initialMaintenanceLogs && initialMaintenanceLogs.length > 0) {
-      console.log(`[Seed] Syncing ${initialMaintenanceLogs.length} maintenance logs into MySQL...`);
-      for (const m of initialMaintenanceLogs) {
-        await pool.query(
-          `INSERT INTO maintenance_logs (id, assetId, furniture, issueDescription, scheduledDate, completedDate, cost, status, vendor, technicianNotes)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             assetId=VALUES(assetId),
-             furniture=VALUES(furniture),
-             issueDescription=VALUES(issueDescription),
-             scheduledDate=VALUES(scheduledDate),
-             completedDate=VALUES(completedDate),
-             cost=VALUES(cost),
-             status=VALUES(status),
-             vendor=VALUES(vendor),
-             technicianNotes=VALUES(technicianNotes)`,
-          [m.id, m.assetId, m.furniture, m.issueDescription, m.scheduledDate || null, m.completedDate || null, m.cost || 0, m.status || 'Scheduled', m.vendor || '', m.technicianNotes || '']
-        );
+    try {
+      if (initialMaintenanceLogs && initialMaintenanceLogs.length > 0) {
+        console.log(`[Seed] Syncing ${initialMaintenanceLogs.length} maintenance logs into MySQL...`);
+        for (const m of initialMaintenanceLogs) {
+          await pool.query(
+            `INSERT INTO maintenance_logs (id, assetId, furniture, issueDescription, scheduledDate, completedDate, cost, status, vendor, technicianNotes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               assetId=VALUES(assetId),
+               furniture=VALUES(furniture),
+               issueDescription=VALUES(issueDescription),
+               scheduledDate=VALUES(scheduledDate),
+               completedDate=VALUES(completedDate),
+               cost=VALUES(cost),
+               status=VALUES(status),
+               vendor=VALUES(vendor),
+               technicianNotes=VALUES(technicianNotes)`,
+            [m.id, m.assetId, m.furniture, m.issueDescription, m.scheduledDate || null, m.completedDate || null, m.cost || 0, m.status || 'Scheduled', m.vendor || '', m.technicianNotes || '']
+          );
+        }
+        console.log('[Seed] Maintenance logs synced.');
       }
-      console.log('[Seed] Maintenance logs synced.');
+    } catch (e) {
+      console.warn('[Seed] Maintenance logs sync error:', e.message);
     }
 
     // 10. Disposals
-    if (initialDisposals && initialDisposals.length > 0) {
-      console.log(`[Seed] Syncing ${initialDisposals.length} disposals into MySQL...`);
-      for (const dp of initialDisposals) {
-        await pool.query(
-          `INSERT INTO disposals (id, assetId, furniture, disposalDate, reason, resaleValue, approvedBy, notes)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             assetId=VALUES(assetId),
-             furniture=VALUES(furniture),
-             disposalDate=VALUES(disposalDate),
-             reason=VALUES(reason),
-             resaleValue=VALUES(resaleValue),
-             approvedBy=VALUES(approvedBy),
-             notes=VALUES(notes)`,
-          [dp.id, dp.assetId, dp.furniture, dp.disposalDate, dp.reason, dp.resaleValue || 0, dp.approvedBy || '', dp.notes || '']
-        );
+    try {
+      if (initialDisposals && initialDisposals.length > 0) {
+        console.log(`[Seed] Syncing ${initialDisposals.length} disposals into MySQL...`);
+        for (const dp of initialDisposals) {
+          await pool.query(
+            `INSERT INTO disposals (id, assetId, furniture, disposalDate, reason, resaleValue, approvedBy, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               assetId=VALUES(assetId),
+               furniture=VALUES(furniture),
+               disposalDate=VALUES(disposalDate),
+               reason=VALUES(reason),
+               resaleValue=VALUES(resaleValue),
+               approvedBy=VALUES(approvedBy),
+               notes=VALUES(notes)`,
+            [dp.id, dp.assetId, dp.furniture, dp.disposalDate, dp.reason, dp.resaleValue || 0, dp.approvedBy || '', dp.notes || '']
+          );
+        }
+        console.log('[Seed] Disposals synced.');
       }
-      console.log('[Seed] Disposals synced.');
+    } catch (e) {
+      console.warn('[Seed] Disposals sync error:', e.message);
     }
 
     // 11. Vendors
-    if (initialVendors && initialVendors.length > 0) {
-      console.log(`[Seed] Syncing ${initialVendors.length} vendors into MySQL...`);
-      for (const v of initialVendors) {
-        await pool.query(
-          `INSERT INTO vendors (id, name, contactPerson, email, phone, address, gstin, rating, services)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             name=VALUES(name),
-             contactPerson=VALUES(contactPerson),
-             email=VALUES(email),
-             phone=VALUES(phone),
-             address=VALUES(address),
-             gstin=VALUES(gstin),
-             rating=VALUES(rating),
-             services=VALUES(services)`,
-          [v.id, v.name, v.contactPerson || '', v.email || '', v.phone || '', v.address || '', v.gstin || '', v.rating || 4.5, v.services || '']
-        );
+    try {
+      if (initialVendors && initialVendors.length > 0) {
+        console.log(`[Seed] Syncing ${initialVendors.length} vendors into MySQL...`);
+        for (const v of initialVendors) {
+          await pool.query(
+            `INSERT INTO vendors (id, name, contactPerson, email, phone, address, gstin, rating, services)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               name=VALUES(name),
+               contactPerson=VALUES(contactPerson),
+               email=VALUES(email),
+               phone=VALUES(phone),
+               address=VALUES(address),
+               gstin=VALUES(gstin),
+               rating=VALUES(rating),
+               services=VALUES(services)`,
+            [v.id, v.name, v.contactPerson || '', v.email || '', v.phone || '', v.address || '', v.gstin || '', v.rating || 4.5, v.services || '']
+          );
+        }
+        console.log('[Seed] Vendors synced.');
       }
-      console.log('[Seed] Vendors synced.');
+    } catch (e) {
+      console.warn('[Seed] Vendors sync error:', e.message);
     }
 
     // 12. Audit Logs
-    if (initialAuditLogs && initialAuditLogs.length > 0) {
-      console.log(`[Seed] Syncing ${initialAuditLogs.length} audit logs into MySQL...`);
-      for (const au of initialAuditLogs) {
-        await pool.query(
-          `INSERT INTO audit_logs (id, userId, userName, userRole, action, entity, entityId, details, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             userId=VALUES(userId),
-             userName=VALUES(userName),
-             userRole=VALUES(userRole),
-             action=VALUES(action),
-             entity=VALUES(entity),
-             entityId=VALUES(entityId),
-             details=VALUES(details)`,
-          [
-            au.id,
-            au.userId || null,
-            au.userName || '',
-            au.userRole || '',
-            au.action,
-            au.entity,
-            au.entityId || '',
-            au.details || '',
-            au.created_at ? new Date(au.created_at) : new Date()
-          ]
-        );
+    try {
+      if (initialAuditLogs && initialAuditLogs.length > 0) {
+        console.log(`[Seed] Syncing ${initialAuditLogs.length} audit logs into MySQL...`);
+        for (const au of initialAuditLogs) {
+          await pool.query(
+            `INSERT INTO audit_logs (id, userId, userName, userRole, action, entity, entityId, details, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               userId=VALUES(userId),
+               userName=VALUES(userName),
+               userRole=VALUES(userRole),
+               action=VALUES(action),
+               entity=VALUES(entity),
+               entityId=VALUES(entityId),
+               details=VALUES(details)`,
+            [
+              au.id,
+              au.userId || null,
+              au.userName || '',
+              au.userRole || '',
+              au.action,
+              au.entity,
+              au.entityId || '',
+              au.details || '',
+              au.created_at ? new Date(au.created_at) : new Date()
+            ]
+          );
+        }
+        console.log('[Seed] Audit logs synced.');
       }
-      console.log('[Seed] Audit logs synced.');
+    } catch (e) {
+      console.warn('[Seed] Audit logs sync error:', e.message);
     }
 
     // 13. Categories
-    if (initialCategories && initialCategories.length > 0) {
-      console.log(`[Seed] Syncing ${initialCategories.length} categories into MySQL...`);
-      for (const c of initialCategories) {
-        await pool.query(
-          `INSERT INTO categories (id, name, mainCategory, code, icon, depreciationRate, usefulLifeYears, description)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             name=VALUES(name),
-             mainCategory=VALUES(mainCategory),
-             code=VALUES(code),
-             icon=VALUES(icon),
-             depreciationRate=VALUES(depreciationRate),
-             usefulLifeYears=VALUES(usefulLifeYears),
-             description=VALUES(description)`,
-          [c.id, c.name, c.mainCategory, c.code, c.icon || 'Box', c.depreciationRate || 10.0, c.usefulLifeYears || 5, c.description || '']
-        );
+    try {
+      if (initialCategories && initialCategories.length > 0) {
+        console.log(`[Seed] Syncing ${initialCategories.length} categories into MySQL...`);
+        for (const c of initialCategories) {
+          await pool.query('DELETE FROM categories WHERE code = ? AND id != ?', [c.code, c.id]);
+          await pool.query(
+            `INSERT INTO categories (id, name, mainCategory, code, icon, depreciationRate, usefulLifeYears, description)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               name=VALUES(name),
+               mainCategory=VALUES(mainCategory),
+               code=VALUES(code),
+               icon=VALUES(icon),
+               depreciationRate=VALUES(depreciationRate),
+               usefulLifeYears=VALUES(usefulLifeYears),
+               description=VALUES(description)`,
+            [c.id, c.name, c.mainCategory, c.code, c.icon || 'Box', c.depreciationRate || 10.0, c.usefulLifeYears || 5, c.description || '']
+          );
+        }
+        console.log('[Seed] Categories synced.');
       }
-      console.log('[Seed] Categories synced.');
+    } catch (e) {
+      console.warn('[Seed] Categories sync error:', e.message);
     }
 
     // 14. Purchase History
-    if (initialPurchaseHistory && initialPurchaseHistory.length > 0) {
-      console.log(`[Seed] Syncing ${initialPurchaseHistory.length} purchase history records into MySQL...`);
-      for (const ph of initialPurchaseHistory) {
-        await pool.query(
-          `INSERT INTO purchase_history (
-            id, assetId, assetName, vendorId, vendorName, categoryId, categoryName,
-            subcategoryId, subcategoryName, itemType, purchaseDate, purchasePrice,
-            quantity, totalAmount, invoiceNumber, invoiceDate, warrantyExpiry, notes
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE
-            assetId=VALUES(assetId),
-            assetName=VALUES(assetName),
-            vendorId=VALUES(vendorId),
-            vendorName=VALUES(vendorName),
-            categoryId=VALUES(categoryId),
-            categoryName=VALUES(categoryName),
-            subcategoryId=VALUES(subcategoryId),
-            subcategoryName=VALUES(subcategoryName),
-            itemType=VALUES(itemType),
-            purchaseDate=VALUES(purchaseDate),
-            purchasePrice=VALUES(purchasePrice),
-            quantity=VALUES(quantity),
-            totalAmount=VALUES(totalAmount),
-            invoiceNumber=VALUES(invoiceNumber),
-            invoiceDate=VALUES(invoiceDate),
-            warrantyExpiry=VALUES(warrantyExpiry),
-            notes=VALUES(notes)`,
-          [
-            ph.id,
-            ph.assetId,
-            ph.assetName,
-            ph.vendorId || null,
-            ph.vendorName,
-            ph.categoryId || null,
-            ph.categoryName,
-            ph.subcategoryId || null,
-            ph.subcategoryName,
-            ph.itemType || ph.subcategoryName,
-            ph.purchaseDate,
-            ph.purchasePrice,
-            ph.quantity || 1,
-            ph.totalAmount || (ph.purchasePrice * (ph.quantity || 1)),
-            ph.invoiceNumber || '',
-            ph.invoiceDate || ph.purchaseDate,
-            ph.warrantyExpiry || '',
-            ph.notes || ''
-          ]
-        );
+    try {
+      if (initialPurchaseHistory && initialPurchaseHistory.length > 0) {
+        console.log(`[Seed] Syncing ${initialPurchaseHistory.length} purchase history records into MySQL...`);
+        for (const ph of initialPurchaseHistory) {
+          await pool.query(
+            `INSERT INTO purchase_history (
+              id, assetId, assetName, vendorId, vendorName, categoryId, categoryName,
+              subcategoryId, subcategoryName, itemType, purchaseDate, purchasePrice,
+              quantity, totalAmount, invoiceNumber, invoiceDate, warrantyExpiry, notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+              assetId=VALUES(assetId),
+              assetName=VALUES(assetName),
+              vendorId=VALUES(vendorId),
+              vendorName=VALUES(vendorName),
+              categoryId=VALUES(categoryId),
+              categoryName=VALUES(categoryName),
+              subcategoryId=VALUES(subcategoryId),
+              subcategoryName=VALUES(subcategoryName),
+              itemType=VALUES(itemType),
+              purchaseDate=VALUES(purchaseDate),
+              purchasePrice=VALUES(purchasePrice),
+              quantity=VALUES(quantity),
+              totalAmount=VALUES(totalAmount),
+              invoiceNumber=VALUES(invoiceNumber),
+              invoiceDate=VALUES(invoiceDate),
+              warrantyExpiry=VALUES(warrantyExpiry),
+              notes=VALUES(notes)`,
+            [
+              ph.id,
+              ph.assetId,
+              ph.assetName,
+              ph.vendorId || null,
+              ph.vendorName,
+              ph.categoryId || null,
+              ph.categoryName,
+              ph.subcategoryId || null,
+              ph.subcategoryName,
+              ph.itemType || ph.subcategoryName,
+              ph.purchaseDate,
+              ph.purchasePrice,
+              ph.quantity || 1,
+              ph.totalAmount || (ph.purchasePrice * (ph.quantity || 1)),
+              ph.invoiceNumber || '',
+              ph.invoiceDate || ph.purchaseDate,
+              ph.warrantyExpiry || '',
+              ph.notes || ''
+            ]
+          );
+        }
+        console.log('[Seed] Purchase history records synced.');
       }
-      console.log('[Seed] Purchase history records synced.');
+    } catch (e) {
+      console.warn('[Seed] Purchase history sync error:', e.message);
     }
   } catch (err) {
     console.error('Seeding error:', err.message);

@@ -57,16 +57,10 @@ export const AssetPriceHistoryModal = ({ assetId, assetName, initialAsset = null
   });
 
   const loadAssetHistory = async () => {
-    try {
-      setLoading(true);
-      const targetId = assetId || currentAsset?.id || assetName;
-      if (!targetId) return;
+    const targetId = assetId || currentAsset?.id || assetName;
+    if (!targetId) return;
 
-      const data = await api.getPurchaseHistoryByAsset(targetId);
-      setAssetAnalytics(data);
-    } catch (err) {
-      console.warn('Backend asset purchase history fetch error, fallback to Redux:', err.message);
-      // Local fallback from Redux store
+    const buildReduxFallback = () => {
       const localRecords = purchaseList.filter(
         (p) => p.assetId === assetId || p.assetName === assetName || (currentAsset && p.assetId === currentAsset.id)
       ).sort((a, b) => new Date(a.purchaseDate) - new Date(b.purchaseDate));
@@ -81,7 +75,7 @@ export const AssetPriceHistoryModal = ({ assetId, assetName, initialAsset = null
         const totalQuantity = quantities.reduce((a, b) => a + b, 0);
         const totalSpent = totalAmounts.reduce((a, b) => a + b, 0);
 
-        setAssetAnalytics({
+        return {
           assetId: currentAsset?.id || assetId,
           assetName: currentAsset?.name || assetName || localRecords[0].assetName,
           categoryName: currentAsset?.mainCategory || localRecords[0].categoryName || 'Furniture',
@@ -110,10 +104,23 @@ export const AssetPriceHistoryModal = ({ assetId, assetName, initialAsset = null
             }))
           },
           purchases: [...localRecords].reverse()
-        });
-      } else {
-        setAssetAnalytics(null);
+        };
       }
+      return null;
+    };
+
+    try {
+      setLoading(true);
+      const data = await api.getPurchaseHistoryByAsset(targetId);
+      if (data && data.purchases && data.purchases.length > 0) {
+        setAssetAnalytics(data);
+      } else {
+        const fallback = buildReduxFallback();
+        setAssetAnalytics(fallback || data);
+      }
+    } catch (err) {
+      console.warn('Backend asset purchase history fetch error, fallback to Redux:', err.message);
+      setAssetAnalytics(buildReduxFallback());
     } finally {
       setLoading(false);
     }

@@ -48,11 +48,24 @@ export const VendorPurchaseHistoryModal = ({ vendor, vendorId, vendorName, onClo
       setLoading(true);
       const res = await api.getPurchaseHistoryByVendor(targetVendorId);
       setVendorData(res.vendor || vendor);
-      setPurchases(res.purchases || []);
+      if (res.purchases && res.purchases.length > 0) {
+        setPurchases(res.purchases);
+      } else {
+        const matched = purchaseList.filter(
+          (p) => (vendor?.id && p.vendorId === vendor.id) ||
+                 p.vendorName === targetVendorName ||
+                 (p.vendorName && targetVendorName && p.vendorName.trim().toLowerCase() === targetVendorName.trim().toLowerCase()) ||
+                 (p.vendorId && targetVendorId && p.vendorId.trim().toLowerCase() === targetVendorId.trim().toLowerCase())
+        );
+        setPurchases(matched);
+      }
     } catch (err) {
       console.warn('Backend vendor history error, fallback to Redux:', err.message);
       const matched = purchaseList.filter(
-        (p) => (vendor?.id && p.vendorId === vendor.id) || p.vendorName === targetVendorName
+        (p) => (vendor?.id && p.vendorId === vendor.id) ||
+               p.vendorName === targetVendorName ||
+               (p.vendorName && targetVendorName && p.vendorName.trim().toLowerCase() === targetVendorName.trim().toLowerCase()) ||
+               (p.vendorId && targetVendorId && p.vendorId.trim().toLowerCase() === targetVendorId.trim().toLowerCase())
       );
       setVendorData(vendor || { name: targetVendorName });
       setPurchases(matched);
@@ -384,7 +397,7 @@ export const VendorPurchaseHistoryModal = ({ vendor, vendorId, vendorName, onClo
                           </span>
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800 dark:text-slate-200">
-                          {p.purchaseDate}
+                          {p.purchaseDate ? String(p.purchaseDate).split('T')[0] : '—'}
                         </td>
                         <td className="px-3 py-3 text-right font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                           ₹{Number(p.purchasePrice || 0).toLocaleString()}

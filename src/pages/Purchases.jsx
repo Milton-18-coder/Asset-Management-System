@@ -788,7 +788,7 @@ export const Purchases = () => {
 
                         {/* Purchase Date */}
                         <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800 dark:text-slate-200 text-xs">
-                          {p.purchaseDate}
+                          {p.purchaseDate ? String(p.purchaseDate).split('T')[0] : '—'}
                         </td>
 
                         {/* Unit Price */}
@@ -951,7 +951,7 @@ export const Purchases = () => {
                                   <span className="font-mono text-[10px] text-slate-400 block">{t.assetId}</span>
                                 </td>
                                 <td className="px-3 py-2.5 text-indigo-600 dark:text-indigo-400 font-semibold">{t.vendorName}</td>
-                                <td className="px-3 py-2.5">{t.purchaseDate}</td>
+                                <td className="px-3 py-2.5">{t.purchaseDate ? String(t.purchaseDate).split('T')[0] : '—'}</td>
                                 <td className="px-3 py-2.5 text-right font-mono font-bold">₹{Number(t.purchasePrice).toLocaleString()}</td>
                                 <td className="px-3 py-2.5 text-center font-mono">{t.quantity}</td>
                                 <td className="px-4 py-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">

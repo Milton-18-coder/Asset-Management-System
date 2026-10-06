@@ -15,7 +15,13 @@ const getInitialVendorsList = () => {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        const combined = [...parsed];
+        for (const iv of initialVendors) {
+          if (!combined.some(v => v.id === iv.id || v.name?.toLowerCase().trim() === iv.name?.toLowerCase().trim())) {
+            combined.push(iv);
+          }
+        }
+        return combined;
       }
     }
   } catch (e) {
@@ -48,8 +54,14 @@ export const Vendors = () => {
     try {
       const data = await api.getVendors();
       if (Array.isArray(data) && data.length > 0) {
-        setVendors(data);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        const combined = [...data];
+        for (const iv of initialVendors) {
+          if (!combined.some(v => v.id === iv.id || v.name?.toLowerCase().trim() === iv.name?.toLowerCase().trim())) {
+            combined.push(iv);
+          }
+        }
+        setVendors(combined);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(combined));
       } else {
         const fallback = getInitialVendorsList();
         setVendors(fallback);
@@ -112,9 +124,31 @@ export const Vendors = () => {
   };
 
   const filteredVendors = useMemo(() => {
-    return vendors.map(v => {
+    const allVendors = [...vendors];
+    const existingNames = new Set(allVendors.map(v => v.name?.toLowerCase().trim()));
+
+    // Automatically incorporate any vendor found in purchase history
+    purchaseList.forEach(p => {
+      if (p.vendorName && !existingNames.has(p.vendorName.toLowerCase().trim())) {
+        existingNames.add(p.vendorName.toLowerCase().trim());
+        allVendors.push({
+          id: p.vendorId || `VND-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+          name: p.vendorName,
+          contactPerson: 'Institutional Representative',
+          email: `contact@${p.vendorName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+          phone: '+91 (Institutional Partner)',
+          address: 'Approved Institutional Hardware & Equipment Supplier',
+          gstin: '33AAACT0000A1Z5',
+          rating: 4.8,
+          services: `${p.categoryName || 'Equipment'} Supplier`
+        });
+      }
+    });
+
+    return allVendors.map(v => {
       const vPurchases = purchaseList.filter(
-        p => (v.id && p.vendorId === v.id) || p.vendorName === v.name
+        p => (v.id && p.vendorId === v.id) ||
+             (p.vendorName && v.name && p.vendorName.trim().toLowerCase() === v.name.trim().toLowerCase())
       );
       const totalSpend = vPurchases.reduce((s, p) => s + Number(p.totalAmount || p.purchasePrice * (p.quantity || 1)), 0);
       const totalUnits = vPurchases.reduce((s, p) => s + Number(p.quantity || 1), 0);
