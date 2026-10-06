@@ -52,10 +52,10 @@ export const FurnitureList = () => {
     return sourceList.filter(f => {
       if (onlyRecent && !recentIds.has(f.id)) return false;
       const q = search.toLowerCase();
-      const matchSearch = 
-        !q || 
-        f.id.toLowerCase().includes(q) || 
-        f.name.toLowerCase().includes(q) || 
+      const matchSearch =
+        !q ||
+        f.id.toLowerCase().includes(q) ||
+        f.name.toLowerCase().includes(q) ||
         (f.itemType && f.itemType.toLowerCase().includes(q)) ||
         (f.category && f.category.toLowerCase().includes(q)) ||
         (f.mainCategory && f.mainCategory.toLowerCase().includes(q)) ||
@@ -95,7 +95,7 @@ export const FurnitureList = () => {
 
     // Define CSV Headers
     const headers = ['Asset ID', 'Name', 'Primary Category', 'Subcategory', 'Item Type', 'Building', 'Department', 'Room', 'Assigned Custodian', 'Custodian Role', 'Qty', 'Condition', 'Status', 'Purchase Date', 'Cost', 'Supplier', 'Warranty', 'Description'];
-    
+
     // Map assets to CSV rows
     const rows = filteredList.map(item => [
       item.id,
@@ -129,7 +129,7 @@ export const FurnitureList = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `asset_inventory_export_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', `asset_inventory_export_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -157,18 +157,18 @@ export const FurnitureList = () => {
           </div>
 
           {/* Category Filter */}
-          <select 
-            value={filterCat} 
-            onChange={e => setFilterCat(e.target.value)} 
+          <select
+            value={filterCat}
+            onChange={e => setFilterCat(e.target.value)}
             className="px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 cursor-pointer"
           >
             {categories.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
           </select>
 
           {/* Status Filter */}
-          <select 
-            value={filterStatus} 
-            onChange={e => setFilterStatus(e.target.value)} 
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
             className="px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 cursor-pointer"
           >
             {['All', 'Available', 'In Use', 'Needs Inspection', 'Retired'].map(s => (
@@ -177,9 +177,9 @@ export const FurnitureList = () => {
           </select>
 
           {/* Condition Filter */}
-          <select 
-            value={filterCond} 
-            onChange={e => setFilterCond(e.target.value)} 
+          <select
+            value={filterCond}
+            onChange={e => setFilterCond(e.target.value)}
             className="px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 cursor-pointer"
           >
             {['All', 'Good', 'Fair', 'Poor', 'Damaged'].map(c => (
@@ -191,11 +191,10 @@ export const FurnitureList = () => {
           <button
             type="button"
             onClick={() => setOnlyRecent(!onlyRecent)}
-            className={`px-3 py-2 text-xs rounded-xl border font-bold flex items-center gap-1.5 transition cursor-pointer ${
-              onlyRecent
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
-            }`}
+            className={`px-3 py-2 text-xs rounded-xl border font-bold flex items-center gap-1.5 transition cursor-pointer ${onlyRecent
+              ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+              }`}
             title="Filter by recently accessed assets"
           >
             <History size={13} className={onlyRecent ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'} />
@@ -219,13 +218,13 @@ export const FurnitureList = () => {
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold whitespace-nowrap">
                 <th className="px-5 py-4 w-28">Asset ID</th>
-                <th className="pl-5 pr-3 py-4 max-w-[320px]">Name & Type</th>
-                <th className="pl-2 pr-5 py-4 w-40">Category</th>
-                <th className="px-5 py-4">Location</th>
-                <th className="px-5 py-4">Custodian</th>
-                <th className="px-5 py-4 text-center">Qty</th>
-                <th className="px-5 py-4">Condition</th>
-                <th className="px-5 py-4">Status</th>
+                <th className="pl-5 pr-3 py-4 max-w-[100px]">Name & Type</th>
+                <th className="px-3 py-4">Category</th>
+                <th className="px-4 py-4">Location</th>
+                <th className="px-4 py-4">Custodian</th>
+                <th className="px-3 py-4 text-center">Qty</th>
+                <th className="px-4 py-4">Condition</th>
+                <th className="px-4 py-4">Status</th>
                 <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -238,8 +237,8 @@ export const FurnitureList = () => {
                 </tr>
               ) : (
                 filteredList.map(f => (
-                  <tr 
-                    key={f.id} 
+                  <tr
+                    key={f.id}
                     className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition duration-150 cursor-pointer"
                     onClick={() => {
                       recordRecentAccess(f);
@@ -247,7 +246,7 @@ export const FurnitureList = () => {
                     }}
                   >
                     <td className="px-5 py-4 font-mono text-indigo-600 dark:text-indigo-400 font-bold whitespace-nowrap">{f.id}</td>
-                    <td className="pl-5 pr-3 py-4 max-w-[320px]">
+                    <td className="pl-5 pr-3 py-4 max-w-[300px]">
                       <div className="flex flex-col min-w-0 pr-2">
                         <span className="font-bold text-slate-800 dark:text-slate-200">{f.name}</span>
                         {f.itemType && (
@@ -255,12 +254,12 @@ export const FurnitureList = () => {
                         )}
                       </div>
                     </td>
-                    <td className="pl-2 pr-5 py-4 text-slate-600 dark:text-slate-400 font-semibold whitespace-nowrap">
+                    <td className="px-3 py-4 text-slate-600 dark:text-slate-400 font-semibold whitespace-nowrap">
                       <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px]">
                         {f.category}
                       </span>
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
                         <div>
@@ -285,33 +284,33 @@ export const FurnitureList = () => {
                     <td className="px-5 py-4 whitespace-nowrap"><Badge label={f.status} /></td>
                     <td className="px-5 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             recordRecentAccess(f);
                             navigate(`/assets/${f.id}`);
-                          }} 
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
                           title="View Details"
                         >
                           <Icon.Eye />
                         </button>
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/assets/edit/${f.id}`);
                           }}
-                          className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
+                          className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
                           title="Edit"
                         >
                           <Icon.Edit />
                         </button>
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteId(f.id);
-                          }} 
-                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer" 
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
                           title="Delete"
                         >
                           <Icon.Trash />
