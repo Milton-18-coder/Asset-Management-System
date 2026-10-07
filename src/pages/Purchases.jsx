@@ -6,13 +6,16 @@ import { Card, Btn, Modal, Input, Select, Badge } from '../components/UIComponen
 import { AssetPriceHistoryModal } from '../components/AssetPriceHistoryModal';
 import { VendorPurchaseHistoryModal } from '../components/VendorPurchaseHistoryModal';
 import { PriceHistoryChart } from '../components/PriceHistoryChart';
+import { BulkPurchaseImport } from '../components/BulkPurchaseImport';
+import { ReportShareModal } from '../components/ReportShareModal';
 import { api } from '../api';
 import {
   addPurchaseHistoryRecord,
   setPurchaseHistoryList,
   setPurchaseHistoryStats
 } from '../store/purchaseHistorySlice';
-import { updateFurniture } from '../store/furnitureSlice';
+import { updateFurniture, setFurnitureList } from '../store/furnitureSlice';
+import { setNotificationsList } from '../store/notificationsSlice';
 import {
   ShoppingBag,
   Calendar,
@@ -34,7 +37,10 @@ import {
   ArrowUpDown,
   Building,
   CheckCircle2,
-  X
+  X,
+  Share2,
+  RefreshCw,
+  UploadCloud
 } from 'lucide-react';
 
 export const Purchases = () => {
@@ -48,6 +54,11 @@ export const Purchases = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'category' | 'vendors' | 'price-tracker'
   const [loading, setLoading] = useState(false);
   const [successToast, setSuccessToast] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  // Modal mode: 'single' | 'bulk'
+  const [purchaseMode, setPurchaseMode] = useState('single');
 
   // Primary Filters
   const [fromDate, setFromDate] = useState('');
@@ -234,6 +245,51 @@ export const Purchases = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Export PDF with active filters
+  const handleExportPDF = async () => {
+    try {
+      setDownloadingPdf(true);
+      const blob = await api.downloadPurchasesPdf({
+        category: selectedCategory,
+        vendor: selectedVendor,
+        from: fromDate,
+        to: toDate,
+        search: searchQuery
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AssetMS_Purchase_History_${new Date().toISOString().slice(0, 10)}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Purchase PDF export failed:', err);
+      alert('Failed to generate Purchase History PDF: ' + err.message);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  // Callback on successful bulk CSV import
+  const handleBulkImportSuccess = async (response) => {
+    await loadPurchases();
+    try {
+      const assets = await api.getAssets();
+      if (Array.isArray(assets) && assets.length > 0) {
+        dispatch(setFurnitureList(assets));
+      }
+      const notifs = await api.getNotifications();
+      if (Array.isArray(notifs) && notifs.length > 0) {
+        dispatch(setNotificationsList(notifs));
+      }
+    } catch (e) {
+      console.warn('Sync post bulk import notice:', e.message);
+    }
+
+    setSuccessToast(response.message || `${response.imported} purchase transactions imported successfully!`);
+    setShowAddModal(false);
   };
 
   // Save new purchase transaction
@@ -557,11 +613,34 @@ export const Purchases = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Btn variant="secondary" onClick={handleExportCSV} className="!py-2 !px-3.5 text-xs font-bold">
-            <Download className="w-4 h-4 mr-1" /> Export CSV
+        <div className="flex items-center flex-wrap gap-2">
+          <Btn variant="secondary" onClick={handleExportCSV} className="!py-2 !px-3 text-xs font-bold cursor-pointer">
+            <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
           </Btn>
-          <Btn onClick={() => setShowAddModal(true)} className="!py-2 !px-3.5 text-xs font-bold">
+          <Btn
+            variant="secondary"
+            onClick={handleExportPDF}
+            disabled={downloadingPdf}
+            className="!py-2 !px-3 text-xs font-bold cursor-pointer"
+          >
+            {downloadingPdf ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" /> Generating PDF...
+              </>
+            ) : (
+              <>
+                <FileText className="w-3.5 h-3.5 mr-1" /> Export PDF
+              </>
+            )}
+          </Btn>
+          <Btn
+            variant="secondary"
+            onClick={() => setIsShareModalOpen(true)}
+            className="!py-2 !px-3 text-xs font-bold cursor-pointer"
+          >
+            <Share2 className="w-3.5 h-3.5 mr-1" /> Share Report
+          </Btn>
+          <Btn onClick={() => { setPurchaseMode('single'); setShowAddModal(true); }} className="!py-2 !px-3.5 text-xs font-bold cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white">
             <Plus className="w-4 h-4 mr-1" /> Record Purchase
           </Btn>
         </div>
@@ -1137,198 +1216,251 @@ export const Purchases = () => {
       )}
 
       {/* =========================================================================
-          MODAL 1: RECORD NEW PURCHASE TRANSACTION
+          MODAL 1: RECORD NEW PURCHASE TRANSACTION (SINGLE OR BULK CSV IMPORT)
          ========================================================================= */}
       {showAddModal && (
         <Modal
-          title="Record New Asset Purchase Transaction"
+          title={purchaseMode === 'bulk' ? 'Bulk Purchase / CSV Import' : 'Record New Asset Purchase Transaction'}
           onClose={() => setShowAddModal(false)}
-          defaultSize="max-w-2xl"
+          defaultSize={purchaseMode === 'bulk' ? 'max-w-4xl' : 'max-w-2xl'}
         >
-          <form onSubmit={handleCreatePurchase} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Asset / Product Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Dell OptiPlex Desktop Workstation"
-                  value={newPurchaseForm.assetName}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const found = assetsList.find((a) => a.name.toLowerCase() === val.toLowerCase());
-                    setNewPurchaseForm({
-                      ...newPurchaseForm,
-                      assetName: val,
-                      assetId: found ? found.id : newPurchaseForm.assetId,
-                      categoryName: found?.mainCategory || newPurchaseForm.categoryName,
-                      subcategoryName: found?.category || newPurchaseForm.subcategoryName,
-                      itemType: found?.itemType || newPurchaseForm.itemType,
-                    });
-                  }}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
-                />
-              </div>
+          {/* Mode Selector Tabs */}
+          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-4 font-bold text-xs">
+            <button
+              type="button"
+              onClick={() => setPurchaseMode('single')}
+              className={`flex-1 py-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                purchaseMode === 'single'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5" /> Single Purchase
+            </button>
+            <button
+              type="button"
+              onClick={() => setPurchaseMode('bulk')}
+              className={`flex-1 py-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                purchaseMode === 'bulk'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <UploadCloud className="w-3.5 h-3.5" /> Bulk Purchase / CSV Import
+            </button>
+          </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Supplier / Vendor *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Dell India Enterprise"
-                  list="vendorSelectOptions"
-                  value={newPurchaseForm.vendorName}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, vendorName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
-                />
-                <datalist id="vendorSelectOptions">
-                  {vendorsList.map((v) => (
-                    <option key={v.id || v.name} value={v.name} />
-                  ))}
-                </datalist>
-              </div>
-            </div>
+          {purchaseMode === 'bulk' ? (
+            <BulkPurchaseImport
+              currentUser={currentUser}
+              onSuccess={handleBulkImportSuccess}
+              onCancel={() => setShowAddModal(false)}
+            />
+          ) : (
+            <form onSubmit={handleCreatePurchase} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Asset / Product Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dell OptiPlex Desktop Workstation"
+                    value={newPurchaseForm.assetName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const found = assetsList.find((a) => a.name.toLowerCase() === val.toLowerCase());
+                      setNewPurchaseForm({
+                        ...newPurchaseForm,
+                        assetName: val,
+                        assetId: found ? found.id : newPurchaseForm.assetId,
+                        categoryName: found?.mainCategory || newPurchaseForm.categoryName,
+                        subcategoryName: found?.category || newPurchaseForm.subcategoryName,
+                        itemType: found?.itemType || newPurchaseForm.itemType,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Primary Category
-                </label>
-                <select
-                  value={newPurchaseForm.categoryName}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, categoryName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
-                >
-                  {['Furniture', 'Electronics', 'Laboratory', 'IT Hardware'].map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Subcategory
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Computer / Chair / Projector"
-                  value={newPurchaseForm.subcategoryName}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, subcategoryName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Purchase Date *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={newPurchaseForm.purchaseDate}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, purchaseDate: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Unit Purchase Price (₹) *
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="e.g. 65000"
-                  value={newPurchaseForm.purchasePrice}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, purchasePrice: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Quantity *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={newPurchaseForm.quantity}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, quantity: parseInt(e.target.value, 10) || 1 })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Total Amount (Auto-calc)
-                </label>
-                <div className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-                  ₹{((parseFloat(newPurchaseForm.purchasePrice) || 0) * (parseInt(newPurchaseForm.quantity, 10) || 1)).toLocaleString()}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Supplier / Vendor *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dell India Enterprise"
+                    list="vendorSelectOptions"
+                    value={newPurchaseForm.vendorName}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, vendorName: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  />
+                  <datalist id="vendorSelectOptions">
+                    {vendorsList.map((v) => (
+                      <option key={v.id || v.name} value={v.name} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Invoice Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. INV-2026-0881"
-                  value={newPurchaseForm.invoiceNumber}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, invoiceNumber: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Primary Category
+                  </label>
+                  <select
+                    value={newPurchaseForm.categoryName}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, categoryName: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  >
+                    {['Furniture', 'Electronics', 'Laboratory', 'IT Hardware'].map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Subcategory
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Computer / Chair / Projector"
+                    value={newPurchaseForm.subcategoryName}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, subcategoryName: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Purchase Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newPurchaseForm.purchaseDate}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, purchaseDate: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Unit Purchase Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    placeholder="e.g. 65000"
+                    value={newPurchaseForm.purchasePrice}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, purchasePrice: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Quantity *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={newPurchaseForm.quantity}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, quantity: parseInt(e.target.value, 10) || 1 })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Total Amount (Auto-calc)
+                  </label>
+                  <div className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                    ₹{((parseFloat(newPurchaseForm.purchasePrice) || 0) * (parseInt(newPurchaseForm.quantity, 10) || 1)).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Invoice Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. INV-2026-0881"
+                    value={newPurchaseForm.invoiceNumber}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, invoiceNumber: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                    Warranty Coverage
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 3 Years Onsite OEM Warranty"
+                    value={newPurchaseForm.warrantyExpiry}
+                    onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, warrantyExpiry: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                  Warranty Coverage
+                  Purchase Remarks / Notes
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 3 Years Onsite OEM Warranty"
-                  value={newPurchaseForm.warrantyExpiry}
-                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, warrantyExpiry: e.target.value })}
+                <textarea
+                  rows="2"
+                  placeholder="e.g. Lab expansion batch with upgraded specifications..."
+                  value={newPurchaseForm.notes}
+                  onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, notes: e.target.value })}
                   className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
-                Purchase Remarks / Notes
-              </label>
-              <textarea
-                rows="2"
-                placeholder="e.g. Lab expansion batch with upgraded specifications..."
-                value={newPurchaseForm.notes}
-                onChange={(e) => setNewPurchaseForm({ ...newPurchaseForm, notes: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
-              />
-            </div>
-
-            <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
-              <Btn variant="secondary" type="button" onClick={() => setShowAddModal(false)}>
-                Cancel
-              </Btn>
-              <Btn type="submit">
-                Save Purchase Transaction
-              </Btn>
-            </div>
-          </form>
+              <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+                <Btn variant="secondary" type="button" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </Btn>
+                <Btn type="submit">
+                  Save Purchase Transaction
+                </Btn>
+              </div>
+            </form>
+          )}
         </Modal>
       )}
+
+      {/* Share Report Modal */}
+      <ReportShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        reportType="purchases"
+        title="Share Campus Procurement & Purchase History Report"
+        filterParams={{
+          category: selectedCategory,
+          vendor: selectedVendor,
+          dateRange: fromDate || toDate ? `${fromDate || 'Start'} to ${toDate || 'End'}` : 'All Time'
+        }}
+        summaryData={{
+          totalExpenditure,
+          totalUnits,
+          transactionCount: filteredPurchases.length,
+          activeVendorsCount
+        }}
+      />
 
       {/* MODAL 2: ASSET PRICE HISTORY & CHART DRILL-DOWN */}
       {selectedAssetForModal && (

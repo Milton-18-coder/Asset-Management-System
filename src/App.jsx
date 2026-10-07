@@ -31,6 +31,8 @@ import { Purchases } from './pages/Purchases';
 import { AuditLogs } from './pages/AuditLogs';
 import { Analytics } from './pages/Analytics';
 
+import { AIChatbot } from './components/AIChatbot';
+
 export default function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -126,6 +128,9 @@ export default function App() {
           </Routes>
         </div>
       </main>
+
+      {/* Global AI Assistant across all authenticated screens */}
+      <AIChatbot />
     </div>
   );
 }

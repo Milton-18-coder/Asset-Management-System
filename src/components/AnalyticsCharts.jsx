@@ -1,7 +1,25 @@
 import React, { useState } from 'react';
 
 /**
+ * Format Indian Currency Short Notation
+ */
+function formatCurrencyShort(num) {
+  const val = Number(num) || 0;
+  if (val >= 10000000) {
+    return `₹${(val / 10000000).toFixed(2)}Cr`;
+  }
+  if (val >= 100000) {
+    return `₹${(val / 100000).toFixed(2)}L`;
+  }
+  if (val >= 1000) {
+    return `₹${(val / 1000).toFixed(1)}k`;
+  }
+  return `₹${val}`;
+}
+
+/**
  * 1. Grouped Bar Chart (Volume & Value by Department - Dual Scale Calibrated)
+ * Displays permanent values above each bar
  */
 export function GroupedBarChart({ data = [], title, subtitle }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -9,7 +27,7 @@ export function GroupedBarChart({ data = [], title, subtitle }) {
 
   const maxVolume = Math.max(...data.map(d => d.volume || 0), 1);
   const maxValue = Math.max(...data.map(d => d.value || 0), 1);
-  const chartHeight = 190;
+  const chartHeight = 175;
 
   return (
     <div className="flex flex-col h-full justify-between">
@@ -48,7 +66,7 @@ export function GroupedBarChart({ data = [], title, subtitle }) {
         </div>
       </div>
 
-      <div className="relative pt-6 pb-2">
+      <div className="relative pt-8 pb-2">
         {/* Y-Axis guide lines */}
         <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 dark:opacity-10 border-b border-slate-300 dark:border-slate-700">
           <div className="border-b border-slate-400 border-dashed w-full" />
@@ -58,10 +76,10 @@ export function GroupedBarChart({ data = [], title, subtitle }) {
         </div>
 
         {/* Bars Container */}
-        <div className="relative flex items-end justify-between gap-2 sm:gap-4 h-[200px] px-1 sm:px-2">
+        <div className="relative flex items-end justify-between gap-1.5 sm:gap-3 h-[210px] px-1 sm:px-2">
           {data.map((d, i) => {
-            const volHeight = Math.max(((d.volume || 0) / maxVolume) * chartHeight * 0.85, 10);
-            const valHeight = Math.max(((d.value || 0) / maxValue) * chartHeight * 0.85, 10);
+            const volHeight = Math.max(((d.volume || 0) / maxVolume) * chartHeight * 0.75, 12);
+            const valHeight = Math.max(((d.value || 0) / maxValue) * chartHeight * 0.75, 12);
             const isHovered = hoveredIdx === i;
 
             return (
@@ -71,7 +89,7 @@ export function GroupedBarChart({ data = [], title, subtitle }) {
                 onMouseEnter={() => setHoveredIdx(i)}
                 onMouseLeave={() => setHoveredIdx(null)}
               >
-                {/* Floating Tooltip */}
+                {/* Floating Detailed Tooltip on Hover */}
                 {isHovered && (
                   <div className="absolute -top-16 z-30 bg-slate-900 text-white text-[11px] py-1.5 px-3 rounded-xl shadow-xl whitespace-nowrap pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                     <p className="font-bold text-indigo-300">{d.label}</p>
@@ -82,29 +100,29 @@ export function GroupedBarChart({ data = [], title, subtitle }) {
                 )}
 
                 <div className="flex items-end gap-1 sm:gap-1.5 w-full justify-center">
-                  {/* Volume Bar (Purple) */}
+                  {/* Volume Bar (Purple) with PERMANENT VALUE on top */}
                   {(viewMode === 'both' || viewMode === 'volume') && (
-                    <div className="w-full max-w-[18px] flex flex-col items-center">
-                      <span className="text-[9px] font-bold text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity mb-1 font-mono">
+                    <div className="w-full max-w-[20px] flex flex-col items-center">
+                      <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 mb-0.5 font-mono leading-none tracking-tight">
                         {d.volume}
                       </span>
                       <div
                         style={{ height: `${volHeight}px` }}
-                        className="w-full rounded-t-md bg-gradient-to-t from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 transition-all duration-300 shadow-xs"
+                        className="w-full rounded-t-md bg-gradient-to-t from-indigo-600 to-indigo-500 group-hover:from-indigo-500 group-hover:to-indigo-400 transition-all duration-300 shadow-xs"
                         title={`Units: ${d.volume}`}
                       />
                     </div>
                   )}
 
-                  {/* Value Bar (Green) */}
+                  {/* Value Bar (Green) with PERMANENT VALUE on top */}
                   {(viewMode === 'both' || viewMode === 'capital') && (
-                    <div className="w-full max-w-[18px] flex flex-col items-center">
-                      <span className="text-[9px] font-bold text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity mb-1 font-mono">
-                        {d.value >= 100000 ? `${(d.value / 100000).toFixed(1)}L` : `${(d.value / 1000).toFixed(0)}k`}
+                    <div className="w-full max-w-[20px] flex flex-col items-center">
+                      <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 mb-0.5 font-mono leading-none tracking-tight">
+                        {formatCurrencyShort(d.value)}
                       </span>
                       <div
                         style={{ height: `${valHeight}px` }}
-                        className="w-full rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all duration-300 shadow-xs"
+                        className="w-full rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-500 group-hover:from-emerald-500 group-hover:to-emerald-400 transition-all duration-300 shadow-xs"
                         title={`Capital: ₹${d.value?.toLocaleString('en-IN')}`}
                       />
                     </div>
@@ -136,14 +154,14 @@ export function GroupedBarChart({ data = [], title, subtitle }) {
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-sm bg-emerald-500" />
               <span className="text-slate-600 dark:text-slate-400 font-medium">
-                Invested Capital (Peak: <strong className="font-mono text-emerald-600 dark:text-emerald-400">₹{(maxValue / 100000).toFixed(1)}L</strong>)
+                Invested Capital (Peak: <strong className="font-mono text-emerald-600 dark:text-emerald-400">{formatCurrencyShort(maxValue)}</strong>)
               </span>
             </div>
           )}
         </div>
 
         <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">
-          Calibrated Dual-Axis Normalization
+          Live Permanent Values Displayed Above Bars
         </span>
       </div>
     </div>
@@ -204,6 +222,7 @@ export function HorizontalBarChart({ data = [], title, subtitle }) {
 
 /**
  * 3. Histogram Chart (Asset Cost Bins & Life Distribution)
+ * Displays permanent frequency/count badges above every bar
  */
 export function HistogramChart({ bins = [], title, subtitle, unit = 'assets' }) {
   const maxCount = Math.max(...bins.map(b => b.count), 1);
@@ -219,14 +238,14 @@ export function HistogramChart({ bins = [], title, subtitle, unit = 'assets' }) 
       <div className="relative pt-6 pb-2">
         <div className="flex items-end justify-between gap-2 sm:gap-3 h-[180px] px-2 border-b border-slate-200 dark:border-slate-800">
           {bins.map((bin, i) => {
-            const barHeight = Math.max((bin.count / maxCount) * 150, 6);
-            const pct = Math.round((bin.count / totalCount) * 100);
+            const barHeight = Math.max((bin.count / maxCount) * 135, 8);
+            const pct = totalCount > 0 ? Math.round((bin.count / totalCount) * 100) : 0;
 
             return (
               <div key={bin.range} className="flex-1 flex flex-col items-center justify-end h-full group relative">
-                {/* Count Badge on Top */}
-                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 font-mono">
-                  {bin.count} ({pct}%)
+                {/* Count Badge on Top - PERMANENTLY VISIBLE */}
+                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 mb-1 font-mono leading-none">
+                  {bin.count} <span className="text-[8px] font-normal text-slate-400">({pct}%)</span>
                 </span>
 
                 <div
@@ -257,15 +276,18 @@ export function HistogramChart({ bins = [], title, subtitle, unit = 'assets' }) 
 
 /**
  * 4. Multi-Line & Area Trend Graph (Price & Maintenance Curves)
+ * Permanently displays values above each node point with anti-overlap positioning
  */
 export function TrendLineChart({ data = [], title, subtitle }) {
   const [activePoint, setActivePoint] = useState(null);
 
   if (!data || data.length === 0) return null;
 
-  const width = 500;
-  const height = 180;
-  const padding = 30;
+  const width = 520;
+  const height = 200;
+  const paddingX = 35;
+  const paddingTop = 32;
+  const paddingBottom = 30;
 
   const maxVal = Math.max(...data.map(d => d.value), 1);
   const minVal = Math.min(...data.map(d => d.value), 0);
@@ -273,8 +295,8 @@ export function TrendLineChart({ data = [], title, subtitle }) {
 
   // Calculate SVG coordinates
   const points = data.map((d, i) => {
-    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
-    const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
+    const x = paddingX + (i / Math.max(data.length - 1, 1)) * (width - paddingX * 2);
+    const y = height - paddingBottom - ((d.value - minVal) / range) * (height - paddingTop - paddingBottom);
     return { x, y, ...d };
   });
 
@@ -284,28 +306,28 @@ export function TrendLineChart({ data = [], title, subtitle }) {
   }, '');
 
   // Shaded area path
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - paddingBottom} L ${points[0].x} ${height - paddingBottom} Z`;
 
   return (
     <div className="flex flex-col h-full justify-between">
       <div>
         {title && <h3 className="text-sm font-bold text-slate-800 dark:text-white font-display">{title}</h3>}
-        {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{subtitle}</p>}
       </div>
 
       <div className="relative w-full overflow-hidden my-auto">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
           <defs>
             <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.35" />
               <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
           {/* Grid lines */}
-          <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="#cbd5e1" strokeDasharray="3 3" opacity="0.4" />
-          <line x1={padding} y1={(height - padding) / 2} x2={width - padding} y2={(height - padding) / 2} stroke="#cbd5e1" strokeDasharray="3 3" opacity="0.4" />
-          <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#cbd5e1" opacity="0.6" />
+          <line x1={paddingX} y1={paddingTop} x2={width - paddingX} y2={paddingTop} stroke="#cbd5e1" strokeDasharray="3 3" opacity="0.4" />
+          <line x1={paddingX} y1={(height - paddingBottom + paddingTop) / 2} x2={width - paddingX} y2={(height - paddingBottom + paddingTop) / 2} stroke="#cbd5e1" strokeDasharray="3 3" opacity="0.4" />
+          <line x1={paddingX} y1={height - paddingBottom} x2={width - paddingX} y2={height - paddingBottom} stroke="#cbd5e1" opacity="0.6" />
 
           {/* Shaded Area */}
           <path d={areaPath} fill="url(#areaGradient)" />
@@ -313,17 +335,59 @@ export function TrendLineChart({ data = [], title, subtitle }) {
           {/* Line Curve */}
           <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-          {/* Interactive Dots */}
-          {points.map((p, i) => (
-            <g key={i} className="cursor-pointer" onMouseEnter={() => setActivePoint(p)} onMouseLeave={() => setActivePoint(null)}>
-              <circle cx={p.x} cy={p.y} r={activePoint?.label === p.label ? 6 : 4} fill="#ffffff" stroke="#6366f1" strokeWidth="2.5" className="transition-all duration-200" />
-            </g>
-          ))}
+          {/* Interactive Dots and Permanent Node Value Labels */}
+          {points.map((p, i) => {
+            // Stagger label Y offset slightly if needed to avoid overlap
+            const isAlternate = i % 2 === 1;
+            const labelY = p.y - (isAlternate ? 10 : 12);
+
+            return (
+              <g
+                key={i}
+                className="cursor-pointer"
+                onMouseEnter={() => setActivePoint(p)}
+                onMouseLeave={() => setActivePoint(null)}
+              >
+                {/* Permanent Node Value Label */}
+                <text
+                  x={p.x}
+                  y={labelY}
+                  textAnchor="middle"
+                  className="fill-indigo-600 dark:fill-indigo-400 font-mono font-bold"
+                  style={{ fontSize: '9px' }}
+                >
+                  {p.value >= 1000 ? `₹${(p.value / 1000).toFixed(0)}k` : `₹${p.value}`}
+                </text>
+
+                {/* Node circle */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={activePoint?.label === p.label ? 6 : 4}
+                  fill="#ffffff"
+                  stroke="#6366f1"
+                  strokeWidth="2.5"
+                  className="transition-all duration-200"
+                />
+
+                {/* X-axis label under node */}
+                <text
+                  x={p.x}
+                  y={height - paddingBottom + 14}
+                  textAnchor="middle"
+                  className="fill-slate-500 dark:fill-slate-400 font-medium"
+                  style={{ fontSize: '8.5px' }}
+                >
+                  {p.label}
+                </text>
+              </g>
+            );
+          })}
         </svg>
 
-        {/* Hover Tooltip Overlay */}
+        {/* Hover Tooltip Overlay with exact currency */}
         {activePoint && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs py-1.5 px-3 rounded-xl shadow-xl pointer-events-none">
+          <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs py-1.5 px-3 rounded-xl shadow-xl pointer-events-none z-20">
             <span className="font-bold text-indigo-300">{activePoint.label}: </span>
             <span className="font-mono font-bold text-emerald-400">₹{activePoint.value?.toLocaleString('en-IN')}</span>
           </div>
@@ -332,7 +396,7 @@ export function TrendLineChart({ data = [], title, subtitle }) {
 
       <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400">
         <span>Timeline: <strong className="text-slate-700 dark:text-slate-300">{data[0]?.label} ➔ {data[data.length - 1]?.label}</strong></span>
-        <span>Inflation Trend: <strong className="text-emerald-600 dark:text-emerald-400">+6.8% CAGR</strong></span>
+        <span>Inflation Trajectory: <strong className="text-emerald-600 dark:text-emerald-400">Live Database Benchmark</strong></span>
       </div>
     </div>
   );

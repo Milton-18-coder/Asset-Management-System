@@ -253,6 +253,9 @@ export async function initDatabase() {
         invoiceDate DATE,
         warrantyExpiry VARCHAR(100),
         notes TEXT,
+        batch_id VARCHAR(100),
+        import_source ENUM('manual', 'csv', 'api', 'ai') DEFAULT 'manual',
+        created_by VARCHAR(150),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_ph_vendor (vendorId),
@@ -265,7 +268,53 @@ export async function initDatabase() {
       );
     `);
 
-    console.log('MySQL Database and 14 Tables initialized successfully');
+    // Safe schema migration for existing purchase_history tables
+    try {
+      const [colRows] = await pool.query(`SHOW COLUMNS FROM purchase_history LIKE 'batch_id'`);
+      if (colRows.length === 0) {
+        await pool.query(`ALTER TABLE purchase_history ADD COLUMN batch_id VARCHAR(100) AFTER notes`);
+      }
+    } catch (e) {
+      console.warn('Migration batch_id note:', e.message);
+    }
+
+    try {
+      const [colRows] = await pool.query(`SHOW COLUMNS FROM purchase_history LIKE 'import_source'`);
+      if (colRows.length === 0) {
+        await pool.query(`ALTER TABLE purchase_history ADD COLUMN import_source ENUM('manual', 'csv', 'api', 'ai') DEFAULT 'manual' AFTER batch_id`);
+      }
+    } catch (e) {
+      console.warn('Migration import_source note:', e.message);
+    }
+
+    try {
+      const [colRows] = await pool.query(`SHOW COLUMNS FROM purchase_history LIKE 'created_by'`);
+      if (colRows.length === 0) {
+        await pool.query(`ALTER TABLE purchase_history ADD COLUMN created_by VARCHAR(150) AFTER import_source`);
+      }
+    } catch (e) {
+      console.warn('Migration created_by note:', e.message);
+    }
+
+    // AI Chatbot Audit & Query Logs
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_audit_logs (
+        id VARCHAR(50) PRIMARY KEY,
+        userId VARCHAR(50),
+        userName VARCHAR(150),
+        userRole VARCHAR(50),
+        mode ENUM('agent', 'rule') NOT NULL,
+        intent VARCHAR(100),
+        tool VARCHAR(100),
+        status VARCHAR(50) DEFAULT 'success',
+        responseTimeMs INT DEFAULT 0,
+        prompt TEXT,
+        responseSummary TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    console.log('MySQL Database, 15 Tables, and migrations initialized successfully');
     return pool;
   } catch (error) {
     console.error('Failed to initialize MySQL Database:', error.message);

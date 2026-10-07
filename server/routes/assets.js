@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getPool } from '../db.js';
+import { sendAssetConditionIntimationEmail } from '../services/emailService.js';
 
 const router = Router();
 
@@ -97,6 +98,8 @@ router.put('/:id', async (req, res) => {
     const pool = getPool();
     const id = req.params.id;
     const a = req.body;
+    const updatedBy = req.body.updatedBy || null;
+
     if (a.department) {
       const validatedDept = normalizeDepartment(a.department);
       if (!validatedDept) {
@@ -104,6 +107,11 @@ router.put('/:id', async (req, res) => {
       }
       a.department = validatedDept;
     }
+
+    // Fetch existing asset state before update to compare condition
+    const [prevRows] = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
+    const prevAsset = prevRows.length > 0 ? prevRows[0] : null;
+
     await pool.query(
       `UPDATE assets SET
          name=?, mainCategory=?, category=?, itemType=?, building=?, department=?, room=?,
@@ -119,8 +127,21 @@ router.put('/:id', async (req, res) => {
         id
       ]
     );
+
     const [rows] = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
-    res.json(rows[0]);
+    const updatedAsset = rows[0];
+
+    // Trigger intimation email if condition changed
+    if (prevAsset && a.condition && a.condition !== prevAsset.condition) {
+      sendAssetConditionIntimationEmail({
+        asset: updatedAsset,
+        previousCondition: prevAsset.condition,
+        newCondition: a.condition,
+        updatedBy
+      }).catch(err => console.error('[Asset PUT] Email dispatch error:', err.message));
+    }
+
+    res.json(updatedAsset);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -173,10 +194,29 @@ router.patch('/:id/custodian', async (req, res) => {
 router.patch('/:id/condition', async (req, res) => {
   try {
     const pool = getPool();
-    const { condition } = req.body;
+    const { condition, updatedBy } = req.body;
+
+    const [prevRows] = await pool.query('SELECT * FROM assets WHERE id = ?', [req.params.id]);
+    if (prevRows.length === 0) {
+      return res.status(404).json({ error: 'Asset not found' });
+    }
+    const prevAsset = prevRows[0];
+
     await pool.query('UPDATE assets SET `condition` = ? WHERE id = ?', [condition, req.params.id]);
     const [rows] = await pool.query('SELECT * FROM assets WHERE id = ?', [req.params.id]);
-    res.json(rows[0]);
+    const updatedAsset = rows[0];
+
+    // Trigger intimation email if condition changed
+    if (condition && condition !== prevAsset.condition) {
+      sendAssetConditionIntimationEmail({
+        asset: updatedAsset,
+        previousCondition: prevAsset.condition,
+        newCondition: condition,
+        updatedBy
+      }).catch(err => console.error('[Asset PATCH condition] Email dispatch error:', err.message));
+    }
+
+    res.json(updatedAsset);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

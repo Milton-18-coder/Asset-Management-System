@@ -466,7 +466,224 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 10. POST create new purchase history transaction
+// 10. POST Bulk Purchase Import (CSV / Batch Processing)
+router.post('/bulk', async (req, res) => {
+  const pool = getPool();
+  let connection = null;
+  try {
+    const { purchases = [], batchId, importSource = 'csv', createdBy = 'System User' } = req.body;
+
+    if (!Array.isArray(purchases) || purchases.length === 0) {
+      return res.status(400).json({ error: 'No purchase records provided for bulk import.' });
+    }
+
+    const currentBatchId = batchId || `BATCH-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const validRecords = [];
+    const errors = [];
+
+    // Fetch all existing vendors to auto-resolve vendor IDs
+    const [existingVendors] = await pool.query('SELECT id, name FROM vendors');
+    const vendorMap = new Map();
+    existingVendors.forEach(v => {
+      vendorMap.set(v.name.toLowerCase().trim(), v.id);
+    });
+
+    // Row-by-row backend validation
+    purchases.forEach((row, idx) => {
+      const rowNum = row.rowNumber || idx + 1;
+      const assetName = (row.asset_name || row.assetName || '').trim();
+      const vendorName = (row.vendor_name || row.vendorName || '').trim();
+      const purchaseDate = row.purchase_date || row.purchaseDate;
+      const rawPrice = row.purchase_price !== undefined ? row.purchase_price : row.purchasePrice;
+      const rawQty = row.quantity !== undefined ? row.quantity : row.qty;
+
+      const rowErrors = [];
+
+      if (!assetName) {
+        rowErrors.push('Asset name is required');
+      }
+      if (!vendorName) {
+        rowErrors.push('Vendor name is required');
+      }
+      if (!purchaseDate || isNaN(new Date(purchaseDate).getTime())) {
+        rowErrors.push('Valid purchase date is required');
+      }
+
+      const priceNum = parseFloat(rawPrice);
+      if (isNaN(priceNum) || priceNum < 0) {
+        rowErrors.push('Purchase price must be a valid non-negative number');
+      }
+
+      const qtyNum = parseInt(rawQty, 10);
+      if (isNaN(qtyNum) || qtyNum < 1) {
+        rowErrors.push('Quantity must be an integer greater than or equal to 1');
+      }
+
+      if (rowErrors.length > 0) {
+        errors.push({
+          row: rowNum,
+          asset: assetName || 'Unknown Asset',
+          vendor: vendorName || 'Unknown Vendor',
+          errors: rowErrors,
+          message: rowErrors.join(', ')
+        });
+      } else {
+        const totalAmount = parseFloat((priceNum * qtyNum).toFixed(2));
+        const purchaseId = `PUR-B-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
+        const assetId = row.assetId || row.asset_id || `AST-B-${Date.now()}-${idx}`;
+        const resolvedVendorId = row.vendorId || vendorMap.get(vendorName.toLowerCase()) || null;
+
+        validRecords.push({
+          id: purchaseId,
+          assetId,
+          assetName,
+          vendorId: resolvedVendorId,
+          vendorName,
+          categoryId: row.categoryId || row.category_id || null,
+          categoryName: (row.category || row.categoryName || 'Furniture').trim(),
+          subcategoryId: row.subcategoryId || row.subcategory_id || null,
+          subcategoryName: (row.subcategory || row.subcategoryName || 'General').trim(),
+          itemType: (row.item_type || row.itemType || row.subcategory || 'General').trim(),
+          purchaseDate: new Date(purchaseDate).toISOString().split('T')[0],
+          purchasePrice: priceNum,
+          quantity: qtyNum,
+          totalAmount,
+          invoiceNumber: (row.invoice_number || row.invoiceNumber || '').trim(),
+          invoiceDate: row.invoice_date || row.invoiceDate ? new Date(row.invoice_date || row.invoiceDate).toISOString().split('T')[0] : new Date(purchaseDate).toISOString().split('T')[0],
+          warrantyExpiry: (row.warranty_expiry || row.warrantyExpiry || '1 Year Standard').trim(),
+          notes: (row.notes || '').trim(),
+          batch_id: currentBatchId,
+          import_source: importSource,
+          created_by: createdBy
+        });
+      }
+    });
+
+    if (validRecords.length === 0) {
+      return res.status(400).json({
+        success: false,
+        imported: 0,
+        failed: errors.length,
+        batchId: currentBatchId,
+        errors,
+        message: 'No valid purchase records found in the import payload.'
+      });
+    }
+
+    // Execute atomic MySQL transaction
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const insertSql = `
+      INSERT INTO purchase_history (
+        id, assetId, assetName, vendorId, vendorName, categoryId, categoryName,
+        subcategoryId, subcategoryName, itemType, purchaseDate, purchasePrice,
+        quantity, totalAmount, invoiceNumber, invoiceDate, warrantyExpiry, notes,
+        batch_id, import_source, created_by
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    for (const rec of validRecords) {
+      await connection.query(insertSql, [
+        rec.id,
+        rec.assetId,
+        rec.assetName,
+        rec.vendorId,
+        rec.vendorName,
+        rec.categoryId,
+        rec.categoryName,
+        rec.subcategoryId,
+        rec.subcategoryName,
+        rec.itemType,
+        rec.purchaseDate,
+        rec.purchasePrice,
+        rec.quantity,
+        rec.totalAmount,
+        rec.invoiceNumber,
+        rec.invoiceDate,
+        rec.warrantyExpiry,
+        rec.notes,
+        rec.batch_id,
+        rec.import_source,
+        rec.created_by
+      ]);
+
+      // If asset exists in assets table, update its cost/supplier/warranty/purchaseDate
+      try {
+        await connection.query(
+          `UPDATE assets 
+           SET cost = ?, supplier = ?, purchaseDate = ?, warranty = COALESCE(NULLIF(?, ''), warranty)
+           WHERE id = ? OR name = ?`,
+          [rec.purchasePrice, rec.vendorName, rec.purchaseDate, rec.warrantyExpiry, rec.assetId, rec.assetName]
+        );
+      } catch (e) {
+        // Continue if asset update is not applicable
+      }
+    }
+
+    // Create a system notification for the bulk import
+    const notifId = `NOTIF-${Date.now()}`;
+    await connection.query(
+      `INSERT INTO notifications (id, title, message, time, \`read\`, type, link)
+       VALUES (?, ?, ?, ?, 0, 'purchase', '/purchases')`,
+      [
+        notifId,
+        'Bulk Purchase Import Completed',
+        `${validRecords.length} purchase transaction${validRecords.length === 1 ? '' : 's'} imported successfully into batch ${currentBatchId}.` + (errors.length > 0 ? ` (${errors.length} failed)` : ''),
+        'Just now'
+      ]
+    );
+
+    // Audit log
+    try {
+      await connection.query(
+        `INSERT INTO audit_logs (id, userId, userName, userRole, action, entity, entityId, details)
+         VALUES (?, ?, ?, ?, 'BULK_IMPORT', 'purchase_history', ?, ?)`,
+        [
+          `AUD-${Date.now()}`,
+          'USR-SYSTEM',
+          createdBy,
+          'Admin',
+          currentBatchId,
+          `Imported ${validRecords.length} purchase records from ${importSource}. ${errors.length} errors.`
+        ]
+      );
+    } catch (e) {
+      // audit log error non-blocking
+    }
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      imported: validRecords.length,
+      failed: errors.length,
+      batchId: currentBatchId,
+      errors,
+      message: `Bulk Purchase Import Completed: ${validRecords.length} transactions imported successfully.`
+    });
+
+  } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
+    console.error('Bulk purchase import transaction failed:', error);
+    res.status(500).json({
+      success: false,
+      imported: 0,
+      failed: req.body?.purchases?.length || 0,
+      error: error.message,
+      message: 'Failed to process bulk import transaction. Database changes were safely rolled back.'
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
+// 11. POST create new single purchase history transaction
 router.post('/', async (req, res) => {
   try {
     const pool = getPool();

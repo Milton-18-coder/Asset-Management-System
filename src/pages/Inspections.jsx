@@ -5,6 +5,7 @@ import { updateFurnitureCondition } from '../store/furnitureSlice';
 import { addNotification } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Modal, Select, Input, Icon } from '../components/UIComponents';
+import { api } from '../api';
 
 export const Inspections = () => {
   const dispatch = useDispatch();
@@ -42,6 +43,12 @@ export const Inspections = () => {
     dispatch(addInspection(newInspection));
     dispatch(updateFurnitureCondition({ id: selectedAssetId, condition }));
     
+    try {
+      api.addInspection(newInspection, currentUser).catch(() => {});
+    } catch {
+      // Backend optional
+    }
+
     const notif = {
       title: `Asset Inspected: ${condition}`,
       message: `${currentUser.name} audited ${asset.name} (${selectedAssetId}) in ${asset.room}. Condition marked as ${condition}.`,

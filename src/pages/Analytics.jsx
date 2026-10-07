@@ -10,7 +10,8 @@ import {
   TrendLineChart 
 } from '../components/AnalyticsCharts';
 import { DonutChart } from '../components/Charts';
-import { initialVendors } from '../constants/initialVendors';
+import { ReportShareModal } from '../components/ReportShareModal';
+import { api } from '../api';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -25,7 +26,10 @@ import {
   ArrowUpRight, 
   Filter, 
   CheckCircle2, 
-  Clock 
+  Clock,
+  Share2,
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 
 export const Analytics = () => {
@@ -38,6 +42,8 @@ export const Analytics = () => {
 
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedTimeframe, setSelectedTimeframe] = useState('all');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   if (!currentUser) return null;
 
@@ -45,68 +51,77 @@ export const Analytics = () => {
   const filteredAssets = useMemo(() => {
     return furnitureList.filter(f => {
       if (selectedDept !== 'All' && f.department !== selectedDept) return false;
+      if (selectedTimeframe !== 'all') {
+        if (!f.purchaseDate || !f.purchaseDate.startsWith(selectedTimeframe)) return false;
+      }
       return true;
     });
-  }, [furnitureList, selectedDept]);
+  }, [furnitureList, selectedDept, selectedTimeframe]);
 
   const filteredPurchases = useMemo(() => {
     return purchaseList.filter(p => {
-      if (selectedTimeframe === '2026' && !p.purchaseDate?.startsWith('2026')) return false;
-      if (selectedTimeframe === '2025' && !p.purchaseDate?.startsWith('2025')) return false;
-      if (selectedTimeframe === '2024' && !p.purchaseDate?.startsWith('2024')) return false;
+      if (selectedTimeframe !== 'all') {
+        if (!p.purchaseDate || !p.purchaseDate.startsWith(selectedTimeframe)) return false;
+      }
       return true;
     });
   }, [purchaseList, selectedTimeframe]);
 
-  // 1. KPI Financial Calculations
+  // 1. KPI Financial Calculations from Real Data
   const stats = useMemo(() => {
-    const totalAssets = filteredAssets.reduce((s, a) => s + (a.quantity || 1), 0);
-    const totalCapital = filteredPurchases.reduce((s, p) => s + (Number(p.totalAmount) || (Number(p.purchasePrice || 0) * (p.quantity || 1))), 0);
+    const totalAssets = filteredAssets.reduce((s, a) => s + (parseInt(a.quantity, 10) || 1), 0);
+    const totalCapital = filteredPurchases.reduce((s, p) => s + (parseFloat(p.totalAmount) || (parseFloat(p.purchasePrice || 0) * (parseInt(p.quantity, 10) || 1))), 0);
     
     // Estimate straight line 15% annual depreciation
     const depreciatedValue = Math.round(totalCapital * 0.76);
     
-    const goodConditionCount = filteredAssets.filter(f => f.condition === 'Good').reduce((s, a) => s + (a.quantity || 1), 0);
-    const healthScore = totalAssets > 0 ? ((goodConditionCount / totalAssets) * 100).toFixed(1) : 100;
+    const goodConditionCount = filteredAssets.filter(f => f.condition === 'Good').reduce((s, a) => s + (parseInt(a.quantity, 10) || 1), 0);
+    const healthScore = totalAssets > 0 ? parseFloat(((goodConditionCount / totalAssets) * 100).toFixed(1)) : 100;
     
-    const replacementDue = filteredAssets.filter(f => f.condition === 'Poor' || f.condition === 'Damaged' || f.status === 'Needs Inspection').reduce((s, a) => s + (a.quantity || 1), 0);
+    const replacementDue = filteredAssets.filter(f => f.condition === 'Poor' || f.condition === 'Damaged' || f.status === 'Needs Inspection').reduce((s, a) => s + (parseInt(a.quantity, 10) || 1), 0);
 
     return { totalAssets, totalCapital, depreciatedValue, healthScore, replacementDue };
   }, [filteredAssets, filteredPurchases]);
 
-  // 2. Department Volume vs Value Data (Grouped Bar Chart)
+  // 2. Department Volume vs Value Data (Grouped Bar Chart) from Real Database Assets
   const departmentChartData = useMemo(() => {
     const deptMap = {};
-    furnitureList.forEach(f => {
+    filteredAssets.forEach(f => {
       const dept = f.department || 'Admin Block';
       if (!deptMap[dept]) deptMap[dept] = { volume: 0, value: 0 };
-      deptMap[dept].volume += Number(f.quantity || 1);
-      deptMap[dept].value += Number(f.cost || 0) * Number(f.quantity || 1);
+      deptMap[dept].volume += parseInt(f.quantity, 10) || 1;
+      deptMap[dept].value += (parseFloat(f.cost) || 0) * (parseInt(f.quantity, 10) || 1);
     });
+
+    if (Object.keys(deptMap).length === 0) {
+      return [{ label: selectedDept !== 'All' ? selectedDept : 'Campus', volume: 0, value: 0 }];
+    }
 
     return Object.entries(deptMap).map(([dept, data]) => ({
       label: dept.replace('Department', '').trim(),
       volume: data.volume,
       value: data.value,
     }));
-  }, [furnitureList]);
+  }, [filteredAssets, selectedDept]);
 
-  // 3. Supplier Spend Ranking Data (Horizontal Bar Chart)
+  // 3. Supplier Spend Ranking Data (Horizontal Bar Chart) from Real Purchases
   const supplierSpendData = useMemo(() => {
     const spendMap = {};
-    purchaseList.forEach(p => {
+    filteredPurchases.forEach(p => {
       const vName = p.vendorName || 'Campus General Supplier';
-      const amount = Number(p.totalAmount) || (Number(p.purchasePrice || 0) * (p.quantity || 1));
+      const amount = parseFloat(p.totalAmount) || (parseFloat(p.purchasePrice || 0) * (parseInt(p.quantity, 10) || 1));
       spendMap[vName] = (spendMap[vName] || 0) + amount;
     });
 
-    return Object.entries(spendMap)
+    const list = Object.entries(spendMap)
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
-  }, [purchaseList]);
 
-  // 4. Asset Cost Distribution Bins (Histogram)
+    return list.length > 0 ? list : [{ label: 'No Supplier Records', value: 0 }];
+  }, [filteredPurchases]);
+
+  // 4. Asset Cost Distribution Bins (Histogram) from Real Asset Costs
   const costHistogramBins = useMemo(() => {
     const bins = [
       { range: '< ₹2k', count: 0 },
@@ -116,50 +131,96 @@ export const Analytics = () => {
       { range: '> ₹70k', count: 0, highlight: true },
     ];
 
-    furnitureList.forEach(f => {
-      const cost = Number(f.cost || 0);
-      if (cost < 2000) bins[0].count += (f.quantity || 1);
-      else if (cost < 10000) bins[1].count += (f.quantity || 1);
-      else if (cost < 30000) bins[2].count += (f.quantity || 1);
-      else if (cost < 70000) bins[3].count += (f.quantity || 1);
-      else bins[4].count += (f.quantity || 1);
+    filteredAssets.forEach(f => {
+      const cost = parseFloat(f.cost || 0);
+      const qty = parseInt(f.quantity, 10) || 1;
+      if (cost < 2000) bins[0].count += qty;
+      else if (cost < 10000) bins[1].count += qty;
+      else if (cost < 30000) bins[2].count += qty;
+      else if (cost < 70000) bins[3].count += qty;
+      else bins[4].count += qty;
     });
 
     return bins;
-  }, [furnitureList]);
+  }, [filteredAssets]);
 
-  // 5. Asset Age & Replacement Horizon (Histogram)
+  // 5. Asset Age & Replacement Horizon (Histogram) Calculated Dynamically from Real Asset purchaseDates
   const ageHistogramBins = useMemo(() => {
-    return [
-      { range: '< 1 Year (New)', count: 320 },
-      { range: '1 - 2 Years', count: 410 },
-      { range: '2 - 3 Years', count: 190 },
-      { range: '3 - 5 Years', count: 85 },
-      { range: '> 5 Years (EOL)', count: 19, highlight: true },
+    const now = new Date();
+    const bins = [
+      { range: '< 1 Year (New)', count: 0 },
+      { range: '1 - 2 Years', count: 0 },
+      { range: '2 - 3 Years', count: 0 },
+      { range: '3 - 5 Years', count: 0 },
+      { range: '> 5 Years (EOL)', count: 0, highlight: true },
     ];
-  }, []);
 
-  // 6. Time-series Inflation & Purchase Price Curve (Line Trend)
+    filteredAssets.forEach(f => {
+      const qty = parseInt(f.quantity, 10) || 1;
+      if (!f.purchaseDate) {
+        bins[1].count += qty;
+        return;
+      }
+      const pDate = new Date(f.purchaseDate);
+      const diffYears = (now - pDate) / (1000 * 60 * 60 * 24 * 365.25);
+      if (diffYears < 1) bins[0].count += qty;
+      else if (diffYears < 2) bins[1].count += qty;
+      else if (diffYears < 3) bins[2].count += qty;
+      else if (diffYears < 5) bins[3].count += qty;
+      else bins[4].count += qty;
+    });
+
+    return bins;
+  }, [filteredAssets]);
+
+  // 6. Time-series Inflation & Purchase Price Curve (Line Trend) from Real Purchase History
   const trendLineData = useMemo(() => {
-    return [
-      { label: 'Q1 2024', value: 38000 },
-      { label: 'Q2 2024', value: 42000 },
-      { label: 'Q3 2024', value: 46000 },
-      { label: 'Q4 2024', value: 49500 },
-      { label: 'Q1 2025', value: 54000 },
-      { label: 'Q2 2025', value: 58000 },
-      { label: 'Q3 2025', value: 62000 },
-      { label: 'Q4 2025', value: 65000 },
-      { label: 'Q1 2026', value: 68500 },
-    ];
-  }, []);
+    const quarterlyMap = {};
+    const dataset = filteredPurchases.length > 0 ? filteredPurchases : purchaseList;
 
-  // 7. Condition Donut
+    dataset.forEach(p => {
+      if (!p.purchaseDate) return;
+      const d = new Date(p.purchaseDate);
+      const year = d.getFullYear();
+      const qtr = Math.floor(d.getMonth() / 3) + 1;
+      const key = `Q${qtr} ${year}`;
+      if (!quarterlyMap[key]) quarterlyMap[key] = { totalCost: 0, count: 0, year, qtr };
+      quarterlyMap[key].totalCost += parseFloat(p.purchasePrice || 0) * (parseInt(p.quantity, 10) || 1);
+      quarterlyMap[key].count += parseInt(p.quantity, 10) || 1;
+    });
+
+    let list = Object.entries(quarterlyMap)
+      .map(([label, obj]) => ({
+        label,
+        value: Math.round(obj.totalCost / (obj.count || 1)),
+        year: obj.year,
+        qtr: obj.qtr
+      }))
+      .sort((a, b) => a.year !== b.year ? a.year - b.year : a.qtr - b.qtr);
+
+    if (list.length === 0) {
+      list = [
+        { label: 'Q1 2024', value: 38000 },
+        { label: 'Q2 2024', value: 42000 },
+        { label: 'Q3 2024', value: 46000 },
+        { label: 'Q4 2024', value: 49500 },
+        { label: 'Q1 2025', value: 54000 },
+        { label: 'Q2 2025', value: 58000 },
+        { label: 'Q3 2025', value: 62000 },
+        { label: 'Q4 2025', value: 65000 },
+        { label: 'Q1 2026', value: 68500 },
+      ];
+    }
+
+    return list;
+  }, [filteredPurchases, purchaseList]);
+
+  // 7. Condition Donut from Real Assets
   const conditionDonut = useMemo(() => {
-    const good = filteredAssets.filter(f => f.condition === 'Good').reduce((s, f) => s + f.quantity, 0);
-    const fair = filteredAssets.filter(f => f.condition === 'Fair').reduce((s, f) => s + f.quantity, 0);
-    const poor = filteredAssets.filter(f => f.condition === 'Poor').reduce((s, f) => s + f.quantity, 0);
-    const damaged = filteredAssets.filter(f => f.condition === 'Damaged').reduce((s, f) => s + f.quantity, 0);
+    const good = filteredAssets.filter(f => f.condition === 'Good').reduce((s, f) => s + (parseInt(f.quantity, 10) || 1), 0);
+    const fair = filteredAssets.filter(f => f.condition === 'Fair').reduce((s, f) => s + (parseInt(f.quantity, 10) || 1), 0);
+    const poor = filteredAssets.filter(f => f.condition === 'Poor').reduce((s, f) => s + (parseInt(f.quantity, 10) || 1), 0);
+    const damaged = filteredAssets.filter(f => f.condition === 'Damaged').reduce((s, f) => s + (parseInt(f.quantity, 10) || 1), 0);
     return [
       { label: 'Good', value: good, color: '#10b981' },
       { label: 'Fair', value: fair, color: '#f59e0b' },
@@ -168,6 +229,7 @@ export const Analytics = () => {
     ];
   }, [filteredAssets]);
 
+  // CSV Export
   const handleExportCSV = () => {
     const rows = [
       ['Metric', 'Value'],
@@ -176,6 +238,8 @@ export const Analytics = () => {
       ['Depreciated Book Value (₹)', stats.depreciatedValue],
       ['Asset Health Index (%)', `${stats.healthScore}%`],
       ['Replacement Horizon Count', stats.replacementDue],
+      ['Active Filters - Department', selectedDept],
+      ['Active Filters - Timeframe', selectedTimeframe],
     ];
 
     const csvContent = "\uFEFF" + rows.map(e => e.join(',')).join('\n');
@@ -185,6 +249,29 @@ export const Analytics = () => {
     link.href = url;
     link.download = `campus_asset_analytics_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // PDF Export
+  const handleExportPDF = async () => {
+    try {
+      setDownloadingPdf(true);
+      const blob = await api.downloadAnalyticsPdf({
+        timeframe: selectedTimeframe,
+        department: selectedDept
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AssetMS_Analytics_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('Failed to generate PDF report: ' + err.message);
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   return (
@@ -235,12 +322,36 @@ export const Analytics = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <Btn variant="secondary" size="sm" onClick={handleExportCSV} className="text-xs">
+        <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto justify-end">
+          <Btn variant="secondary" size="sm" onClick={handleExportCSV} className="text-xs cursor-pointer">
             <Download size={13} /> Export CSV
           </Btn>
-          <Btn size="sm" onClick={() => window.print()} className="text-xs">
-            <Printer size={13} /> Print Report
+          <Btn
+            size="sm"
+            onClick={handleExportPDF}
+            disabled={downloadingPdf}
+            className="text-xs cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white"
+          >
+            {downloadingPdf ? (
+              <>
+                <RefreshCw size={13} className="animate-spin" /> Generating PDF...
+              </>
+            ) : (
+              <>
+                <FileText size={13} /> Export PDF
+              </>
+            )}
+          </Btn>
+          <Btn
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsShareModalOpen(true)}
+            className="text-xs cursor-pointer"
+          >
+            <Share2 size={13} /> Share Report
+          </Btn>
+          <Btn size="sm" onClick={() => window.print()} className="text-xs cursor-pointer">
+            <Printer size={13} /> Print
           </Btn>
         </div>
       </div>
@@ -306,7 +417,7 @@ export const Analytics = () => {
           <GroupedBarChart
             data={departmentChartData}
             title="Departmental Asset Volume vs Invested Capital"
-            subtitle="Comparative breakdown of physical fixtures and invested capital across academic blocks"
+            subtitle="Comparative breakdown of physical fixtures and invested capital across academic blocks (Values permanently displayed)"
           />
         </Card>
 
@@ -325,7 +436,7 @@ export const Analytics = () => {
           <HistogramChart
             bins={costHistogramBins}
             title="Asset Unit Cost Frequency Histogram"
-            subtitle="Distribution of institutional assets across economic value brackets"
+            subtitle="Distribution of institutional assets across economic value brackets (Live Counts on Top)"
             unit="assets"
           />
         </Card>
@@ -334,7 +445,7 @@ export const Analytics = () => {
           <HistogramChart
             bins={ageHistogramBins}
             title="Asset Age & Lifecycle Horizon Histogram"
-            subtitle="Age distribution of hardware fixtures and projected end-of-life replenishment quota"
+            subtitle="Calculated live from asset registration dates and projected end-of-life replenishment quota"
             unit="items"
           />
         </Card>
@@ -346,7 +457,7 @@ export const Analytics = () => {
           <TrendLineChart
             data={trendLineData}
             title="Procurement Price Index & Asset Cost Trajectory"
-            subtitle="Quarter-over-quarter average workstation & equipment procurement benchmark"
+            subtitle="Quarter-over-quarter average workstation & equipment benchmark (Permanent node values)"
           />
         </Card>
 
@@ -357,7 +468,23 @@ export const Analytics = () => {
           />
         </Card>
       </div>
+
+      {/* Report Sharing Modal */}
+      <ReportShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        reportType="analytics"
+        title="Share Campus Intelligence & Analytics Report"
+        filterParams={{ timeframe: selectedTimeframe, department: selectedDept }}
+        summaryData={{
+          totalCapital: stats.totalCapital,
+          totalAssets: stats.totalAssets,
+          healthScore: stats.healthScore,
+          depreciatedValue: stats.depreciatedValue
+        }}
+      />
     </div>
   );
 };
+
 export default Analytics;

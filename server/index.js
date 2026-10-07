@@ -34,6 +34,8 @@ import vendorsRouter from './routes/vendors.js';
 import auditLogsRouter from './routes/auditLogs.js';
 import categoriesRouter from './routes/categories.js';
 import purchaseHistoryRouter from './routes/purchaseHistory.js';
+import reportsRouter from './routes/reports.js';
+import aiRouter from './routes/ai.js';
 
 dotenv.config();
 
@@ -58,6 +60,8 @@ app.use('/api/vendors', vendorsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/purchase-history', purchaseHistoryRouter);
+app.use('/api/reports', reportsRouter);
+app.use('/api/ai', aiRouter);
 
 // Health Check
 app.get('/api/health', (req, res) => {

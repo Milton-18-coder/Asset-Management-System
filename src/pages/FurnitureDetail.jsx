@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Btn, Badge, Modal, Input, Icon } from '../components/UIComponents';
-import { updateFurnitureCustodian, updateFurnitureLocation, updateFurniture } from '../store/furnitureSlice';
+import { updateFurnitureCustodian, updateFurnitureLocation, updateFurniture, updateFurnitureCondition } from '../store/furnitureSlice';
 import { addNotification } from '../store/notificationsSlice';
 import { addPurchaseHistoryRecord } from '../store/purchaseHistorySlice';
 import { PriceHistoryChart } from '../components/PriceHistoryChart';
 import { recordRecentAccess } from '../utils/recentAccess';
 import { api } from '../api';
-import { MapPin, User, Mail, Shield, ArrowLeft, Edit3, Building2, Layers, ShoppingBag, Store, Calendar, DollarSign, Plus, FileText, CheckCircle2, TrendingUp, History } from 'lucide-react';
+import { MapPin, User, Mail, Shield, ArrowLeft, Edit3, Building2, Layers, ShoppingBag, Store, Calendar, DollarSign, Plus, FileText, CheckCircle2, TrendingUp, History, Activity, Bell } from 'lucide-react';
 
 export const FurnitureDetail = ({ furniture: propFurniture }) => {
   const { id } = useParams();
@@ -42,6 +42,9 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
 
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showAddPurchaseModal, setShowAddPurchaseModal] = useState(false);
+  const [showConditionModal, setShowConditionModal] = useState(false);
+  const [newConditionVal, setNewConditionVal] = useState(furniture?.condition || 'Good');
+  const [conditionFeedback, setConditionFeedback] = useState(null);
   const [editRoom, setEditRoom] = useState('');
   const [editBuilding, setEditBuilding] = useState('');
   const [editPerson, setEditPerson] = useState('');
@@ -201,6 +204,48 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
     setShowReassignModal(false);
   };
 
+  const handleOpenConditionModal = () => {
+    setNewConditionVal(furniture.condition || 'Good');
+    setShowConditionModal(true);
+  };
+
+  const handleSaveCondition = async (e) => {
+    e.preventDefault();
+    if (!newConditionVal || newConditionVal === furniture.condition) {
+      setShowConditionModal(false);
+      return;
+    }
+
+    const prevCond = furniture.condition;
+    dispatch(updateFurnitureCondition({ id: furniture.id, condition: newConditionVal }));
+
+    try {
+      await api.updateAssetCondition(furniture.id, newConditionVal, currentUser);
+    } catch (err) {
+      console.warn('Backend condition update note:', err.message);
+    }
+
+    const notif = {
+      title: `Asset Condition Updated: ${newConditionVal}`,
+      message: `${currentUser.name} (${currentUser.role}) changed condition of ${furniture.name} (${furniture.id}) from "${prevCond}" to "${newConditionVal}". Intimation dispatched via email.`,
+      type: 'asset',
+      link: `/assets/${furniture.id}`,
+      department: furniture.department,
+    };
+    dispatch(addNotification(notif));
+
+    const isDept = (currentUser?.role || '').toLowerCase().includes('dept');
+    setConditionFeedback({
+      prev: prevCond,
+      next: newConditionVal,
+      targetRole: isDept ? 'Super Admin' : `Department Admin (${furniture.department})`,
+      editorRole: isDept ? 'Department Admin' : 'Super Admin',
+    });
+
+    setTimeout(() => setConditionFeedback(null), 8000);
+    setShowConditionModal(false);
+  };
+
   const handleUserSelectAutoFill = (userName) => {
     setEditPerson(userName);
     const foundUser = usersList.find((u) => u.name === userName);
@@ -212,6 +257,34 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Real-time Email Intimation Toast / Alert */}
+      {conditionFeedback && (
+        <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800/60 flex items-start gap-3 shadow-sm animate-fade-in">
+          <div className="p-2 rounded-xl bg-indigo-600 text-white flex-shrink-0">
+            <Mail className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-indigo-950 dark:text-indigo-200">
+                Asset Condition Updated & Email Intimation Dispatched
+              </h4>
+              <button
+                onClick={() => setConditionFeedback(null)}
+                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                Dismiss
+              </button>
+            </div>
+            <p className="text-xs text-indigo-800 dark:text-indigo-300 mt-0.5">
+              Condition transitioned from <span className="font-bold underline">{conditionFeedback.prev}</span> to <span className="font-bold underline">{conditionFeedback.next}</span> by {conditionFeedback.editorRole}.
+            </p>
+            <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
+              ✓ Automated Email Intimation routed strictly to: <strong className="text-indigo-900 dark:text-indigo-100">{conditionFeedback.targetRole}</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button 
@@ -234,11 +307,20 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          <Badge label={furniture.condition} type="condition" />
+        <div className="flex items-center gap-3 self-end sm:self-auto flex-wrap">
+          <button
+            onClick={handleOpenConditionModal}
+            className="group flex items-center gap-1.5 p-1 pr-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+            title="Click to edit condition (triggers email intimation)"
+          >
+            <Badge label={furniture.condition} type="condition" />
+            <span className="text-[11px] font-bold text-slate-500 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400 flex items-center gap-0.5">
+              <Edit3 className="w-3 h-3" /> Edit
+            </span>
+          </button>
           <Badge label={furniture.status} />
           <Btn variant="secondary" onClick={() => navigate(`/assets/edit/${furniture.id}`)} size="sm">
-            <Icon.Edit /> Edit Asset
+            <Icon.Edit /> Edit Full Asset
           </Btn>
         </div>
       </div>
@@ -847,6 +929,86 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
               </Btn>
               <Btn type="submit">
                 Record Purchase Batch
+              </Btn>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* QUICK CONDITION UPDATE MODAL WITH AUTOMATED INTIMATION DIRECTIVE */}
+      {showConditionModal && (
+        <Modal
+          title={`Update Condition: ${furniture.name}`}
+          onClose={() => setShowConditionModal(false)}
+        >
+          <form onSubmit={handleSaveCondition} className="space-y-4">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">{furniture.id}</span>
+                <span className="text-xs text-slate-500 font-medium">{furniture.department}</span>
+              </div>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{furniture.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Location: Room {furniture.room} ({furniture.building})</p>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Current Condition State
+              </label>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge label={furniture.condition || 'Good'} type="condition" />
+                <span className="text-xs text-slate-400">➔ Select new state below</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                New Condition State *
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {['Good', 'Fair', 'Poor', 'Damaged'].map((c) => {
+                  const isSelected = newConditionVal === c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewConditionVal(c)}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition text-center cursor-pointer ${
+                        isSelected
+                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* AUTOMATED INTIMATION POLICY DIRECTIVE */}
+            <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 flex items-start gap-2.5">
+              <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+              <div className="text-[11px] text-indigo-900 dark:text-indigo-200 leading-relaxed">
+                <strong className="block font-bold mb-0.5">Automated Two-Way Email Intimation Protocol:</strong>
+                {(currentUser?.role || '').toLowerCase().includes('dept') ? (
+                  <span>
+                    As <strong>Department Admin</strong>, editing this condition will immediately dispatch an intimation email strictly to the <strong>Super Admin</strong>.
+                  </span>
+                ) : (
+                  <span>
+                    As <strong>Super Admin</strong>, editing this condition will immediately dispatch an intimation email strictly to the respective <strong>Department Admin ({furniture.department})</strong>.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+              <Btn variant="secondary" type="button" onClick={() => setShowConditionModal(false)}>
+                Cancel
+              </Btn>
+              <Btn type="submit" disabled={newConditionVal === furniture.condition}>
+                Update Condition & Send Intimation
               </Btn>
             </div>
           </form>

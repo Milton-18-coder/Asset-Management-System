@@ -322,6 +322,11 @@ export const AddFurniture = ({ selectedFurniture: propSelected, clearSelectedFur
 
     if (selectedFurniture) {
       dispatch(editFurniture(formState));
+      try {
+        api.updateAsset(formState.id, formState, currentUser).catch(() => {});
+      } catch {
+        // Backend optional
+      }
       dispatch(
         addNotification({
           title: 'Asset Updated',

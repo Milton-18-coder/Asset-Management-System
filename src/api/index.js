@@ -21,11 +21,12 @@ export const api = {
     if (!res.ok) throw new Error('Failed to add asset');
     return res.json();
   },
-  async updateAsset(id, asset) {
+  async updateAsset(id, asset, updatedBy) {
+    const payload = updatedBy ? { ...asset, updatedBy } : asset;
     const res = await fetch(`${API_BASE}/assets/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(asset),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('Failed to update asset');
     return res.json();
@@ -55,11 +56,11 @@ export const api = {
     if (!res.ok) throw new Error('Failed to update asset custodian');
     return res.json();
   },
-  async updateAssetCondition(id, condition) {
+  async updateAssetCondition(id, condition, updatedBy) {
     const res = await fetch(`${API_BASE}/assets/${id}/condition`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ condition }),
+      body: JSON.stringify({ condition, updatedBy }),
     });
     if (!res.ok) throw new Error('Failed to update asset condition');
     return res.json();
@@ -105,11 +106,12 @@ export const api = {
     if (!res.ok) throw new Error('Failed to fetch inspections');
     return res.json();
   },
-  async addInspection(inspection) {
+  async addInspection(inspection, updatedBy) {
+    const payload = updatedBy ? { ...inspection, updatedBy } : inspection;
     const res = await fetch(`${API_BASE}/inspections`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(inspection),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('Failed to add inspection');
     return res.json();
@@ -470,6 +472,109 @@ export const api = {
   async deletePurchaseHistory(id) {
     const res = await fetch(`${API_BASE}/purchase-history/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete purchase transaction');
+    return res.json();
+  },
+  async bulkImportPurchases(payload) {
+    const res = await fetch(`${API_BASE}/purchase-history/bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || data.error || 'Failed to process bulk purchase import');
+    }
+    return data;
+  },
+
+  // Reports (PDF, Email, WhatsApp)
+  async downloadAnalyticsPdf({ timeframe = 'all', department = 'All' } = {}) {
+    const query = new URLSearchParams({ timeframe, department }).toString();
+    const res = await fetch(`${API_BASE}/reports/analytics/pdf?${query}`);
+    if (!res.ok) throw new Error('Failed to generate Analytics PDF report');
+    return res.blob();
+  },
+  async downloadPurchasesPdf(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/reports/purchases/pdf?${query}`);
+    if (!res.ok) throw new Error('Failed to generate Purchase History PDF report');
+    return res.blob();
+  },
+  async sendReportEmail(payload) {
+    const res = await fetch(`${API_BASE}/reports/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || data.error || 'Failed to dispatch email');
+    return data;
+  },
+  async sendReportWhatsApp(payload) {
+    const res = await fetch(`${API_BASE}/reports/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || data.error || 'Failed to dispatch WhatsApp message');
+    return data;
+  },
+
+  // AI Assistant & Hybrid Engine
+  async sendAiChat(payload) {
+    const res = await fetch(`${API_BASE}/ai/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.error || 'AI request failed');
+    }
+    return res.json();
+  },
+  async sendRuleQuery(payload) {
+    const res = await fetch(`${API_BASE}/ai/rule-query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Rule query failed');
+    return res.json();
+  },
+  async getAiAuditLogs(limit = 50) {
+    const res = await fetch(`${API_BASE}/ai/audit-logs?limit=${limit}`);
+    if (!res.ok) throw new Error('Failed to fetch AI audit logs');
+    return res.json();
+  },
+  async getAiAssetSearch(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/ai/assets/search?${query}`);
+    if (!res.ok) throw new Error('Failed to search assets for AI');
+    return res.json();
+  },
+  async getAiPurchaseStats(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/ai/purchases/stats?${query}`);
+    if (!res.ok) throw new Error('Failed to get purchase stats for AI');
+    return res.json();
+  },
+  async getAiTopVendors(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/ai/vendors/top?${query}`);
+    if (!res.ok) throw new Error('Failed to get top vendors for AI');
+    return res.json();
+  },
+  async getAiDepartmentSummary() {
+    const res = await fetch(`${API_BASE}/ai/departments/summary`);
+    if (!res.ok) throw new Error('Failed to get department summary for AI');
+    return res.json();
+  },
+  async getAiAnalyticsSummary(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/ai/analytics/summary?${query}`);
+    if (!res.ok) throw new Error('Failed to get analytics summary for AI');
     return res.json();
   },
 };
