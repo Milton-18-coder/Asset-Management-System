@@ -11,7 +11,8 @@ export const initialUsers = [
     name: 'Dr. Rajesh Kumar',
     role: 'superadmin',
     department: 'Admin Block',
-    email: 'rajesh.kumar@nec.edu.in'
+    email: 'rajesh.kumar@nec.edu.in',
+    phone: '+91 98401 23456'
   },
   {
     id: 'USR-002',
@@ -20,7 +21,8 @@ export const initialUsers = [
     name: 'Prof. Anitha Sharma',
     role: 'deptadmin',
     department: 'Computer Science',
-    email: 'anitha.sharma@nec.edu.in'
+    email: 'anitha.sharma@nec.edu.in',
+    phone: '+91 98402 34567'
   },
   {
     id: 'USR-003',
@@ -29,7 +31,8 @@ export const initialUsers = [
     name: 'Prof. Kavitha Raj',
     role: 'deptadmin',
     department: 'Mechanical',
-    email: 'kavitha.raj@nec.edu.in'
+    email: 'kavitha.raj@nec.edu.in',
+    phone: '+91 98405 67890'
   },
   {
     id: 'USR-004',
@@ -38,7 +41,8 @@ export const initialUsers = [
     name: 'Prof. Aruna Devi',
     role: 'deptadmin',
     department: 'Civil',
-    email: 'aruna.devi@nec.edu.in'
+    email: 'aruna.devi@nec.edu.in',
+    phone: '+91 98408 90123'
   },
   {
     id: 'USR-005',
@@ -47,7 +51,8 @@ export const initialUsers = [
     name: 'Dr. M. Venkatesh',
     role: 'deptadmin',
     department: 'IT',
-    email: 'venkatesh.m@nec.edu.in'
+    email: 'venkatesh.m@nec.edu.in',
+    phone: '+91 98409 11223'
   },
   {
     id: 'USR-006',
@@ -56,7 +61,8 @@ export const initialUsers = [
     name: 'Dr. Nalini Patel',
     role: 'deptadmin',
     department: 'AIDS',
-    email: 'nalini.patel@nec.edu.in'
+    email: 'nalini.patel@nec.edu.in',
+    phone: '+91 98410 22334'
   },
   {
     id: 'USR-007',
@@ -65,7 +71,8 @@ export const initialUsers = [
     name: 'Prof. Ramesh Nair',
     role: 'deptadmin',
     department: 'ECE',
-    email: 'ramesh.nair@nec.edu.in'
+    email: 'ramesh.nair@nec.edu.in',
+    phone: '+91 98404 56789'
   },
   {
     id: 'USR-008',
@@ -74,7 +81,8 @@ export const initialUsers = [
     name: 'Dr. R. Vijay Anand',
     role: 'deptadmin',
     department: 'EEE',
-    email: 'vijayanand.r@nec.edu.in'
+    email: 'vijayanand.r@nec.edu.in',
+    phone: '+91 98411 33445'
   },
   {
     id: 'USR-009',
@@ -83,7 +91,8 @@ export const initialUsers = [
     name: 'Prof. Dinesh Kumar',
     role: 'deptadmin',
     department: 'Science & Humanities',
-    email: 'dinesh.kumar@nec.edu.in'
+    email: 'dinesh.kumar@nec.edu.in',
+    phone: '+91 98406 78901'
   },
   {
     id: 'USR-010',
@@ -92,7 +101,8 @@ export const initialUsers = [
     name: 'Ms. Priya Mehta',
     role: 'deptadmin',
     department: 'Admin Block',
-    email: 'priya.mehta@nec.edu.in'
+    email: 'priya.mehta@nec.edu.in',
+    phone: '+91 98409 01234'
   },
   {
     id: 'USR-011',
@@ -101,7 +111,8 @@ export const initialUsers = [
     name: 'Mr. Ravi Shankar',
     role: 'auditor',
     department: 'Admin Block',
-    email: 'ravi.shankar@nec.edu.in'
+    email: 'ravi.shankar@nec.edu.in',
+    phone: '+91 98407 89012'
   },
   {
     id: 'USR-012',
@@ -110,7 +121,8 @@ export const initialUsers = [
     name: 'Prof. Suresh Babu',
     role: 'faculty',
     department: 'Computer Science',
-    email: 'suresh.babu@nec.edu.in'
+    email: 'suresh.babu@nec.edu.in',
+    phone: '+91 98403 45678'
   },
   {
     id: 'USR-013',
@@ -119,7 +131,8 @@ export const initialUsers = [
     name: 'Dr. Lalitha Devi',
     role: 'faculty',
     department: 'Science & Humanities',
-    email: 'lalitha.devi@nec.edu.in'
+    email: 'lalitha.devi@nec.edu.in',
+    phone: '+91 98412 56789'
   }
 ];
 

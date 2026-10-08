@@ -21,92 +21,99 @@ export const ruleEngine = {
       text.includes('create report') ||
       text.includes('send report')
     ) {
+      const yearMatch = text.match(/\b(202[0-9])\b/);
       if (text.includes('procurement') || text.includes('purchase')) {
-        const yearMatch = text.match(/\b(202[0-9])\b/);
         return { intent: 'REPORT_GENERATION', type: 'purchase', year: yearMatch ? yearMatch[1] : null };
       }
-      if (text.includes('analytics') || text.includes('intelligence')) {
-        const yearMatch = text.match(/\b(202[0-9])\b/);
-        return { intent: 'REPORT_GENERATION', type: 'analytics', year: yearMatch ? yearMatch[1] : null };
+      return { intent: 'REPORT_GENERATION', type: 'analytics', year: yearMatch ? yearMatch[1] : null };
+    }
+
+    // 2. Departmental queries (how many departments, list departments, specific department)
+    if (
+      text.includes('department') ||
+      text.includes('departments') ||
+      text.includes('dept') ||
+      text.includes('depts') ||
+      text.includes('branch') ||
+      text.includes('branches')
+    ) {
+      if (
+        text.includes('computer science') ||
+        text.includes('cse') ||
+        text.includes('mechanical') ||
+        text.includes('civil') ||
+        text.includes('it ') ||
+        text.includes('aids') ||
+        text.includes('ece') ||
+        text.includes('eee') ||
+        text.includes('science & humanities') ||
+        text.includes('admin')
+      ) {
+        return { intent: 'ASSET_BY_DEPARTMENT' };
       }
-      return { intent: 'REPORT_GENERATION', type: 'analytics' };
-    }
-
-    // 2. Vendor ranking and spending
-    if (
-      (text.includes('vendor') || text.includes('supplier')) &&
-      (text.includes('highest') || text.includes('top') || text.includes('most') || text.includes('spent') || text.includes('ranking') || text.includes('largest'))
-    ) {
-      return { intent: 'TOP_VENDOR' };
-    }
-
-    if (text.includes('vendor') || text.includes('supplier')) {
-      return { intent: 'PURCHASE_BY_VENDOR' };
-    }
-
-    // 3. Departmental assets & ranking
-    if (
-      text.includes('department') &&
-      (text.includes('highest') || text.includes('most') || text.includes('top') || text.includes('volume') || text.includes('largest'))
-    ) {
       return { intent: 'TOP_DEPARTMENT' };
     }
 
+    // 3. Procurement spend and total monetary amount (handles 'spended', 'spent', 'spending', 'cost', 'budget', etc.)
     if (
-      text.includes('computer science') ||
-      text.includes('mechanical') ||
-      text.includes('civil') ||
-      text.includes('it ') ||
-      text.includes('aids') ||
-      text.includes('ece') ||
-      text.includes('eee') ||
-      text.includes('science & humanities') ||
-      text.includes('admin block')
-    ) {
-      return { intent: 'ASSET_BY_DEPARTMENT' };
-    }
-
-    // 4. Procurement spend and purchase totals
-    if (
-      (text.includes('how much') || text.includes('total') || text.includes('spend') || text.includes('procurement') || text.includes('expenditure') || text.includes('cost')) &&
-      (text.includes('spend') || text.includes('purchase') || text.includes('procurement') || text.includes('spent') || text.includes('invested'))
+      text.includes('spended') ||
+      text.includes('spent') ||
+      text.includes('spend') ||
+      text.includes('procurement') ||
+      text.includes('expenditure') ||
+      text.includes('financial') ||
+      text.includes('budget') ||
+      text.includes('invested') ||
+      text.includes('total purchase') ||
+      text.includes('total amount') ||
+      text.includes('purchase cost') ||
+      text.includes('how much')
     ) {
       const yearMatch = text.match(/\b(202[0-9])\b/);
       return { intent: 'PURCHASE_TOTAL', year: yearMatch ? yearMatch[1] : null };
     }
 
-    // 5. Purchases above certain threshold / amount
-    if (text.includes('above') || text.includes('greater than') || text.includes('more than') || text.includes('>')) {
-      const numMatch = text.replace(/,/g, '').match(/\d+/);
-      return { intent: 'HIGH_VALUE_ASSETS', minAmount: numMatch ? parseInt(numMatch[0], 10) : 50000 };
+    // 4. Vendors and suppliers
+    if (text.includes('vendor') || text.includes('supplier') || text.includes('dealer') || text.includes('distributor')) {
+      return { intent: 'TOP_VENDOR' };
     }
 
-    // 6. Replacement / Damaged / Condition
+    // 5. Replacement, Damaged, Poor condition, Repairs
     if (
       text.includes('replacement') ||
       text.includes('replace') ||
       text.includes('damaged') ||
       text.includes('broken') ||
       text.includes('poor') ||
+      text.includes('faulty') ||
       text.includes('condition') ||
+      text.includes('scrap') ||
       text.includes('eol') ||
       text.includes('expired')
     ) {
       return { intent: 'REPLACEMENT_DUE' };
     }
 
+    // 6. Purchases / Assets above high threshold
+    if (text.includes('above') || text.includes('greater than') || text.includes('more than') || text.includes('expensive') || text.includes('costly') || text.includes('highest cost') || text.includes('>')) {
+      const numMatch = text.replace(/,/g, '').match(/\d+/);
+      return { intent: 'HIGH_VALUE_ASSETS', minAmount: numMatch ? parseInt(numMatch[0], 10) : 50000 };
+    }
+
     // 7. Maintenance & Work orders
-    if (text.includes('maintenance') || text.includes('repair') || text.includes('service') || text.includes('work order')) {
+    if (text.includes('maintenance') || text.includes('repair') || text.includes('service') || text.includes('work order') || text.includes('ticket')) {
       return { intent: 'MAINTENANCE_DUE' };
     }
 
-    // 8. Inspections
-    if (text.includes('inspection') || text.includes('audit') || text.includes('inspector')) {
+    // 8. Inspections & Audits
+    if (text.includes('inspection') || text.includes('audit') || text.includes('inspector') || text.includes('verifier')) {
       return { intent: 'INSPECTION_STATUS' };
     }
 
     // 9. Categories & subcategories
     if (
+      text.includes('category') ||
+      text.includes('categories') ||
       text.includes('furniture') ||
       text.includes('chair') ||
       text.includes('table') ||
@@ -120,21 +127,24 @@ export const ruleEngine = {
 
     // 10. Overall asset counts / inventory size
     if (
-      text.includes('how many assets') ||
-      text.includes('total assets') ||
+      text.includes('how many asset') ||
+      text.includes('how many items') ||
+      text.includes('how many units') ||
+      text.includes('total asset') ||
+      text.includes('total items') ||
       text.includes('asset count') ||
-      text.includes('registered assets') ||
-      text.includes('units are registered')
+      text.includes('registered asset') ||
+      text.includes('inventory')
     ) {
       return { intent: 'ASSET_COUNT' };
     }
 
     // 11. Recent transactions
-    if (text.includes('recent') || text.includes('latest') || text.includes('last purchase') || text.includes('history')) {
+    if (text.includes('recent') || text.includes('latest') || text.includes('last purchase') || text.includes('history') || text.includes('transaction')) {
       return { intent: 'PURCHASE_BY_DATE' };
     }
 
-    // 12. Search / Default
+    // 12. Search / Default fallback
     if (text.length > 2) {
       return { intent: 'ASSET_SEARCH', query: prompt };
     }
@@ -168,15 +178,19 @@ export const ruleEngine = {
         toolUsed = 'assetTools.getAssetCounts';
         const stats = await assetTools.getAssetCounts();
         structuredData = stats;
+        const totalUnits = Number(stats.totalPhysicalUnits) || 0;
+        const totalModels = Number(stats.totalAssetTypes) || 0;
+        const totalVal = Number(stats.totalBookValue) || 0;
+        
         responseText = `### 📦 Campus Asset Inventory Overview\n\n` +
-          `• **Total Physical Units Registered:** **${Number(stats.totalPhysicalUnits).toLocaleString('en-IN')}**\n` +
-          `• **Unique Asset Classifications:** ${Number(stats.totalAssetTypes).toLocaleString('en-IN')} models\n` +
-          `• **Total Deployed Asset Book Value:** **₹${Number(stats.totalBookValue).toLocaleString('en-IN')}**\n\n` +
-          `**Condition Status:**\n` +
-          `• 🟢 **Good / Optimal:** ${Number(stats.goodConditionUnits).toLocaleString('en-IN')} units\n` +
-          `• 🟡 **Fair:** ${Number(stats.fairConditionUnits).toLocaleString('en-IN')} units\n` +
-          `• 🟠 **Poor:** ${Number(stats.poorConditionUnits).toLocaleString('en-IN')} units\n` +
-          `• 🔴 **Damaged:** ${Number(stats.damagedConditionUnits).toLocaleString('en-IN')} units`;
+          `• **Total Physical Units Deployed:** **${totalUnits.toLocaleString('en-IN')} units**\n` +
+          `• **Cataloged Equipment Models:** **${totalModels.toLocaleString('en-IN')} unique models**\n` +
+          `• **Total Asset Book Valuation:** **₹${totalVal.toLocaleString('en-IN')}**\n\n` +
+          `**Condition Distribution (${totalUnits} Total Units):**\n` +
+          `• 🟢 **Good / Operational:** **${Number(stats.goodConditionUnits || 0).toLocaleString('en-IN')} units** (${Math.round(((stats.goodConditionUnits || 0) / (totalUnits || 1)) * 100)}%)\n` +
+          `• 🟡 **Fair (Minor Wear):** **${Number(stats.fairConditionUnits || 0).toLocaleString('en-IN')} units**\n` +
+          `• 🟠 **Poor (Needs Overhaul):** **${Number(stats.poorConditionUnits || 0).toLocaleString('en-IN')} units**\n` +
+          `• 🔴 **Damaged (Immediate Action):** **${Number(stats.damagedConditionUnits || 0).toLocaleString('en-IN')} units**`;
         break;
       }
 
@@ -184,12 +198,20 @@ export const ruleEngine = {
         toolUsed = 'purchaseTools.getPurchaseStats';
         const stats = await purchaseTools.getPurchaseStats({ year });
         structuredData = stats;
-        const period = year ? `in ${year}` : 'to date';
-        responseText = `### 💰 Total Procurement Expenditure (${year || 'Consolidated'})\n\n` +
-          `Total procurement expenditure ${period} is **₹${Number(stats.totalProcurementSpend).toLocaleString('en-IN')}** across **${stats.totalTransactions} recorded transactions**.\n\n` +
-          `• **Total Physical Units Acquired:** ${Number(stats.totalUnitsPurchased).toLocaleString('en-IN')} units\n` +
-          `• **Active Suppliers Utilized:** ${stats.activeSuppliersCount}\n` +
-          `• **Average Unit Price:** ₹${Math.round(Number(stats.averageUnitPrice)).toLocaleString('en-IN')}`;
+        const period = year ? `in ${year}` : 'Consolidated (All Time)';
+        const totalSpend = Number(stats.totalProcurementSpend) || 0;
+        const orders = Number(stats.totalTransactions) || 0;
+        const units = Number(stats.totalUnitsPurchased) || 0;
+        const avgOrder = orders > 0 ? Math.round(totalSpend / orders) : 0;
+        const avgUnit = units > 0 ? Math.round(totalSpend / units) : 0;
+
+        responseText = `### 💰 Total Procurement Expenditure (${period})\n\n` +
+          `• **Total Procurement Capital Invested:** **₹${totalSpend.toLocaleString('en-IN')}**\n` +
+          `• **Total Purchasing Orders (Invoices):** **${orders} recorded transactions**\n` +
+          `• **Total Equipment Units Acquired:** **${units.toLocaleString('en-IN')} physical units**\n` +
+          `• **Active Approved Suppliers Utilized:** **${stats.activeSuppliersCount} vendors**\n` +
+          `• **Average Transaction Value:** ₹${avgOrder.toLocaleString('en-IN')} per purchase order\n` +
+          `• **Average Unit Procurement Cost:** ₹${avgUnit.toLocaleString('en-IN')} per physical unit`;
         break;
       }
 
@@ -201,10 +223,10 @@ export const ruleEngine = {
           responseText = 'No vendor procurement records currently found in the database.';
         } else {
           const topOne = vendors[0];
-          responseText = `### 🏆 Top Supplier by Procurement Value\n\n` +
-            `The vendor with the highest procurement capital is **${topOne.vendorName}** with a cumulative spend of **₹${Number(topOne.totalProcurementValue).toLocaleString('en-IN')}** across ${topOne.transactionCount} transactions (${topOne.totalUnitsSupplied} units supplied).\n\n` +
-            `**Top 5 Suppliers Ranking:**\n` +
-            vendors.map((v, i) => `${i + 1}. **${v.vendorName}** — **₹${Number(v.totalProcurementValue).toLocaleString('en-IN')}** (${v.totalUnitsSupplied} units)`).join('\n');
+          responseText = `### 🏆 Top Institutional Suppliers Ranking\n\n` +
+            `The highest volume vendor is **${topOne.vendorName}** with cumulative spend of **₹${Number(topOne.totalProcurementValue).toLocaleString('en-IN')}** across **${topOne.transactionCount} orders** (${topOne.totalUnitsSupplied} units supplied).\n\n` +
+            `**Top 5 Vendors by Total Capital:**\n` +
+            vendors.map((v, i) => `${i + 1}. **${v.vendorName}**\n   • **Total Spend:** **₹${Number(v.totalProcurementValue).toLocaleString('en-IN')}**\n   • **Volume:** ${v.transactionCount} orders | ${v.totalUnitsSupplied} units supplied`).join('\n\n');
         }
         break;
       }
@@ -213,14 +235,17 @@ export const ruleEngine = {
         toolUsed = 'departmentTools.getTopDepartment';
         const result = await departmentTools.getTopDepartment();
         structuredData = result;
-        if (!result || !result.topByVolume) {
+        if (!result || !result.allDepartments || result.allDepartments.length === 0) {
           responseText = 'Departmental inventory data is currently being populated.';
         } else {
-          responseText = `### 🏛️ Departmental Asset Volume & Capital Analysis\n\n` +
-            `• **Highest Asset Density:** **${result.topByVolume.departmentName}** with **${result.topByVolume.totalAssetUnits} physical units** (₹${Number(result.topByVolume.totalInvestedCapital).toLocaleString('en-IN')})\n` +
-            `• **Highest Invested Capital:** **${result.topByCapital.departmentName}** (₹${Number(result.topByCapital.totalInvestedCapital).toLocaleString('en-IN')})\n\n` +
-            `**Summary across departments:**\n` +
-            result.allDepartments.slice(0, 5).map(d => `• **${d.departmentName}:** ${d.totalAssetUnits} units | ₹${Number(d.totalInvestedCapital).toLocaleString('en-IN')}`).join('\n');
+          const totalDepts = result.allDepartments.length;
+          const totalCampusUnits = result.allDepartments.reduce((s, d) => s + (parseInt(d.totalAssetUnits, 10) || 0), 0);
+          const totalCampusCap = result.allDepartments.reduce((s, d) => s + (parseFloat(d.totalInvestedCapital) || 0), 0);
+          
+          responseText = `### 🏛️ Campus Department Overview (${totalDepts} Registered Departments)\n\n` +
+            `The college comprises **${totalDepts} academic and administrative departments** managing **${totalCampusUnits.toLocaleString('en-IN')} total physical asset units** with a combined capital valuation of **₹${Number(totalCampusCap).toLocaleString('en-IN')}**.\n\n` +
+            `**Departmental Ranking by Asset Volume:**\n` +
+            result.allDepartments.map((d, i) => `${i + 1}. **${d.departmentName}** (\`${d.departmentCode || 'DEPT'}\`)\n   • **Total Assets:** **${d.totalAssetUnits} units** (Valuation: ₹${Number(d.totalInvestedCapital).toLocaleString('en-IN')})\n   • **Location:** ${d.building || 'Campus'} | **HOD:** ${d.hod || 'Unassigned'}`).join('\n\n');
         }
         break;
       }
@@ -228,16 +253,15 @@ export const ruleEngine = {
       case 'ASSET_BY_DEPARTMENT': {
         toolUsed = 'departmentTools.getDepartmentStats';
         const allDepts = await departmentTools.getDepartmentStats();
-        // find matching dept
         const promptLower = prompt.toLowerCase();
-        const matched = allDepts.find(d => promptLower.includes(d.departmentName.toLowerCase()) || promptLower.includes(d.departmentCode.toLowerCase()));
+        const matched = allDepts.find(d => promptLower.includes(d.departmentName.toLowerCase()) || promptLower.includes((d.departmentCode || '').toLowerCase()));
         if (matched) {
-          responseText = `### 🏢 ${matched.departmentName} Department Summary\n\n` +
+          responseText = `### 🏢 ${matched.departmentName} Department Inventory\n\n` +
             `• **Building Location:** ${matched.building || 'Main Campus'}\n` +
             `• **Head of Department (HOD):** ${matched.hod || 'Unassigned'}\n` +
-            `• **Total Asset Units:** **${matched.totalAssetUnits} units**\n` +
-            `• **Invested Capital:** **₹${Number(matched.totalInvestedCapital).toLocaleString('en-IN')}**\n` +
-            `• **Condition Breakdown:** ${matched.goodConditionUnits} Good, ${matched.damagedUnits} Damaged/Needs Repair`;
+            `• **Total Physical Units:** **${matched.totalAssetUnits} units** (${matched.uniqueAssetTypes || 0} unique models)\n` +
+            `• **Invested Capital Valuation:** **₹${Number(matched.totalInvestedCapital).toLocaleString('en-IN')}**\n` +
+            `• **Condition Breakdown:** ${matched.goodConditionUnits} Good / Optimal, ${matched.damagedUnits} Damaged / Needs Attention`;
         } else {
           responseText = `### 🏢 Consolidated Departmental Breakdown\n\n` +
             allDepts.map(d => `• **${d.departmentName}:** ${d.totalAssetUnits} units (₹${Number(d.totalInvestedCapital).toLocaleString('en-IN')})`).join('\n');
@@ -248,29 +272,62 @@ export const ruleEngine = {
       case 'HIGH_VALUE_ASSETS': {
         toolUsed = 'assetTools.getHighValueAssets';
         const minVal = minAmount || 50000;
-        const assets = await assetTools.getHighValueAssets({ minCost: minVal, limit: 8 });
+        const assets = await assetTools.getHighValueAssets({ minCost: minVal, limit: 10 });
         structuredData = assets;
         if (assets.length === 0) {
           responseText = `No individual assets currently found with unit cost above ₹${minVal.toLocaleString('en-IN')}.`;
         } else {
-          responseText = `### 💎 High-Value Assets (Above ₹${minVal.toLocaleString('en-IN')})\n\n` +
-            `Found **${assets.length} high-value assets** registered in the system:\n\n` +
-            assets.map(a => `• **${a.name}** (${a.department || 'Campus'}) — **₹${Number(a.cost).toLocaleString('en-IN')}** each (Qty: ${a.quantity}, Supplier: ${a.supplier || 'OEM'})`).join('\n');
+          responseText = `### 💎 High-Value Capital Assets (Unit Cost ≥ ₹${minVal.toLocaleString('en-IN')})\n\n` +
+            `Found **${assets.length} high-value asset classifications** registered:\n\n` +
+            assets.map((a, i) => `${i + 1}. **${a.name}** [\`${a.id}\`]\n   • **Unit Cost:** **₹${Number(a.cost).toLocaleString('en-IN')}** (Quantity: **${a.quantity || 1} units** | Total Value: **₹${Number(a.totalValue || (a.cost * (a.quantity || 1))).toLocaleString('en-IN')}**)\n   • **Department:** ${a.department || 'Campus'} (${a.room || 'General'})\n   • **Supplier:** ${a.supplier || 'OEM'}`).join('\n\n');
         }
         break;
       }
 
       case 'REPLACEMENT_DUE': {
         toolUsed = 'assetTools.getAssetsNeedingReplacement';
-        const assets = await assetTools.getAssetsNeedingReplacement({ limit: 10 });
-        structuredData = assets;
-        if (assets.length === 0) {
-          responseText = `✅ **All campus assets are in Good / Fair operating condition.** No replacement or urgent inspection requests are currently overdue.`;
+        const [counts, assets] = await Promise.all([
+          assetTools.getAssetCounts(),
+          assetTools.getAssetsNeedingReplacement({ limit: 20 })
+        ]);
+        structuredData = { counts, assets };
+        
+        const damagedAssets = assets.filter(a => a.condition === 'Damaged');
+        const poorAssets = assets.filter(a => a.condition === 'Poor');
+        
+        const damagedUnits = damagedAssets.reduce((s, a) => s + (parseInt(a.quantity, 10) || 1), 0);
+        const poorUnits = poorAssets.reduce((s, a) => s + (parseInt(a.quantity, 10) || 1), 0);
+        const totalUnits = damagedUnits + poorUnits;
+
+        if (totalUnits === 0) {
+          responseText = `✅ **All campus assets are in Good / Fair operating condition.** No replacement or urgent maintenance is currently required.`;
         } else {
-          const totalUnits = assets.reduce((s, a) => s + (a.quantity || 1), 0);
-          responseText = `### ⚠️ Assets Requiring Replacement or Immediate Maintenance\n\n` +
-            `Identified **${totalUnits} units across ${assets.length} equipment entries** flagged as Poor, Damaged, or Awaiting Inspection:\n\n` +
-            assets.map(a => `• **${a.name}** [ID: ${a.id}] — Condition: **${a.condition}** | Status: **${a.status}** | Dept: ${a.department || 'Campus'}`).join('\n');
+          let text = `### ⚠️ Equipment Replacement & Condition Report\n\n` +
+            `Identified **${assets.length} unique equipment models** representing **${totalUnits} total physical units** needing attention:\n` +
+            `• 🔴 **Damaged Assets:** **${damagedUnits} physical units** (across ${damagedAssets.length} models) — *Urgent repair/replacement required*\n` +
+            `• 🟠 **Poor Condition Assets:** **${poorUnits} physical units** (across ${poorAssets.length} models) — *Overhaul/inspection recommended*\n\n`;
+
+          if (damagedAssets.length > 0) {
+            text += `#### 🔴 Damaged Equipment (${damagedUnits} Physical Units):\n`;
+            damagedAssets.forEach((a, i) => {
+              text += `${i + 1}. **${a.name}** [\`${a.id}\`]\n` +
+                `   • **Quantity Damaged:** **${a.quantity || 1} physical units**\n` +
+                `   • **Location:** ${a.department || 'Campus'} (${a.room || 'General'})\n` +
+                `   • **Unit Cost:** ₹${Number(a.cost).toLocaleString('en-IN')} | **Status:** *${a.status}*\n\n`;
+            });
+          }
+
+          if (poorAssets.length > 0) {
+            text += `#### 🟠 Poor Condition Equipment (${poorUnits} Physical Units):\n`;
+            poorAssets.forEach((a, i) => {
+              text += `${i + 1}. **${a.name}** [\`${a.id}\`]\n` +
+                `   • **Quantity in Poor Condition:** **${a.quantity || 1} physical units**\n` +
+                `   • **Location:** ${a.department || 'Campus'} (${a.room || 'General'})\n` +
+                `   • **Unit Cost:** ₹${Number(a.cost).toLocaleString('en-IN')} | **Status:** *${a.status}*\n\n`;
+            });
+          }
+
+          responseText = text.trim();
         }
         break;
       }

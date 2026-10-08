@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateProfileSuccess } from '../store/authSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Input, Icon } from '../components/UIComponents';
+import { api } from '../api';
 
 export const Profile = () => {
   const dispatch = useDispatch();
@@ -18,12 +19,32 @@ export const Profile = () => {
 
   if (!currentUser) return null;
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
+
+    // Digits only normalization for phone
+    const rawPhoneDigits = phone ? phone.replace(/[^0-9]/g, '') : '';
+    let normalizedPhone = phone;
+    if (rawPhoneDigits) {
+      normalizedPhone = rawPhoneDigits.length === 10 ? `91${rawPhoneDigits}` : rawPhoneDigits;
+    }
+
+    try {
+      if (currentUser.id) {
+        await api.updateUser(currentUser.id, {
+          name,
+          email,
+          phone: normalizedPhone,
+        });
+      }
+    } catch (err) {
+      console.warn('Profile backend update note:', err.message);
+    }
+
     dispatch(updateProfileSuccess({ 
       name, 
       email, 
-      phone, 
+      phone: normalizedPhone || phone, 
       office, 
       bio 
     }));

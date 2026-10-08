@@ -103,6 +103,7 @@ export async function initDatabase() {
         role ENUM('superadmin', 'deptadmin', 'auditor', 'faculty') NOT NULL,
         department VARCHAR(100),
         email VARCHAR(150),
+        phone VARCHAR(30) NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -115,11 +116,82 @@ export async function initDatabase() {
         time VARCHAR(100),
         \`read\` BOOLEAN DEFAULT FALSE,
         department VARCHAR(100),
+        recipient_user_id VARCHAR(50) NULL,
+        recipient_role VARCHAR(50) NULL,
+        notification_channel VARCHAR(50) NULL,
+        asset_id VARCHAR(50) NULL,
+        direction VARCHAR(50) NULL,
+        status VARCHAR(50) NULL,
         type VARCHAR(50),
         link VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Safe schema migration for users table
+    try {
+      const [uCols] = await pool.query(`SHOW COLUMNS FROM users LIKE 'phone'`);
+      if (uCols.length === 0) {
+        await pool.query(`ALTER TABLE users ADD COLUMN phone VARCHAR(30) NULL AFTER email`);
+      }
+    } catch (e) {
+      console.warn('Migration users.phone note:', e.message);
+    }
+
+    // Safe schema migrations for notifications table
+    try {
+      const [nCols] = await pool.query(`SHOW COLUMNS FROM notifications LIKE 'recipient_user_id'`);
+      if (nCols.length === 0) {
+        await pool.query(`ALTER TABLE notifications ADD COLUMN recipient_user_id VARCHAR(50) NULL AFTER department`);
+      }
+    } catch (e) {
+      console.warn('Migration notifications.recipient_user_id note:', e.message);
+    }
+
+    try {
+      const [nCols] = await pool.query(`SHOW COLUMNS FROM notifications LIKE 'recipient_role'`);
+      if (nCols.length === 0) {
+        await pool.query(`ALTER TABLE notifications ADD COLUMN recipient_role VARCHAR(50) NULL AFTER recipient_user_id`);
+      }
+    } catch (e) {
+      console.warn('Migration notifications.recipient_role note:', e.message);
+    }
+
+    try {
+      const [nCols] = await pool.query(`SHOW COLUMNS FROM notifications LIKE 'notification_channel'`);
+      if (nCols.length === 0) {
+        await pool.query(`ALTER TABLE notifications ADD COLUMN notification_channel VARCHAR(50) NULL AFTER recipient_role`);
+      }
+    } catch (e) {
+      console.warn('Migration notifications.notification_channel note:', e.message);
+    }
+
+    try {
+      const [nCols] = await pool.query(`SHOW COLUMNS FROM notifications LIKE 'asset_id'`);
+      if (nCols.length === 0) {
+        await pool.query(`ALTER TABLE notifications ADD COLUMN asset_id VARCHAR(50) NULL AFTER notification_channel`);
+      }
+    } catch (e) {
+      console.warn('Migration notifications.asset_id note:', e.message);
+    }
+
+    try {
+      const [nCols] = await pool.query(`SHOW COLUMNS FROM notifications LIKE 'direction'`);
+      if (nCols.length === 0) {
+        await pool.query(`ALTER TABLE notifications ADD COLUMN direction VARCHAR(50) NULL AFTER asset_id`);
+      }
+    } catch (e) {
+      console.warn('Migration notifications.direction note:', e.message);
+    }
+
+    try {
+      const [nCols] = await pool.query(`SHOW COLUMNS FROM notifications LIKE 'status'`);
+      if (nCols.length === 0) {
+        await pool.query(`ALTER TABLE notifications ADD COLUMN status VARCHAR(50) NULL AFTER direction`);
+      }
+    } catch (e) {
+      console.warn('Migration notifications.status note:', e.message);
+    }
 
     // Option 1: Infrastructure & Organizational Structure
     await pool.query(`

@@ -150,8 +150,9 @@ export const api = {
   },
 
   // Notifications
-  async getNotifications() {
-    const res = await fetch(`${API_BASE}/notifications`);
+  async getNotifications(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/notifications${query ? `?${query}` : ''}`);
     if (!res.ok) throw new Error('Failed to fetch notifications');
     return res.json();
   },

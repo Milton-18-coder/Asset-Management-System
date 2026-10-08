@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,10 +7,12 @@ import {
   deleteNotification,
   clearAllNotifications,
   addNotification,
+  setNotificationsList,
 } from '../store/notificationsSlice';
 import { TopBar } from '../components/TopBar';
 import { Card, Btn, Badge, Icon } from '../components/UIComponents';
-import { CheckCheck, Trash2, ArrowRight, Bell, Filter } from 'lucide-react';
+import { CheckCheck, Trash2, ArrowRight, Bell, Filter, Mail, MessageSquare, Smartphone } from 'lucide-react';
+import { api } from '../api';
 
 export const NotificationsPage = () => {
   const dispatch = useDispatch();
@@ -21,13 +23,58 @@ export const NotificationsPage = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread' | 'transfer' | 'inspection' | 'asset'
   const [search, setSearch] = useState('');
 
-  // Scoped notifications
+  // Sync latest notifications from backend for the logged-in recipient
+  useEffect(() => {
+    if (!currentUser) return;
+    api.getNotifications({
+      userId: currentUser.id || currentUser.username,
+      role: currentUser.role,
+      department: currentUser.department
+    })
+    .then((data) => {
+      if (Array.isArray(data)) {
+        dispatch(setNotificationsList(data));
+      }
+    })
+    .catch((err) => {
+      console.warn('Notifications backend fetch note:', err.message);
+    });
+  }, [currentUser, dispatch]);
+
+  // Scoped notifications for current user
   const userNotifications = useMemo(() => {
     if (!currentUser) return notificationsList;
-    if (currentUser.role === 'superadmin') return notificationsList;
-    return notificationsList.filter(
-      (n) => !n.department || n.department === currentUser.department || n.department === 'All'
-    );
+    const userRole = (currentUser.role || '').toLowerCase().replace(/[\s_-]/g, '');
+    const isSuperAdmin = userRole === 'superadmin' || userRole === 'superadministrator';
+    const isDeptAdmin = userRole === 'deptadmin' || userRole === 'departmentadmin';
+
+    return notificationsList.filter((n) => {
+      // Direct recipient user ID match
+      if (n.recipient_user_id && (n.recipient_user_id === currentUser.id || n.recipient_user_id === currentUser.username)) {
+        return true;
+      }
+      // If notification has a specific recipient_user_id meant for someone else, don't show it
+      if (n.recipient_user_id && n.recipient_user_id !== currentUser.id && n.recipient_user_id !== currentUser.username) {
+        return false;
+      }
+
+      // If Super Admin: show superadmin role notifications, and global/all alerts
+      if (isSuperAdmin) {
+        if (n.recipient_role === 'superadmin') return true;
+        if (n.recipient_role && n.recipient_role !== 'superadmin') return false;
+        return !n.department || n.department === 'All' || n.department === 'Admin Block' || n.department === currentUser.department;
+      }
+
+      // If Dept Admin: show deptadmin notifications for their own department only
+      if (isDeptAdmin) {
+        if (n.recipient_role === 'superadmin') return false; // Never show superadmin-only alerts
+        if (n.department && n.department !== currentUser.department && n.department !== 'All') return false;
+        return true;
+      }
+
+      // Other roles: only matching department or broadcast
+      return !n.department || n.department === currentUser.department || n.department === 'All';
+    });
   }, [notificationsList, currentUser]);
 
   const filteredNotifications = useMemo(() => {
@@ -161,11 +208,21 @@ export const NotificationsPage = () => {
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                       {n.message}
                     </p>
-                    <div className="flex items-center gap-4 mt-2.5 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                      <span>{n.timestamp}</span>
+                    <div className="flex flex-wrap items-center gap-3 mt-2.5 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                      <span>{n.time || n.timestamp || 'Just now'}</span>
                       {n.department && (
                         <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold">
                           {n.department}
+                        </span>
+                      )}
+                      {n.direction && (
+                        <span className="px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold border border-indigo-200 dark:border-indigo-800">
+                          {n.direction === 'deptadmin_to_superadmin' ? 'Dept Admin ➔ Super Admin' : 'Super Admin ➔ Dept Admin'}
+                        </span>
+                      )}
+                      {n.notification_channel && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800">
+                          <Smartphone size={11} /> {n.notification_channel}
                         </span>
                       )}
                     </div>

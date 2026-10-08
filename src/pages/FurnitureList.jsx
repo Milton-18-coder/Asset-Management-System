@@ -54,22 +54,27 @@ export const FurnitureList = () => {
     const targetAsset = conditionModalAsset;
     dispatch(updateFurnitureCondition({ id: targetAsset.id, condition: newConditionVal }));
 
+    let resData = null;
     try {
-      await api.updateAssetCondition(targetAsset.id, newConditionVal, currentUser);
+      resData = await api.updateAssetCondition(targetAsset.id, newConditionVal, currentUser);
     } catch (err) {
       console.warn('Backend condition update note:', err.message);
     }
 
+    const isDept = (currentUser?.role || '').toLowerCase().includes('dept');
+    const notifInfo = resData?.notification || null;
+
     const notif = {
       title: `Asset Condition Updated: ${newConditionVal}`,
-      message: `${currentUser.name} (${currentUser.role}) changed condition of ${targetAsset.name} (${targetAsset.id}) from "${prevCond}" to "${newConditionVal}". Intimation dispatched via email.`,
+      message: `${currentUser.name} (${currentUser.role}) changed condition of ${targetAsset.name} (${targetAsset.id}) from "${prevCond}" to "${newConditionVal}". Intimation dispatched via email & WhatsApp.`,
       type: 'asset',
       link: `/assets/${targetAsset.id}`,
       department: targetAsset.department,
+      direction: isDept ? 'deptadmin_to_superadmin' : 'superadmin_to_deptadmin',
+      notification_channel: 'in-app'
     };
     dispatch(addNotification(notif));
 
-    const isDept = (currentUser?.role || '').toLowerCase().includes('dept');
     setConditionFeedback({
       assetName: targetAsset.name,
       assetId: targetAsset.id,
@@ -77,6 +82,7 @@ export const FurnitureList = () => {
       next: newConditionVal,
       targetRole: isDept ? 'Super Admin' : `Department Admin (${targetAsset.department})`,
       editorRole: isDept ? 'Department Admin' : 'Super Admin',
+      notification: notifInfo
     });
 
     setTimeout(() => setConditionFeedback(null), 8000);
@@ -190,7 +196,7 @@ export const FurnitureList = () => {
     <div className="space-y-6 pb-12">
       <TopBar title="Asset Inventory" subtitle={`${filteredList.length} assets tracked across campus`} user={currentUser} />
 
-      {/* Real-time Email Intimation Feedback Banner */}
+      {/* Real-time Automated Notification Feedback Banner */}
       {conditionFeedback && (
         <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800/60 flex items-start gap-3 shadow-sm animate-fade-in">
           <div className="p-2 rounded-xl bg-indigo-600 text-white flex-shrink-0">
@@ -199,7 +205,7 @@ export const FurnitureList = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-bold text-indigo-950 dark:text-indigo-200">
-                Asset Condition Updated & Email Intimation Dispatched
+                Asset Condition Updated & Automated Notifications Dispatched
               </h4>
               <button
                 onClick={() => setConditionFeedback(null)}
@@ -212,7 +218,7 @@ export const FurnitureList = () => {
               Condition for <strong className="font-mono">{conditionFeedback.assetId}</strong> ({conditionFeedback.assetName}) changed from <span className="font-bold underline">{conditionFeedback.prev}</span> to <span className="font-bold underline">{conditionFeedback.next}</span> by {conditionFeedback.editorRole}.
             </p>
             <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
-              ✓ Automated Email Intimation routed strictly to: <strong className="text-indigo-900 dark:text-indigo-100">{conditionFeedback.targetRole}</strong>.
+              ✓ Automated Notifications dispatched to: <strong className="text-indigo-900 dark:text-indigo-100">{conditionFeedback.targetRole}</strong> via Email, WhatsApp & In-App.
             </p>
           </div>
         </div>

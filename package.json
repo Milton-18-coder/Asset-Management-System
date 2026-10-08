@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "server": "node server/index.js",
-    "dev:all": "concurrently \"node server/index.js\" \"vite --host 0.0.0.0\"",
+    "server": "node --watch server/index.js",
+    "agent:python": "python run_agent.py --server --port 5050",
+    "agent:cli": "python run_agent.py",
+    "dev:all": "concurrently \"node --watch server/index.js\" \"vite --host 0.0.0.0\"",
+    "dev:full": "concurrently \"node --watch server/index.js\" \"vite --host 0.0.0.0\" \"python run_agent.py --server --port 5050\"",
     "build": "vite build",
     "preview": "vite preview"
   },

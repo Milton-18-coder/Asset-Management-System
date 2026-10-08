@@ -139,208 +139,181 @@ export async function sendReportEmail({ to, subject, message, pdfBuffer, filenam
 }
 
 /**
- * Send automated email intimation when an asset's condition is edited:
- * 1. If edited by Department Admin ('deptadmin'): Intimation goes ONLY to the Super Admin ('superadmin').
- * 2. If edited by Super Admin ('superadmin'): Intimation goes ONLY to the respective Department Admin ('deptadmin') of that asset's department.
+ * Send automated email notification for asset status / condition change:
+ * 1. If edited by Department Admin: Alert dispatched to Super Admin(s).
+ * 2. If edited by Super Admin: Update dispatched to the respective Department Admin(s).
  */
-export async function sendAssetConditionIntimationEmail({ asset, previousCondition, newCondition, updatedBy }) {
-  if (!asset || !newCondition) return { success: false, reason: 'Invalid payload' };
+export async function sendAssetStatusNotificationEmail({
+  asset,
+  previousCondition,
+  newCondition,
+  previousStatus,
+  newStatus,
+  updatedBy,
+  recipients = [],
+  direction
+}) {
+  if (!asset) return { success: false, reason: 'Invalid asset payload' };
 
-  try {
-    const pool = getPool();
-    
-    // Normalize editor role
-    const rawRole = (updatedBy?.role || '').toLowerCase().replace(/[\s_-]/g, '');
-    const isDeptAdmin = rawRole === 'deptadmin' || rawRole === 'departmentadmin';
-    const isSuperAdmin = rawRole === 'superadmin' || rawRole === 'superadministrator';
+  const isDeptAdmin = direction === 'deptadmin_to_superadmin' || 
+    (updatedBy?.role || '').toLowerCase().replace(/[\s_-]/g, '').includes('dept');
 
-    if (!isDeptAdmin && !isSuperAdmin) {
-      console.log(`[Email Intimation] Editor role "${updatedBy?.role}" is neither deptadmin nor superadmin. Skipping email dispatch.`);
-      return { success: false, skipped: true, reason: 'Role not applicable for condition intimation' };
-    }
+  const directionDesc = isDeptAdmin
+    ? 'Department Admin → Super Admin'
+    : `Super Admin → ${asset.department || 'Department'} Department Admin`;
 
-    let recipients = [];
-    let recipientRoleDesc = '';
+  const subject = isDeptAdmin
+    ? `[AssetMS Alert] Asset Status Updated - ${asset.department || 'General'} - ${asset.id}`
+    : `[AssetMS Update] Asset Status Updated - ${asset.id} - ${asset.department || 'General'}`;
 
-    if (isDeptAdmin) {
-      // Dept Admin edited -> Send intimation ONLY to Super Admin(s)
-      recipientRoleDesc = 'Super Admin';
-      const [superAdmins] = await pool.query(
-        `SELECT id, name, email, role, department FROM users WHERE role = 'superadmin' AND email IS NOT NULL AND email != ''`
-      );
-      recipients = superAdmins;
-    } else if (isSuperAdmin) {
-      // Super Admin edited -> Send intimation ONLY to the respective Department Admin
-      const assetDept = asset.department || '';
-      recipientRoleDesc = `Department Admin (${assetDept || 'Asset Department'})`;
-      const [deptAdmins] = await pool.query(
-        `SELECT id, name, email, role, department FROM users 
-         WHERE role = 'deptadmin' AND (department = ? OR ? LIKE CONCAT('%', department, '%') OR department LIKE CONCAT('%', ?, '%'))
-         AND email IS NOT NULL AND email != ''`,
-        [assetDept, assetDept, assetDept]
-      );
-      recipients = deptAdmins;
-    }
-
-    if (!recipients || recipients.length === 0) {
-      console.warn(`[Email Intimation] No recipient email found for target ${recipientRoleDesc}.`);
-      // Record internal notification
-      try {
-        await pool.query(
-          `INSERT INTO notifications (id, title, message, time, \`read\`, department, type, link)
-           VALUES (?, ?, ?, ?, 0, ?, 'email', ?)`,
-          [
-            `NOTIF-COND-${Date.now()}`,
-            'Condition Change Intimation (No Recipient Email)',
-            `Asset ${asset.name} (${asset.id}) condition changed from "${previousCondition || 'N/A'}" to "${newCondition}". No active email found for ${recipientRoleDesc}.`,
-            'Just now',
-            asset.department || null,
-            `/assets/${asset.id}`
-          ]
-        );
-      } catch (e) {
-        // non-blocking
-      }
-      return { success: false, configured: isEmailConfigured(), message: `No active email found for ${recipientRoleDesc}` };
-    }
-
-    const recipientEmails = recipients.map(r => r.email).filter(Boolean);
-    const to = recipientEmails.join(', ');
-    const editorName = updatedBy?.name || updatedBy?.username || (isDeptAdmin ? 'Department Admin' : 'Super Admin');
-    const editorEmail = updatedBy?.email || 'Not Provided';
-    const editorRoleDisplay = isDeptAdmin ? 'Department Admin' : 'Super Admin';
-
-    const subject = isDeptAdmin
-      ? `[AssetMS Alert] Asset Condition Updated in ${asset.department}: ${asset.name} (${asset.id})`
-      : `[AssetMS Notice] Super Admin Updated Asset Condition in ${asset.department}: ${asset.name} (${asset.id})`;
-
-    const conditionColors = {
-      'Good': '#059669',
-      'Fair': '#d97706',
-      'Poor': '#ea580c',
-      'Damaged': '#dc2626'
+  const recipientEmails = recipients.map(r => r.email).filter(Boolean);
+  if (recipientEmails.length === 0) {
+    return {
+      success: false,
+      configured: isEmailConfigured(),
+      status: 'skipped',
+      message: 'No recipient email addresses available'
     };
+  }
 
-    const prevColor = conditionColors[previousCondition] || '#64748b';
-    const newColor = conditionColors[newCondition] || '#64748b';
+  const to = recipientEmails.join(', ');
+  const editorName = updatedBy?.name || updatedBy?.username || (isDeptAdmin ? 'Department Admin' : 'Super Admin');
+  const editorEmail = updatedBy?.email || 'Not Provided';
+  const editorRoleDisplay = isDeptAdmin ? 'Department Admin' : 'Super Admin';
 
-    const changeTimestamp = new Date().toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      dateStyle: 'full',
-      timeStyle: 'medium'
-    });
+  const conditionColors = {
+    'Good': '#059669',
+    'Fair': '#d97706',
+    'Poor': '#ea580c',
+    'Damaged': '#dc2626'
+  };
 
-    const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        <!-- Header -->
-        <div style="background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); padding: 24px 28px; color: #ffffff;">
-          <p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; color: #c7d2fe;">AssetMS Automated Intimation</p>
-          <h1 style="margin: 6px 0 0 0; font-size: 20px; font-weight: 800; color: #ffffff;">Asset Condition State Modified</h1>
-          <p style="margin: 4px 0 0 0; font-size: 13px; color: #e0e7ff;">Target Recipient: <strong>${recipientRoleDesc}</strong></p>
-        </div>
+  const prevColor = conditionColors[previousCondition] || '#64748b';
+  const newColor = conditionColors[newCondition] || '#64748b';
 
-        <!-- Body Container -->
-        <div style="padding: 28px;">
-          <p style="margin: 0 0 20px 0; font-size: 14px; color: #334155; line-height: 1.6;">
-            This is an official notification to inform you that the physical condition status of an institutional asset has been updated in the campus registry.
-          </p>
+  const changeTimestamp = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    dateStyle: 'full',
+    timeStyle: 'medium'
+  }).format(new Date());
 
-          <!-- Condition Transition Banner -->
-          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 24px; text-align: center;">
-            <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Condition Transition</div>
-            <div style="display: inline-flex; align-items: center; gap: 12px; justify-content: center;">
-              <span style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; background-color: ${prevColor}15; color: ${prevColor}; border: 1px solid ${prevColor}40;">
-                ${previousCondition || 'Initial State'}
-              </span>
-              <span style="font-size: 16px; font-weight: bold; color: #94a3b8;">➔</span>
-              <span style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 14px; background-color: ${newColor}20; color: ${newColor}; border: 2px solid ${newColor};">
-                ${newCondition}
-              </span>
+  const assetLink = `/assets/${asset.id}`;
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); padding: 24px 28px; color: #ffffff;">
+        <p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; color: #c7d2fe;">AssetMS Automated Notification</p>
+        <h1 style="margin: 6px 0 0 0; font-size: 20px; font-weight: 800; color: #ffffff;">Asset Status & Condition Update</h1>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: #e0e7ff;">Workflow: <strong>${directionDesc}</strong></p>
+      </div>
+
+      <!-- Body Container -->
+      <div style="padding: 28px;">
+        <p style="margin: 0 0 20px 0; font-size: 14px; color: #334155; line-height: 1.6;">
+          This is an official two-way automated notification from AssetMS regarding an asset condition/status modification in the institutional registry.
+        </p>
+
+        <!-- Condition Transition Banner -->
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 24px; text-align: center;">
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Condition Transition</div>
+          <div style="display: inline-flex; align-items: center; gap: 12px; justify-content: center;">
+            <span style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; background-color: ${prevColor}15; color: ${prevColor}; border: 1px solid ${prevColor}40;">
+              ${previousCondition || 'Initial State'}
+            </span>
+            <span style="font-size: 16px; font-weight: bold; color: #94a3b8;">➔</span>
+            <span style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 14px; background-color: ${newColor}20; color: ${newColor}; border: 2px solid ${newColor};">
+              ${newCondition || 'Updated State'}
+            </span>
+          </div>
+          ${previousStatus && newStatus && previousStatus !== newStatus ? `
+            <div style="margin-top: 10px; font-size: 12px; color: #475569;">
+              <strong>Status:</strong> ${previousStatus} ➔ <strong>${newStatus}</strong>
             </div>
-          </div>
-
-          <!-- Details Table -->
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
-            <tbody>
-              <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b; width: 35%;">Asset ID</td>
-                <td style="padding: 10px 0; font-weight: 700; font-family: monospace; color: #4338ca; font-size: 14px;">${asset.id}</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Asset Name</td>
-                <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${asset.name}</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Department</td>
-                <td style="padding: 10px 0; font-weight: 700; color: #1e293b;">${asset.department || 'General'}</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Location</td>
-                <td style="padding: 10px 0; color: #334155;">Room ${asset.room || 'N/A'}, ${asset.building || 'Campus Block'}</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Assigned Custodian</td>
-                <td style="padding: 10px 0; color: #334155;">${asset.assignedTo || 'Unassigned'} ${asset.assignedRole ? `(${asset.assignedRole})` : ''}</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Action Performed By</td>
-                <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${editorName} <span style="font-size: 11px; font-weight: 600; color: #6366f1; background: #eef2ff; padding: 2px 6px; border-radius: 4px;">${editorRoleDisplay}</span></td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Editor Contact</td>
-                <td style="padding: 10px 0; color: #475569;">${editorEmail}</td>
-              </tr>
-              <tr>
-                <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Timestamp</td>
-                <td style="padding: 10px 0; color: #475569;">${changeTimestamp}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- Intimation Directive Note -->
-          <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
-            <p style="margin: 0; font-size: 12px; color: #15803d; line-height: 1.5;">
-              <strong>Intimation Directive:</strong> ${isDeptAdmin ? 'Department Admin modified asset condition ➔ Intimation dispatched exclusively to Super Admin.' : 'Super Admin modified asset condition ➔ Intimation dispatched exclusively to the respective Department Admin.'}
-            </p>
-          </div>
+          ` : ''}
         </div>
 
-        <!-- Footer -->
-        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 28px; font-size: 11px; color: #94a3b8; text-align: center;">
-          <p style="margin: 0 0 4px 0;">AssetMS – Campus Furniture & Asset Management System</p>
-          <p style="margin: 0;">This is an automated system email intimation. Please do not reply directly to this email.</p>
+        <!-- Details Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+          <tbody>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b; width: 35%;">Asset ID</td>
+              <td style="padding: 10px 0; font-weight: 700; font-family: monospace; color: #4338ca; font-size: 14px;">${asset.id}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Asset Name</td>
+              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${asset.name}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Department</td>
+              <td style="padding: 10px 0; font-weight: 700; color: #1e293b;">${asset.department || 'General'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Location</td>
+              <td style="padding: 10px 0; color: #334155;">${asset.building || 'Campus Block'} / Room ${asset.room || 'N/A'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Previous Condition</td>
+              <td style="padding: 10px 0; font-weight: 700; color: ${prevColor};">${previousCondition || 'N/A'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">New Condition</td>
+              <td style="padding: 10px 0; font-weight: 700; color: ${newColor};">${newCondition || 'N/A'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Updated By</td>
+              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${editorName}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Role</td>
+              <td style="padding: 10px 0;"><span style="font-size: 11px; font-weight: 600; color: #6366f1; background: #eef2ff; padding: 2px 8px; border-radius: 4px;">${editorRoleDisplay}</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Updated By Email</td>
+              <td style="padding: 10px 0; color: #475569;">${editorEmail}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Direction</td>
+              <td style="padding: 10px 0; font-weight: 600; color: #0f172a;">${directionDesc}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Updated At</td>
+              <td style="padding: 10px 0; color: #475569;">${changeTimestamp}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Direct Asset Link</td>
+              <td style="padding: 10px 0;"><a href="${assetLink}" style="color: #4f46e5; text-decoration: underline; font-weight: 600;">View Asset in AssetMS</a></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Intimation Directive Note -->
+        <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+          <p style="margin: 0; font-size: 12px; color: #15803d; line-height: 1.5;">
+            <strong>Notification Notice:</strong> ${isDeptAdmin ? 'Department Admin updated asset state ➔ Notification automatically sent to Super Admin via Email, WhatsApp & Internal App.' : 'Super Admin updated asset state ➔ Notification automatically sent exclusively to the responsible Department Admin.'}
+          </p>
         </div>
       </div>
-    `;
 
-    if (!isEmailConfigured()) {
-      console.log(`[Email Intimation] SMTP is in local simulation mode. Intimation target: ${recipientRoleDesc} (${to})`);
-      // Record internal notification in system
-      try {
-        await pool.query(
-          `INSERT INTO notifications (id, title, message, time, \`read\`, department, type, link)
-           VALUES (?, ?, ?, ?, 0, ?, 'condition_intimation', ?)`,
-          [
-            `NOTIF-COND-${Date.now()}`,
-            `Asset Condition Intimation: ${asset.name}`,
-            `[Email Intimation to ${recipientRoleDesc} (${to})] Condition of ${asset.name} (${asset.id}) in ${asset.department} updated from "${previousCondition || 'N/A'}" to "${newCondition}" by ${editorName} (${editorRoleDisplay}).`,
-            'Just now',
-            asset.department || null,
-            `/assets/${asset.id}`
-          ]
-        );
-      } catch (e) {
-        // non-blocking
-      }
-      return {
-        success: true,
-        simulated: true,
-        configured: false,
-        recipients: recipientEmails,
-        message: `Intimation recorded for ${recipientRoleDesc} (${to}).`
-      };
-    }
+      <!-- Footer -->
+      <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 28px; font-size: 11px; color: #94a3b8; text-align: center;">
+        <p style="margin: 0 0 4px 0;">AssetMS – Campus Furniture & Asset Management System</p>
+        <p style="margin: 0;">This is an automated system notification. Please do not reply directly to this email.</p>
+      </div>
+    </div>
+  `;
 
+  if (!isEmailConfigured()) {
+    return {
+      success: false,
+      configured: false,
+      status: 'skipped',
+      recipients: recipientEmails,
+      message: 'SMTP credentials not configured in environment variables'
+    };
+  }
+
+  try {
     const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: SMTP_PORT,
@@ -355,63 +328,63 @@ export async function sendAssetConditionIntimationEmail({ asset, previousConditi
       from: `AssetMS System <${REPORT_FROM_EMAIL}>`,
       to,
       subject,
-      text: `AssetMS Intimation: Asset ${asset.name} (${asset.id}) in ${asset.department} condition changed from ${previousCondition} to ${newCondition} by ${editorName} (${editorRoleDisplay}).`,
+      text: `AssetMS Update: Asset ${asset.name} (${asset.id}) in ${asset.department} condition changed from "${previousCondition || 'N/A'}" to "${newCondition || 'N/A'}" by ${editorName} (${editorRoleDisplay}). Direction: ${directionDesc}. Time: ${changeTimestamp}. Link: ${assetLink}`,
       html,
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`[Email Intimation] Email dispatched successfully to ${to}. MessageId: ${info.messageId}`);
-
-    // Record notification
-    try {
-      await pool.query(
-        `INSERT INTO notifications (id, title, message, time, \`read\`, department, type, link)
-         VALUES (?, ?, ?, ?, 0, ?, 'condition_intimation', ?)`,
-        [
-          `NOTIF-COND-${Date.now()}`,
-          `Condition Intimation Sent to ${recipientRoleDesc}`,
-          `Condition change intimation for ${asset.name} (${asset.id}) delivered to ${to}.`,
-          'Just now',
-          asset.department || null,
-          `/assets/${asset.id}`
-        ]
-      );
-    } catch (e) {
-      // non-blocking
-    }
-
     return {
       success: true,
       configured: true,
+      status: 'sent',
       messageId: info.messageId,
-      recipients: recipientEmails,
-      message: `Intimation successfully dispatched to ${recipientRoleDesc} (${to}).`
+      recipients: recipientEmails
     };
   } catch (error) {
-    console.error('[Email Intimation] Failed to send email:', error.message);
-    try {
-      const pool = getPool();
-      await pool.query(
-        `INSERT INTO notifications (id, title, message, time, \`read\`, department, type, link)
-         VALUES (?, ?, ?, ?, 0, ?, 'condition_intimation', ?)`,
-        [
-          `NOTIF-COND-${Date.now()}`,
-          `Condition Intimation Failed`,
-          `Failed to deliver email: ${error.message}`,
-          'Just now',
-          asset.department || null,
-          `/assets/${asset.id}`
-        ]
-      );
-    } catch (e) {
-      // non-blocking
-    }
+    console.warn(`[Asset Notification] Email dispatch failed: ${error.message}`);
     return {
       success: false,
       configured: true,
+      status: 'failed',
       error: error.message,
-      message: `Failed to deliver email intimation: ${error.message}`
+      recipients: recipientEmails
     };
   }
+}
+
+/**
+ * Compatibility wrapper for existing legacy calls
+ */
+export async function sendAssetConditionIntimationEmail({ asset, previousCondition, newCondition, updatedBy }) {
+  const pool = getPool();
+  const rawRole = (updatedBy?.role || '').toLowerCase().replace(/[\s_-]/g, '');
+  const isDeptAdmin = rawRole === 'deptadmin' || rawRole === 'departmentadmin';
+  const isSuperAdmin = rawRole === 'superadmin' || rawRole === 'superadministrator';
+
+  let recipients = [];
+  if (isDeptAdmin) {
+    const [superAdmins] = await pool.query(
+      `SELECT id, name, email, phone, role, department FROM users WHERE role = 'superadmin' AND email IS NOT NULL AND email != ''`
+    );
+    recipients = superAdmins;
+  } else if (isSuperAdmin) {
+    const assetDept = asset?.department || '';
+    const [deptAdmins] = await pool.query(
+      `SELECT id, name, email, phone, role, department FROM users 
+       WHERE role = 'deptadmin' AND (department = ? OR ? LIKE CONCAT('%', department, '%') OR department LIKE CONCAT('%', ?, '%'))
+       AND email IS NOT NULL AND email != ''`,
+      [assetDept, assetDept, assetDept]
+    );
+    recipients = deptAdmins;
+  }
+
+  return sendAssetStatusNotificationEmail({
+    asset,
+    previousCondition,
+    newCondition,
+    updatedBy,
+    recipients,
+    direction: isDeptAdmin ? 'deptadmin_to_superadmin' : 'superadmin_to_deptadmin'
+  });
 }
 

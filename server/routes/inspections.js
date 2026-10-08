@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getPool } from '../db.js';
-import { sendAssetConditionIntimationEmail } from '../services/emailService.js';
+import { notifyAssetStatusChange } from '../services/assetNotificationService.js';
 
 const router = Router();
 
@@ -38,22 +38,29 @@ router.post('/', async (req, res) => {
     );
 
     // Sync condition to assets table if asset exists
+    let notificationResult = null;
     if (prevAsset) {
       await pool.query('UPDATE assets SET `condition` = ? WHERE id = ?', [i.condition, i.assetId]);
       
-      // If condition changed, trigger intimation email
+      // If condition changed, trigger two-way automated notification
       if (i.condition && i.condition !== prevAsset.condition) {
-        sendAssetConditionIntimationEmail({
-          asset: { ...prevAsset, condition: i.condition },
-          previousCondition: prevAsset.condition,
-          newCondition: i.condition,
-          updatedBy
-        }).catch(err => console.error('[Inspections POST] Email dispatch error:', err.message));
+        try {
+          notificationResult = await notifyAssetStatusChange({
+            asset: { ...prevAsset, condition: i.condition },
+            previousAsset: prevAsset,
+            updatedBy
+          });
+        } catch (err) {
+          console.error('[Inspections POST] Notification dispatch error:', err.message);
+        }
       }
     }
 
     const [rows] = await pool.query('SELECT * FROM inspections WHERE id = ?', [i.id]);
-    res.status(201).json(rows[0]);
+    res.status(201).json({
+      ...rows[0],
+      ...(notificationResult ? { notification: notificationResult } : {})
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

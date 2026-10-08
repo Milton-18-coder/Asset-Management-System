@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const AI_MAX_TOKENS = parseInt(process.env.AI_MAX_TOKENS || '4000', 10);
-export const AI_LOW_TOKEN_THRESHOLD = parseInt(process.env.AI_LOW_TOKEN_THRESHOLD || '800', 10);
+export const AI_MAX_TOKENS = parseInt(process.env.AI_MAX_TOKENS || '100000', 10);
+export const AI_LOW_TOKEN_THRESHOLD = parseInt(process.env.AI_LOW_TOKEN_THRESHOLD || '50', 10);
 
 /**
  * Estimate token count for a string (~4 characters per token heuristic)

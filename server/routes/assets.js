@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getPool } from '../db.js';
-import { sendAssetConditionIntimationEmail } from '../services/emailService.js';
+import { notifyAssetStatusChange } from '../services/assetNotificationService.js';
 
 const router = Router();
 
@@ -100,6 +100,27 @@ router.put('/:id', async (req, res) => {
     const a = req.body;
     const updatedBy = req.body.updatedBy || null;
 
+    // Fetch existing asset state before update
+    const [prevRows] = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
+    if (prevRows.length === 0) {
+      return res.status(404).json({ error: 'Asset not found' });
+    }
+    const prevAsset = prevRows[0];
+
+    // Authorization check: If updatedBy is Dept Admin, verify department match
+    if (updatedBy) {
+      const editorRole = String(updatedBy.role || '').toLowerCase().replace(/[\s_-]/g, '');
+      if (editorRole === 'deptadmin') {
+        const editorDept = normalizeDepartment(updatedBy.department);
+        const assetDept = normalizeDepartment(prevAsset.department);
+        if (editorDept && assetDept && editorDept !== assetDept) {
+          return res.status(403).json({
+            error: `Forbidden: Department Admin (${editorDept}) is not authorized to modify assets belonging to ${assetDept}.`
+          });
+        }
+      }
+    }
+
     if (a.department) {
       const validatedDept = normalizeDepartment(a.department);
       if (!validatedDept) {
@@ -108,10 +129,6 @@ router.put('/:id', async (req, res) => {
       a.department = validatedDept;
     }
 
-    // Fetch existing asset state before update to compare condition
-    const [prevRows] = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
-    const prevAsset = prevRows.length > 0 ? prevRows[0] : null;
-
     await pool.query(
       `UPDATE assets SET
          name=?, mainCategory=?, category=?, itemType=?, building=?, department=?, room=?,
@@ -119,11 +136,24 @@ router.put('/:id', async (req, res) => {
          purchaseDate=?, cost=?, supplier=?, warranty=?, quantity=?, description=?
        WHERE id=?`,
       [
-        a.name, a.mainCategory || 'Furniture', a.category || 'General', a.itemType || '',
-        a.building || '', a.department || '', a.room || '', a.assignedTo || '',
-        a.assignedRole || '', a.assignedEmail || '', a.condition || 'Good',
-        a.status || 'Available', a.purchaseDate || null, a.cost || 0,
-        a.supplier || '', a.warranty || '', a.quantity || 1, a.description || '',
+        a.name !== undefined ? a.name : prevAsset.name,
+        a.mainCategory || prevAsset.mainCategory || 'Furniture',
+        a.category || prevAsset.category || 'General',
+        a.itemType || prevAsset.itemType || '',
+        a.building || prevAsset.building || '',
+        a.department || prevAsset.department || '',
+        a.room || prevAsset.room || '',
+        a.assignedTo !== undefined ? a.assignedTo : prevAsset.assignedTo,
+        a.assignedRole !== undefined ? a.assignedRole : prevAsset.assignedRole,
+        a.assignedEmail !== undefined ? a.assignedEmail : prevAsset.assignedEmail,
+        a.condition || prevAsset.condition || 'Good',
+        a.status || prevAsset.status || 'Available',
+        a.purchaseDate !== undefined ? a.purchaseDate : prevAsset.purchaseDate,
+        a.cost !== undefined ? a.cost : prevAsset.cost,
+        a.supplier !== undefined ? a.supplier : prevAsset.supplier,
+        a.warranty !== undefined ? a.warranty : prevAsset.warranty,
+        a.quantity !== undefined ? a.quantity : prevAsset.quantity,
+        a.description !== undefined ? a.description : prevAsset.description,
         id
       ]
     );
@@ -131,17 +161,24 @@ router.put('/:id', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
     const updatedAsset = rows[0];
 
-    // Trigger intimation email if condition changed
-    if (prevAsset && a.condition && a.condition !== prevAsset.condition) {
-      sendAssetConditionIntimationEmail({
-        asset: updatedAsset,
-        previousCondition: prevAsset.condition,
-        newCondition: a.condition,
-        updatedBy
-      }).catch(err => console.error('[Asset PUT] Email dispatch error:', err.message));
+    // Trigger two-way automated notification if condition or status changed
+    let notificationResult = null;
+    if ((a.condition && a.condition !== prevAsset.condition) || (a.status && a.status !== prevAsset.status)) {
+      try {
+        notificationResult = await notifyAssetStatusChange({
+          asset: updatedAsset,
+          previousAsset: prevAsset,
+          updatedBy
+        });
+      } catch (err) {
+        console.error('[Asset PUT] Notification dispatch error:', err.message);
+      }
     }
 
-    res.json(updatedAsset);
+    res.json({
+      ...updatedAsset,
+      ...(notificationResult ? { notification: notificationResult } : {})
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -202,21 +239,42 @@ router.patch('/:id/condition', async (req, res) => {
     }
     const prevAsset = prevRows[0];
 
+    // Authorization check: If updatedBy is Dept Admin, verify department match
+    if (updatedBy) {
+      const editorRole = String(updatedBy.role || '').toLowerCase().replace(/[\s_-]/g, '');
+      if (editorRole === 'deptadmin') {
+        const editorDept = normalizeDepartment(updatedBy.department);
+        const assetDept = normalizeDepartment(prevAsset.department);
+        if (editorDept && assetDept && editorDept !== assetDept) {
+          return res.status(403).json({
+            error: `Forbidden: Department Admin (${editorDept}) is not authorized to modify assets belonging to ${assetDept}.`
+          });
+        }
+      }
+    }
+
     await pool.query('UPDATE assets SET `condition` = ? WHERE id = ?', [condition, req.params.id]);
     const [rows] = await pool.query('SELECT * FROM assets WHERE id = ?', [req.params.id]);
     const updatedAsset = rows[0];
 
-    // Trigger intimation email if condition changed
+    // Trigger two-way automated notification if condition changed
+    let notificationResult = null;
     if (condition && condition !== prevAsset.condition) {
-      sendAssetConditionIntimationEmail({
-        asset: updatedAsset,
-        previousCondition: prevAsset.condition,
-        newCondition: condition,
-        updatedBy
-      }).catch(err => console.error('[Asset PATCH condition] Email dispatch error:', err.message));
+      try {
+        notificationResult = await notifyAssetStatusChange({
+          asset: updatedAsset,
+          previousAsset: prevAsset,
+          updatedBy
+        });
+      } catch (err) {
+        console.error('[Asset PATCH condition] Notification dispatch error:', err.message);
+      }
     }
 
-    res.json(updatedAsset);
+    res.json({
+      ...updatedAsset,
+      ...(notificationResult ? { notification: notificationResult } : {})
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

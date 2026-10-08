@@ -219,27 +219,33 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
     const prevCond = furniture.condition;
     dispatch(updateFurnitureCondition({ id: furniture.id, condition: newConditionVal }));
 
+    let resData = null;
     try {
-      await api.updateAssetCondition(furniture.id, newConditionVal, currentUser);
+      resData = await api.updateAssetCondition(furniture.id, newConditionVal, currentUser);
     } catch (err) {
       console.warn('Backend condition update note:', err.message);
     }
 
+    const isDept = (currentUser?.role || '').toLowerCase().includes('dept');
+    const notifInfo = resData?.notification || null;
+
     const notif = {
       title: `Asset Condition Updated: ${newConditionVal}`,
-      message: `${currentUser.name} (${currentUser.role}) changed condition of ${furniture.name} (${furniture.id}) from "${prevCond}" to "${newConditionVal}". Intimation dispatched via email.`,
+      message: `${currentUser.name} (${currentUser.role}) changed condition of ${furniture.name} (${furniture.id}) from "${prevCond}" to "${newConditionVal}". Intimation dispatched via email & WhatsApp.`,
       type: 'asset',
       link: `/assets/${furniture.id}`,
       department: furniture.department,
+      direction: isDept ? 'deptadmin_to_superadmin' : 'superadmin_to_deptadmin',
+      notification_channel: 'in-app'
     };
     dispatch(addNotification(notif));
 
-    const isDept = (currentUser?.role || '').toLowerCase().includes('dept');
     setConditionFeedback({
       prev: prevCond,
       next: newConditionVal,
       targetRole: isDept ? 'Super Admin' : `Department Admin (${furniture.department})`,
       editorRole: isDept ? 'Department Admin' : 'Super Admin',
+      notification: notifInfo
     });
 
     setTimeout(() => setConditionFeedback(null), 8000);
@@ -257,7 +263,7 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Real-time Email Intimation Toast / Alert */}
+      {/* Real-time Automated Notification Feedback Banner */}
       {conditionFeedback && (
         <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800/60 flex items-start gap-3 shadow-sm animate-fade-in">
           <div className="p-2 rounded-xl bg-indigo-600 text-white flex-shrink-0">
@@ -266,11 +272,11 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-bold text-indigo-950 dark:text-indigo-200">
-                Asset Condition Updated & Email Intimation Dispatched
+                Asset Condition Updated & Automated Notifications Dispatched
               </h4>
               <button
                 onClick={() => setConditionFeedback(null)}
-                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 Dismiss
               </button>
@@ -279,7 +285,7 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
               Condition transitioned from <span className="font-bold underline">{conditionFeedback.prev}</span> to <span className="font-bold underline">{conditionFeedback.next}</span> by {conditionFeedback.editorRole}.
             </p>
             <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
-              ✓ Automated Email Intimation routed strictly to: <strong className="text-indigo-900 dark:text-indigo-100">{conditionFeedback.targetRole}</strong>.
+              ✓ Automated Notifications dispatched to: <strong className="text-indigo-900 dark:text-indigo-100">{conditionFeedback.targetRole}</strong> via Email, WhatsApp & In-App.
             </p>
           </div>
         </div>

@@ -103,16 +103,17 @@ export async function seedInitialDataIfEmpty(
         console.log(`[Seed] Syncing ${initialUsers.length} users into MySQL...`);
         for (const u of initialUsers) {
           await pool.query(
-            `INSERT INTO users (id, username, password, name, role, department, email)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO users (id, username, password, name, role, department, email, phone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                username=VALUES(username),
                password=VALUES(password),
                name=VALUES(name),
                role=VALUES(role),
                department=VALUES(department),
-               email=VALUES(email)`,
-            [u.id, u.username, u.password, u.name, u.role, u.department || null, u.email || '']
+               email=VALUES(email),
+               phone=VALUES(phone)`,
+            [u.id, u.username, u.password, u.name, u.role, u.department || null, u.email || '', u.phone || null]
           );
         }
         console.log('[Seed] Users synced.');
