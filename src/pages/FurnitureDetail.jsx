@@ -464,7 +464,7 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
                     ₹{lowestPrice.toLocaleString()} - ₹{highestPrice.toLocaleString()}
                   </span>
                   <span className="text-[10px] text-slate-400 block truncate mt-0.5">
-                    First: {assetPurchases[0]?.purchaseDate || furniture.purchaseDate || '—'}
+                    First: {(assetPurchases[0]?.purchaseDate || furniture.purchaseDate || '—').split('T')[0]}
                   </span>
                 </div>
               </div>
@@ -472,7 +472,7 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
               {/* Price Trend Chart if multi-purchases */}
               {priceHistoryForChart.length > 1 && (
                 <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800">
-                  <PriceHistoryChart data={priceHistoryForChart} height={140} />
+                  <PriceHistoryChart data={priceHistoryForChart} height={180} />
                 </div>
               )}
             </div>
@@ -480,7 +480,7 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
             {/* Purchase History Table */}
             {assetPurchases.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400 font-medium">
-                Initial purchase record registered: {furniture.supplier || 'Supplier'} (₹{(furniture.cost || 0).toLocaleString()}) on {furniture.purchaseDate || '—'}.
+                Initial purchase record registered: {furniture.supplier || 'Supplier'} (₹{(furniture.cost || 0).toLocaleString()}) on {(furniture.purchaseDate || '—').split('T')[0]}.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -499,7 +499,9 @@ export const FurnitureDetail = ({ furniture: propFurniture }) => {
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/40">
                     {[...assetPurchases].reverse().map((p) => (
                       <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition">
-                        <td className="px-5 py-3.5 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{p.purchaseDate}</td>
+                        <td className="px-5 py-3.5 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                          {p.purchaseDate ? p.purchaseDate.split('T')[0] : '—'}
+                        </td>
                         <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             <Store className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />

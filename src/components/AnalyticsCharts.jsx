@@ -337,27 +337,37 @@ export function TrendLineChart({ data = [], title, subtitle }) {
 
           {/* Interactive Dots and Permanent Node Value Labels */}
           {points.map((p, i) => {
-            // Stagger label Y offset slightly if needed to avoid overlap
-            const isAlternate = i % 2 === 1;
-            const labelY = p.y - (isAlternate ? 10 : 12);
+            const formattedVal = p.value >= 100000 ? `₹${(p.value / 100000).toFixed(1)}L` : (p.value >= 1000 ? `₹${(p.value / 1000).toFixed(1)}k` : `₹${p.value}`);
+            const badgeWidth = Math.max(48, formattedVal.length * 6.5 + 10);
+            const badgeHeight = 16;
+            const labelY = p.y - 12;
 
             return (
               <g
                 key={i}
-                className="cursor-pointer"
+                className="cursor-pointer group"
                 onMouseEnter={() => setActivePoint(p)}
                 onMouseLeave={() => setActivePoint(null)}
               >
-                {/* Permanent Node Value Label */}
-                <text
-                  x={p.x}
-                  y={labelY}
-                  textAnchor="middle"
-                  className="fill-indigo-600 dark:fill-indigo-400 font-mono font-bold"
-                  style={{ fontSize: '9px' }}
-                >
-                  {p.value >= 1000 ? `₹${(p.value / 1000).toFixed(0)}k` : `₹${p.value}`}
-                </text>
+                {/* Permanent Node Value Pill Badge */}
+                <g transform={`translate(${p.x}, ${labelY})`}>
+                  <rect
+                    x={-badgeWidth / 2}
+                    y={-badgeHeight}
+                    width={badgeWidth}
+                    height={badgeHeight}
+                    rx={badgeHeight / 2}
+                    className="fill-indigo-600 dark:fill-indigo-500 shadow-xs"
+                  />
+                  <text
+                    x="0"
+                    y={-badgeHeight / 2 + 3}
+                    textAnchor="middle"
+                    className="fill-white font-mono font-bold text-[9px] select-none"
+                  >
+                    {formattedVal}
+                  </text>
+                </g>
 
                 {/* Node circle */}
                 <circle
@@ -367,16 +377,15 @@ export function TrendLineChart({ data = [], title, subtitle }) {
                   fill="#ffffff"
                   stroke="#6366f1"
                   strokeWidth="2.5"
-                  className="transition-all duration-200"
+                  className="transition-all duration-200 group-hover:r-6"
                 />
 
                 {/* X-axis label under node */}
                 <text
                   x={p.x}
-                  y={height - paddingBottom + 14}
+                  y={height - paddingBottom + 15}
                   textAnchor="middle"
-                  className="fill-slate-500 dark:fill-slate-400 font-medium"
-                  style={{ fontSize: '8.5px' }}
+                  className="fill-slate-500 dark:fill-slate-400 font-semibold text-[8.5px]"
                 >
                   {p.label}
                 </text>

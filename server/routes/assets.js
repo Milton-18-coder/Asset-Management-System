@@ -92,13 +92,49 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Helper to load authenticated backend user from DB
+async function resolveAuthenticatedUser(req, pool) {
+  const candidate = req.user || req.body?.updatedBy || req.headers['x-user-id'] || null;
+  if (!candidate) return null;
+
+  const candidateId = typeof candidate === 'object' ? (candidate.id || candidate.username) : candidate;
+  if (!candidateId) return typeof candidate === 'object' ? candidate : null;
+
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, username, name, role, department, email, phone FROM users WHERE id = ? OR username = ?',
+      [candidateId, candidateId]
+    );
+    if (rows.length > 0) {
+      return rows[0];
+    }
+  } catch (err) {
+    console.warn('[Asset Route] Error querying authenticated user from DB:', err.message);
+  }
+
+  return typeof candidate === 'object' ? candidate : null;
+}
+
+// Helper to verify department authorization for Department Admins
+function isAuthorizedForAsset(authUser, assetDept) {
+  if (!authUser) return true;
+  const role = String(authUser.role || '').toLowerCase().replace(/[\s_-]/g, '');
+  if (role === 'deptadmin' || role === 'departmentadmin' || role.includes('dept')) {
+    const userDept = normalizeDepartment(authUser.department);
+    const targetDept = normalizeDepartment(assetDept);
+    if (userDept && targetDept && userDept !== targetDept) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // PUT update asset
 router.put('/:id', async (req, res) => {
   try {
     const pool = getPool();
     const id = req.params.id;
     const a = req.body;
-    const updatedBy = req.body.updatedBy || null;
 
     // Fetch existing asset state before update
     const [prevRows] = await pool.query('SELECT * FROM assets WHERE id = ?', [id]);
@@ -107,18 +143,16 @@ router.put('/:id', async (req, res) => {
     }
     const prevAsset = prevRows[0];
 
-    // Authorization check: If updatedBy is Dept Admin, verify department match
-    if (updatedBy) {
-      const editorRole = String(updatedBy.role || '').toLowerCase().replace(/[\s_-]/g, '');
-      if (editorRole === 'deptadmin') {
-        const editorDept = normalizeDepartment(updatedBy.department);
-        const assetDept = normalizeDepartment(prevAsset.department);
-        if (editorDept && assetDept && editorDept !== assetDept) {
-          return res.status(403).json({
-            error: `Forbidden: Department Admin (${editorDept}) is not authorized to modify assets belonging to ${assetDept}.`
-          });
-        }
-      }
+    // Authenticate and load user from DB
+    const authUser = await resolveAuthenticatedUser(req, pool);
+
+    // Department Security Check: Department Admin can only modify assets in their department
+    if (authUser && !isAuthorizedForAsset(authUser, prevAsset.department)) {
+      const userDept = normalizeDepartment(authUser.department);
+      const assetDept = normalizeDepartment(prevAsset.department);
+      return res.status(403).json({
+        error: `Forbidden: Department Admin (${userDept}) is not authorized to modify assets belonging to ${assetDept}.`
+      });
     }
 
     if (a.department) {
@@ -163,12 +197,15 @@ router.put('/:id', async (req, res) => {
 
     // Trigger two-way automated notification if condition or status changed
     let notificationResult = null;
-    if ((a.condition && a.condition !== prevAsset.condition) || (a.status && a.status !== prevAsset.status)) {
+    const conditionChanged = Boolean(a.condition && a.condition !== prevAsset.condition);
+    const statusChanged = Boolean(a.status && a.status !== prevAsset.status);
+
+    if (conditionChanged || statusChanged) {
       try {
         notificationResult = await notifyAssetStatusChange({
           asset: updatedAsset,
           previousAsset: prevAsset,
-          updatedBy
+          updatedBy: authUser || req.body.updatedBy
         });
       } catch (err) {
         console.error('[Asset PUT] Notification dispatch error:', err.message);
@@ -177,6 +214,17 @@ router.put('/:id', async (req, res) => {
 
     res.json({
       ...updatedAsset,
+      assetUpdated: true,
+      ...(notificationResult?.email ? {
+        notifications: {
+          email: {
+            status: notificationResult.email.status,
+            recipients: notificationResult.email.recipients
+          },
+          whatsapp: notificationResult.whatsapp,
+          inApp: notificationResult.inApp
+        }
+      } : {}),
       ...(notificationResult ? { notification: notificationResult } : {})
     });
   } catch (error) {
@@ -231,7 +279,7 @@ router.patch('/:id/custodian', async (req, res) => {
 router.patch('/:id/condition', async (req, res) => {
   try {
     const pool = getPool();
-    const { condition, updatedBy } = req.body;
+    const { condition } = req.body;
 
     const [prevRows] = await pool.query('SELECT * FROM assets WHERE id = ?', [req.params.id]);
     if (prevRows.length === 0) {
@@ -239,18 +287,16 @@ router.patch('/:id/condition', async (req, res) => {
     }
     const prevAsset = prevRows[0];
 
-    // Authorization check: If updatedBy is Dept Admin, verify department match
-    if (updatedBy) {
-      const editorRole = String(updatedBy.role || '').toLowerCase().replace(/[\s_-]/g, '');
-      if (editorRole === 'deptadmin') {
-        const editorDept = normalizeDepartment(updatedBy.department);
-        const assetDept = normalizeDepartment(prevAsset.department);
-        if (editorDept && assetDept && editorDept !== assetDept) {
-          return res.status(403).json({
-            error: `Forbidden: Department Admin (${editorDept}) is not authorized to modify assets belonging to ${assetDept}.`
-          });
-        }
-      }
+    // Authenticate and load user from DB
+    const authUser = await resolveAuthenticatedUser(req, pool);
+
+    // Department Security Check: Department Admin can only modify assets in their department
+    if (authUser && !isAuthorizedForAsset(authUser, prevAsset.department)) {
+      const userDept = normalizeDepartment(authUser.department);
+      const assetDept = normalizeDepartment(prevAsset.department);
+      return res.status(403).json({
+        error: `Forbidden: Department Admin (${userDept}) is not authorized to modify assets belonging to ${assetDept}.`
+      });
     }
 
     await pool.query('UPDATE assets SET `condition` = ? WHERE id = ?', [condition, req.params.id]);
@@ -264,7 +310,7 @@ router.patch('/:id/condition', async (req, res) => {
         notificationResult = await notifyAssetStatusChange({
           asset: updatedAsset,
           previousAsset: prevAsset,
-          updatedBy
+          updatedBy: authUser || req.body.updatedBy
         });
       } catch (err) {
         console.error('[Asset PATCH condition] Notification dispatch error:', err.message);
@@ -273,6 +319,17 @@ router.patch('/:id/condition', async (req, res) => {
 
     res.json({
       ...updatedAsset,
+      assetUpdated: true,
+      ...(notificationResult?.email ? {
+        notifications: {
+          email: {
+            status: notificationResult.email.status,
+            recipients: notificationResult.email.recipients
+          },
+          whatsapp: notificationResult.whatsapp,
+          inApp: notificationResult.inApp
+        }
+      } : {}),
       ...(notificationResult ? { notification: notificationResult } : {})
     });
   } catch (error) {

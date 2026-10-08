@@ -75,6 +75,11 @@ export async function sendAssetStatusWhatsApp({
   }
 
   // Format direction text
+  const isDeptAdmin = direction === 'deptadmin_to_superadmin' || 
+    (updatedBy?.role || '').toLowerCase().replace(/[\s_-]/g, '').includes('dept');
+  const roleDisplay = isDeptAdmin ? 'Department Admin' : 'Super Admin';
+  const editorName = updatedBy?.name || updatedBy?.username || (isDeptAdmin ? 'Department Admin' : 'Super Admin');
+
   let directionText = 'Asset Status Update';
   if (direction === 'deptadmin_to_superadmin') {
     directionText = 'Department Admin → Super Admin';
@@ -104,7 +109,8 @@ export async function sendAssetStatusWhatsApp({
     `Previous Condition: ${previousCondition || 'N/A'}`,
     `New Condition: ${newCondition || 'N/A'}`,
     `Updated By: ${editorName}`,
-    `Updated At: ${formattedTime}`
+    `Role: ${roleDisplay}`,
+    `Updated At: ${formattedTime} IST`
   ].join('\n');
 
   try {

@@ -1,7 +1,60 @@
 import { Router } from 'express';
 import { getPool } from '../db.js';
+import { sendAssetStatusNotificationEmail, isValidEmail, isEmailConfigured } from '../services/emailService.js';
 
 const router = Router();
+
+// POST test email delivery (Admin development / validation endpoint)
+router.post('/test-email', async (req, res) => {
+  try {
+    const { recipient, updatedBy } = req.body;
+
+    if (!recipient || !isValidEmail(recipient)) {
+      return res.status(400).json({
+        success: false,
+        error: 'A valid recipient email address is required (e.g. admin@example.com)'
+      });
+    }
+
+    if (!isEmailConfigured()) {
+      return res.status(200).json({
+        success: false,
+        configured: false,
+        status: 'skipped',
+        message: 'SMTP credentials are not configured in environment variables'
+      });
+    }
+
+    // Mock asset payload for testing
+    const sampleAsset = {
+      id: 'AST-TEST-001',
+      name: 'Dell Latitude 7420 Laptop',
+      department: updatedBy?.department || 'Computer Science'
+    };
+
+    const result = await sendAssetStatusNotificationEmail({
+      asset: sampleAsset,
+      previousCondition: 'Good',
+      newCondition: 'Damaged',
+      updatedBy: updatedBy || { name: 'System Administrator', role: 'superadmin' },
+      recipients: [{ email: recipient, name: 'Test Recipient', id: 'TEST-USER' }],
+      direction: 'deptadmin_to_superadmin'
+    });
+
+    res.json({
+      success: result.success,
+      configured: result.configured,
+      status: result.status,
+      recipient,
+      message: result.success
+        ? `Test notification email successfully delivered to ${recipient}`
+        : `Email dispatch failed: ${result.error || result.message}`
+    });
+  } catch (error) {
+    console.error('[Notification Route] Test email error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // GET notifications (supports filtering by userId, role, and department)
 router.get('/', async (req, res) => {
@@ -125,3 +178,4 @@ router.delete('/clear-all', async (req, res) => {
 });
 
 export default router;
+

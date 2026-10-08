@@ -179,6 +179,14 @@ export const api = {
     if (!res.ok) throw new Error('Failed to mark all read');
     return res.json();
   },
+  async testEmail(payload) {
+    const res = await fetch(`${API_BASE}/notifications/test-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
 
   // Departments
   async getDepartments() {
