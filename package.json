@@ -1,42 +1,24 @@
 {
-  "name": "figma-make-app",
+  "name": "asset-management-system",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "server": "node --watch server/index.js",
-    "agent:python": "python run_agent.py --server --port 5050",
-    "agent:cli": "python run_agent.py",
-    "dev:all": "concurrently \"node --watch server/index.js\" \"vite --host 0.0.0.0\"",
-    "dev:full": "concurrently \"node --watch server/index.js\" \"vite --host 0.0.0.0\" \"python run_agent.py --server --port 5050\"",
-    "build": "vite build",
-    "preview": "vite preview"
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:all": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:full": "concurrently -n \"BACKEND,FRONTEND,AGENT\" -c \"blue,green,magenta\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\" \"npm --prefix backend run agent:python\"",
+    "agent:python": "npm --prefix backend run agent:python",
+    "agent:cli": "npm --prefix backend run agent:cli",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "zip:frontend": "tar.exe -a -c -f frontend_submission.zip -C frontend --exclude node_modules --exclude dist --exclude .env .",
+    "zip:backend": "tar.exe -a -c -f backend_submission.zip -C backend --exclude node_modules --exclude __pycache__ --exclude .env .",
+    "zip:all": "npm run zip:frontend && npm run zip:backend"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.5.1",
-    "concurrently": "^10.0.5",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "graphify": "^1.0.0",
-    "lucide-react": "^0.475.0",
-    "mysql2": "^3.24.4",
-    "nodemailer": "^10.0.15",
-    "pdfkit": "^0.20.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-redux": "^9.2.0",
-    "react-router-dom": "^7.18.3"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.0.0",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^6.0.0",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.0",
-    "vite": "^8.0.0"
+    "concurrently": "^10.0.5"
   }
 }

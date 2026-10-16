@@ -1,0 +1,25 @@
+{
+  "name": "asset-management-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "agent:python": "python run_agent.py --server --port 5050",
+    "agent:cli": "python run_agent.py",
+    "seed": "node seedData.js",
+    "test:notifications": "node test_notifications.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.24.4",
+    "nodemailer": "^10.0.15",
+    "pdfkit": "^0.20.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

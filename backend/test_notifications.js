@@ -1,7 +1,7 @@
-import { initDatabase, getPool } from '../server/db.js';
-import { notifyAssetStatusChange, normalizeRole } from '../server/services/assetNotificationService.js';
-import { normalizePhoneNumber } from '../server/services/whatsappService.js';
-import { seedInitialDataIfEmpty } from '../server/seedData.js';
+import { initDatabase, getPool } from './db.js';
+import { notifyAssetStatusChange, normalizeRole } from './services/assetNotificationService.js';
+import { normalizePhoneNumber } from './services/whatsappService.js';
+import { seedInitialDataIfEmpty } from './seedData.js';
 import {
   initialAssets,
   initialUsers,
@@ -17,7 +17,7 @@ import {
   initialAuditLogs,
   initialCategories,
   initialPurchaseHistory
-} from '../server/initialData.js';
+} from './initialData.js';
 
 async function runTests() {
   console.log('--- STARTING NOTIFICATION SYSTEM INTEGRATION TESTS ---');

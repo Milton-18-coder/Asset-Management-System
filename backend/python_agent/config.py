@@ -2,11 +2,14 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load root .env file
-root_dir = Path(__file__).resolve().parent.parent
-env_path = root_dir / ".env"
-if env_path.exists():
-    load_dotenv(dotenv_path=env_path)
+# Load .env file (checks backend directory first, then root workspace)
+backend_dir = Path(__file__).resolve().parent.parent
+env_backend = backend_dir / ".env"
+env_root = backend_dir.parent / ".env"
+if env_backend.exists():
+    load_dotenv(dotenv_path=env_backend)
+elif env_root.exists():
+    load_dotenv(dotenv_path=env_root)
 else:
     load_dotenv()
 

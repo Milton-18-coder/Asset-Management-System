@@ -1,4 +1,4 @@
-import { initialAssets } from '../src/store/furnitureSlice.js';
+import { initialAssets } from './initialAssets.js';
 
 export { initialAssets };
 

@@ -1,60 +1,117 @@
 # 🏢 Asset Management System
 
-A simple, modern, full-stack web application to track, manage, and audit institutional and campus assets.
+A simple, modern, full-stack web application to track, manage, and audit institutional and campus assets with autonomous AI capabilities.
+
+The repository is separated into two fully independent projects:
+- **`frontend/`**: Modern React 19 + Vite + Tailwind CSS dashboard (configured for direct Vercel deployment).
+- **`backend/`**: Node.js Express REST API server + MySQL database layer + Gemini 2.5 Flash Python AI Agent.
 
 ---
 
-## 🚀 Tech Stack
+## 📂 Repository Structure
 
-- **Frontend:** React 19, Vite, Tailwind CSS, Redux Toolkit, Lucide Icons
-- **Backend:** Node.js, Express.js
-- **Database:** MySQL
-
----
-
-## ✨ Features
-
-- **Asset Management:** Register, edit, classify, and track campus assets with 3-tier categorization.
-- **Location Mapping:** Organize by Buildings, Departments, and Rooms.
-- **Transfers & Approvals:** Request and approve inter-departmental asset transfers.
-- **Inspections & Maintenance:** Log periodic condition audits and maintenance service tickets.
-- **Role-Based Access (RBAC):** Super Admin, Department Admin, Faculty, and Auditor roles with dedicated views.
-- **Audit Logs & Alerts:** Real-time notifications and system action logs.
+```
+c:\Projects\Asset\
+├── frontend/                     # Standalone React + Vite Client
+│   ├── public/                   # Static images and icons
+│   ├── src/                      # React components, pages, Redux store, and API services
+│   ├── .env.example              # Frontend environment template
+│   ├── index.html                # Vite HTML entry point
+│   ├── package.json              # Frontend dependencies & scripts
+│   ├── vercel.json               # SPA routing rewrite rule for Vercel
+│   ├── vite.config.js            # Vite build & proxy config
+│   └── README.md                 # Frontend documentation & Vercel deployment guide
+│
+├── backend/                      # Standalone Node.js REST API & AI Service
+│   ├── routes/                   # Express REST endpoints
+│   ├── services/                 # Email, PDF, AI Agent, Rule Engine, and WhatsApp services
+│   ├── tools/                    # Modular database query tools
+│   ├── python_agent/             # Autonomous Gemini 2.5 Flash Python Agent
+│   ├── db.js                     # MySQL connection pool & schema setup
+│   ├── index.js                  # Main Express API server entry point
+│   ├── initialAssets.js          # Catalog of institutional assets
+│   ├── initialData.js            # Initial seed data for users, rooms, etc.
+│   ├── package.json              # Backend dependencies & scripts
+│   ├── requirements.txt          # Python agent dependencies
+│   ├── run_agent.py              # Python agent runner (CLI or REST API)
+│   ├── seedData.js               # Auto-seeder
+│   └── README.md                 # Backend documentation
+│
+├── package.json                  # Root orchestration & packaging scripts
+├── .gitignore                    # Git ignore configurations
+└── README.md                     # Project documentation
+```
 
 ---
 
 ## 🛠️ Quick Start
 
-### 1. Clone & Install
+### 1. Install All Dependencies
+From the root directory:
 ```bash
-git clone https://github.com/Milton-18-coder/Asset-Management-System.git
-cd Asset-Management-System
-npm install
+npm run install:all
 ```
+*(Or install in each folder individually: `cd frontend && npm install` and `cd backend && npm install`)*
 
-### 2. Environment Setup
-Create a `.env` file in the root folder:
-```env
-PORT=5000
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=asset_management_db
-```
+### 2. Configure Environment
+- **Backend:** Copy `backend/.env.example` to `backend/.env` and update MySQL password / API keys.
+- **Frontend:** Copy `frontend/.env.example` to `frontend/.env` (optional in local dev).
 
-### 3. Database
-Create the database in MySQL (tables and seed data are created automatically on launch):
+Ensure MySQL database exists:
 ```sql
 CREATE DATABASE asset_management_db;
 ```
 
-### 4. Run the Project
+### 3. Run Everything Concurrently
+From the root directory:
 ```bash
-npm run dev:all
+npm run dev
 ```
 - **Frontend:** [http://localhost:5173](http://localhost:5173)
 - **Backend API:** [http://localhost:5000](http://localhost:5000)
+
+Or run individual parts:
+```bash
+npm run dev:frontend   # Runs only frontend
+npm run dev:backend    # Runs only backend
+npm run dev:full       # Runs backend + frontend + python AI agent
+```
+
+---
+
+## 🌐 Deploying Frontend to Vercel
+
+1. Push your repository to GitHub.
+2. Go to [Vercel Dashboard](https://vercel.com) and click **"Add New..." > "Project"**.
+3. Import your repository and configure:
+   - **Root Directory:** Select `frontend`
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+4. Add the environment variable:
+   - `VITE_API_URL`: Your hosted backend URL (e.g. `https://your-backend.onrender.com` or `https://your-backend.railway.app`).
+5. Click **Deploy**.
+
+> The included `frontend/vercel.json` ensures all SPA routes (like `/inventory`, `/transfers`, `/inspections`) automatically rewrite to `index.html` without 404 errors.
+
+---
+
+## 📦 Subject Assessment Submission (Zip Archives)
+
+To generate clean zip files for your subject assessment submission (automatically omitting `node_modules`, `.env`, and build artifacts):
+
+```bash
+# Package both frontend and backend zips
+npm run zip:all
+
+# Or package individually:
+npm run zip:frontend   # Creates frontend_submission.zip (~4MB)
+npm run zip:backend    # Creates backend_submission.zip (~130KB)
+```
+
+The resulting zip files:
+- `frontend_submission.zip`: Self-contained frontend project ready for grading.
+- `backend_submission.zip`: Self-contained backend API & Python agent project ready for grading.
 
 ---
 
@@ -70,4 +127,4 @@ npm run dev:all
 ---
 
 ## 📄 License
-This project is open-source and available under the [MIT License](LICENSE).
+This project is open-source under the [MIT License](LICENSE).
